@@ -8,7 +8,7 @@ networks:
 
 x-common-env: &common-env
   HOST: "0.0.0.0"
-  PORT: 4002 #change port
+  PORT: 4006
   REDIS_URL: redis://redis:6379
   DB_TYPE: postgres
   DB_NAME: mairie_360_database
@@ -23,22 +23,22 @@ x-depends-on: &depends-on
   redis:
     condition: service_healthy
 
-x-healthcheck: &healthcheck
-  test: ["CMD", "curl", "-f", "http://localhost:4002"] #change port
-  interval: 10s
-  timeout: 5s
-  retries: 5
+# x-healthcheck: &healthcheck
+#   test: ["CMD", "curl", "-f", "http://localhost:4006"]
+#   interval: 10s
+#   timeout: 5s
+#   retries: 5
 
 x-service: &service-template
   image: ghcr.io/mairie360/service_name:latest
   pull_policy: always
   restart: always
   expose:
-    - "4002" #change port
+    - "4006"
   networks:
     - backend
-  healthcheck:
-    <<: *healthcheck
+  # healthcheck:
+  #   <<: *healthcheck
 
 services:
   postgres:
@@ -96,7 +96,7 @@ services:
       retries: 5
 
   core:
-    container_name: core-bff-developpement
+    container_name: core-elearning-bff-developpement
     image: ghcr.io/mairie360/core-api:dev-latest
     ports:
       - "3000:3000"
@@ -106,7 +106,15 @@ services:
       - 8.8.8.8
       - 1.1.1.1
     environment:
-      <<: *common-env
+      HOST: "0.0.0.0"
+      PORT: 3000
+      REDIS_URL: redis://redis:6379
+      DB_TYPE: postgres
+      DB_NAME: mairie_360_database
+      DB_USER: postgres
+      DB_HOST: postgres
+      DB_PASSWORD: password
+      DB_PORT: 5432
       PUBLIC_URL: http://core.development.mairie360.fr
       JWT_SECRET: b"secret"
       JWT_TIMEOUT: 3600
@@ -115,43 +123,34 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"] # <--- Doit être 3000
-      interval: 5s
-      timeout: 2s
-      retries: 3
-      start_period: 10s
-
-  #add other apis if needed
-
-  bff-elearning: # change bff name
-    container_name: bff-elearning-developpement #change bff name
-    build:
-      context: .
-      dockerfile: development.Dockerfile
-    develop:
-      watch:
-        - action: sync
-          path: ./src
-          target: /usr/src/elearning/src #change bff name
-        - action: sync
-          path: ./Cargo.toml
-          target: /usr/src/elearning/Cargo.toml #change bff name
-        - action: sync
-          path: ./Cargo.lock
-          target: /usr/src/elearning/Cargo.lock #change bff name
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:3000/health"] # <--- Doit être 3000
+    #   interval: 5s
+    #   timeout: 2s
+    #   retries: 3
+    #   start_period: 10s
+      
+  elearning-api:
+    container_name: elearning-api-bff-elearning-developpement
+    image: ghcr.io/mairie360/elearning-api:dev-latest
     ports:
-      - "4002:4002" #change port
-    volumes:
-      - elearning-target:/usr/src/elearning/target #change bff name
+      - "3006:3006"
     networks:
       - backend
     dns:
       - 8.8.8.8
       - 1.1.1.1
     environment:
-      <<: *common-env
-      PUBLIC_URL: http://elearning.development.mairie360.fr #change bff name
+      HOST: "0.0.0.0"
+      PORT: 3006
+      REDIS_URL: redis://redis:6379
+      DB_TYPE: postgres
+      DB_NAME: mairie_360_database
+      DB_USER: postgres
+      DB_HOST: postgres
+      DB_PASSWORD: password
+      DB_PORT: 5432
+      PUBLIC_URL: http://elearning.development.mairie360.fr
       JWT_SECRET: b"secret"
       JWT_TIMEOUT: 3600
     depends_on:
@@ -159,24 +158,59 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://elearning:4002/health"] #change bff name #change port
-      interval: 5s
-      timeout: 2s
-      retries: 3
-      start_period: 10s
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:3006/health"] # <--- Doit être 3006
+    #   interval: 5s
+    #   timeout: 2s
+    #   retries: 3
+    #   start_period: 10s
+  
+  #add other apis if needed
 
-  nginx:
-    image: nginx:1.27.4-bookworm
-    restart: always
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
+  bff-elearning:
+    container_name: bff-elearning-developpement
+    build:
+      context: .
+      dockerfile: development.Dockerfile
+    # Mode synchronisation en temps réel (Docker Compose V2)
+    develop:
+      watch:
+        - action: sync
+          path: ./src
+          target: /app/src
+        - action: rebuild
+          path: package.json
     ports:
-      - "80:80"
+      - "4006:4006"
     networks:
       - backend
-    depends_on:
-      bff-elearning: #change bff name
-        condition: service_healthy
-    extra_hosts:
-      - "elearning.development.mairie360.fr:127.0.0.1" #change bff name
+    environment:
+      <<: *common-env
+      # IMPORTANT : On utilise le nom du service Docker pour communiquer
+      CORE_API_URL: "core" 
+      CORE_API_PORT: 3000
+      ELEARNING_API_URL: "elearning-api" 
+      ELEARNING_API_PORT: 3006
+    volumes:
+      - /app/node_modules # Isolation des modules pour éviter les conflits OS (Mac/Windows vs Linux)
+    # depends_on:
+      # core:
+      #   condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4006/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # nginx:
+  #   image: nginx:1.27.4-bookworm
+  #   restart: always
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf
+  #   ports:
+  #     - "80:80"
+  #   networks:
+  #     - backend
+  #   depends_on:
+  #     bff-elearning: #change bff name
+  #       condition: service_healthy
