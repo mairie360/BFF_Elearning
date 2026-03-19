@@ -1,17 +1,32 @@
 import { Router } from 'express';
-import axios from 'axios'; // La lib utilisée
+import axios from 'axios';
+import { CheckApiResponse, CheckApiResponseSchema } from '../views/check_api_view';
+import { registry } from '../openapi-registry';
 
 const router = Router();
 
-// Récupération des variables d'environnement
-const core_api_url = process.env.CORE_API_URL;
-const core_api_port = process.env.CORE_API_PORT;
+const CORE_FULL_URL = `http://${process.env.CORE_API_URL}:${process.env.CORE_API_PORT}`;
+const ELEARNING_FULL_URL = `http://${process.env.ELEARNING_API_URL}:${process.env.ELEARNING_API_PORT}`;
 
-const elearning_api_url = process.env.ELEARNING_API_URL;
-const elearning_api_port = process.env.ELEARNING_API_PORT;
-
-const CORE_FULL_URL = `http://${core_api_url}:${core_api_port}`;
-const ELEARNING_FULL_URL = `http://${elearning_api_url}:${elearning_api_port}`;
+registry.registerPath({
+  method: 'get',
+  path: '/check_apis',
+  tags: ['Connectivity'],
+  summary: "Vérifie la connexion avec l'API Core et E-learning (Rust)",
+  responses: {
+    200: {
+      description: 'Connexion réussie',
+      content: {
+        'application/json': {
+          schema: CheckApiResponseSchema,
+        },
+      },
+    },
+    502: {
+      description: 'API Core injoignable ou API E-learning injoignable',
+    },
+  },
+});
 
 router.get('/', async (_, res) => {
   try {
@@ -22,16 +37,12 @@ router.get('/', async (_, res) => {
     const elearningResponse = await axios.get(`${ELEARNING_FULL_URL}/health`, { timeout: 5000 });
     console.log(elearningResponse);
     const elearning_is_reachable = elearningResponse.status === 200;
-    
-    res.status(200).json({
+    const result: CheckApiResponse = {
       status: 'OK',
       core_api: core_is_reachable ? 'Connected' : 'Unreachable',
-      elearning_api: elearning_is_reachable ? 'Connected' : 'Unreachable',
-      details: {
-        core: coreResponse.data,
-        elearning: elearningResponse.data
-      }
-    });
+      elearning_api: elearning_is_reachable ? 'Connected' : 'Unreachable'
+    };
+    res.status(200).json(result);
   } catch (error) {
     res.status(502).json({
       status: 'Error',
