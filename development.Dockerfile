@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM node:20-alpine
 
 # Installation de curl pour le healthcheck Docker
@@ -8,8 +9,11 @@ WORKDIR /app
 # On copie les fichiers de définition en premier pour le cache Docker
 COPY package*.json tsconfig.json ./
 
-# Installation complète (avec devDependencies pour ts-node-dev)
-RUN npm install
+# Installation complète (avec devDependencies pour ts-node-dev).
+# Les identifiants GitHub Packages ne sont disponibles que pendant cette étape.
+RUN --mount=type=secret,id=npmrc,target=/app/.npmrc \
+    --mount=type=secret,id=node_auth_token,target=/run/secrets/node_auth_token \
+    NODE_AUTH_TOKEN="$(cat /run/secrets/node_auth_token)" npm ci
 
 # On copie le reste du code source
 COPY . .
