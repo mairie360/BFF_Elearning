@@ -59,7 +59,7 @@ const footerConfig: BffFooterConfig = {
   ],
 };
 
-let currentUser: BffCurrentUser = {
+const fallbackUser: BffCurrentUser = {
   id: 'user-123',
   name: 'Admin Systeme',
   initials: 'AS',
@@ -74,7 +74,7 @@ let currentUser: BffCurrentUser = {
   lastConnection: '3 juillet 2026 a 09:15',
 };
 
-const courses: BffCourse[] = [
+const courseTemplates: BffCourse[] = [
   {
     id: 'accueil-agents',
     title: 'Accueil des nouveaux agents',
@@ -434,6 +434,26 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
+const coursesByUserId = new Map<string, BffCourse[]>();
+const profileOverridesByUserId = new Map<string, BffUpdateProfileBody>();
+
+function getCourses(userId: string): BffCourse[] {
+  const existingCourses = coursesByUserId.get(userId);
+
+  if (existingCourses) return existingCourses;
+
+  const userCourses = clone(courseTemplates);
+  coursesByUserId.set(userId, userCourses);
+  return userCourses;
+}
+
+function getUserWithOverrides(user: BffCurrentUser): BffCurrentUser {
+  return {
+    ...user,
+    ...profileOverridesByUserId.get(user.id),
+  };
+}
+
 function normalize(value: string): string {
   return value
     .normalize('NFD')
@@ -554,7 +574,8 @@ function updateCourseProgress(course: BffCourse): {
   };
 }
 
-function findCourse(courseId: string): BffCourse {
+function findCourse(userId: string, courseId: string): BffCourse {
+  const courses = getCourses(userId);
   const course = courses.find((entry) => entry.id === courseId);
 
   if (!course) {
@@ -572,6 +593,47 @@ function findCourseDetails(course: BffCourse) {
   }
 
   return course.details;
+}
+
+function parseNumericValue(value: number | string | undefined): number {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  if (typeof value === 'string') {
+    const parsedValue = Number.parseInt(value, 10);
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
+  }
+
+  return 0;
+}
+
+function buildAdminStats(courses: BffCourse[]) {
+  const coursesWithRating = courses.filter((course) => typeof course.rating === 'number');
+  const averageRating = coursesWithRating.length
+    ? Math.round(
+        (coursesWithRating.reduce((total, course) => total + Number(course.rating), 0) /
+          coursesWithRating.length) *
+          10,
+      ) / 10
+    : 0;
+  const completionRate = courses.length
+    ? Math.round(courses.reduce((total, course) => total + (course.progress ?? 0), 0) / courses.length)
+    : 0;
+
+  return {
+    totalCourses: courses.length,
+    totalLearners: courses.reduce((total, course) => total + parseNumericValue(course.learners), 0),
+    mandatoryCourses: courses.filter((course) => course.titleBadge?.variant === 'mandatory').length,
+    totalContents: courses.reduce(
+      (total, course) =>
+        total +
+        (course.details?.chapters ?? []).reduce(
+          (chapterTotal, chapter) => chapterTotal + (chapter.contents?.length ?? 0),
+          0,
+        ),
+      0,
+    ),
+    averageRating,
+    completionRate,
+  };
 }
 
 export function sendError(
@@ -601,7 +663,11 @@ export function handleRouteError(res: Response, error: unknown): Response {
   return sendError(res, 500, 'INTERNAL_SERVER_ERROR', message);
 }
 
-export function buildCatalogResponse(query: BffCatalogQuery): BffCatalogResponse {
+export function buildCatalogResponse(
+  query: BffCatalogQuery,
+  user: BffCurrentUser = fallbackUser,
+): BffCatalogResponse {
+  const courses = getCourses(user.id);
   const search = query.search ? normalize(query.search) : '';
   const category = query.category && query.category !== 'all' ? query.category : undefined;
   const status = query.status && query.status !== 'all' ? query.status : undefined;
@@ -626,7 +692,7 @@ export function buildCatalogResponse(query: BffCatalogQuery): BffCatalogResponse
   }));
 
   return {
-    user: clone(currentUser),
+    user: clone(getUserWithOverrides(user)),
     notifications: {
       unreadCount: 3,
     },
@@ -647,39 +713,39 @@ export function buildCatalogResponse(query: BffCatalogQuery): BffCatalogResponse
         { label: 'En cours', value: courses.filter((course) => course.statusValue === 'in-progress').length },
         { label: 'Terminees', value: courses.filter((course) => course.statusValue === 'completed').length },
       ],
+      ...(user.isAdmin ? { adminStats: buildAdminStats(courses) } : {}),
       courses: clone(pagedCourses),
     },
     footer: clone(footerConfig),
   };
 }
 
-export function buildProfileResponse(): BffProfileResponse {
+export function buildProfileResponse(user: BffCurrentUser = fallbackUser): BffProfileResponse {
   return {
-    user: clone(currentUser),
+    user: clone(getUserWithOverrides(user)),
     footer: clone(footerConfig),
   };
 }
 
-export function updateProfile(body: BffUpdateProfileBody): BffProfileUpdateResponse {
-  currentUser = {
-    ...currentUser,
-    ...(body.email !== undefined ? { email: body.email } : {}),
-    ...(body.phone !== undefined ? { phone: body.phone } : {}),
-    ...(body.address !== undefined ? { address: body.address } : {}),
-    ...(body.city !== undefined ? { city: body.city } : {}),
-  };
+export function updateProfile(
+  body: BffUpdateProfileBody,
+  user: BffCurrentUser = fallbackUser,
+): BffProfileUpdateResponse {
+  const currentOverrides = profileOverridesByUserId.get(user.id) ?? {};
+  profileOverridesByUserId.set(user.id, { ...currentOverrides, ...body });
 
   return {
-    user: clone(currentUser),
+    user: clone(getUserWithOverrides(user)),
   };
 }
 
 export function completeCourseContent(
+  userId: string,
   courseId: string,
   contentId: string,
   body: BffCompleteContentBody,
 ): BffContentCompleteResponse {
-  const course = findCourse(courseId);
+  const course = findCourse(userId, courseId);
   const details = findCourseDetails(course);
   const chapter = details.chapters.find((entry) => entry.id === body.chapterId);
 
@@ -712,10 +778,11 @@ export function completeCourseContent(
 }
 
 export function submitCourseRating(
+  userId: string,
   courseId: string,
   body: BffSubmitRatingBody,
 ): BffRatingSubmitResponse {
-  const course = findCourse(courseId);
+  const course = findCourse(userId, courseId);
   const ratingDistribution = ensureRatingDistribution(course);
   const ratingKey = String(body.rating) as RatingKey;
   ratingDistribution[ratingKey] = (ratingDistribution[ratingKey] ?? 0) + 1;
@@ -740,8 +807,8 @@ export function submitCourseRating(
   };
 }
 
-export function startCourse(courseId: string): BffCourseActionResponse {
-  const course = findCourse(courseId);
+export function startCourse(userId: string, courseId: string): BffCourseActionResponse {
+  const course = findCourse(userId, courseId);
   const details = findCourseDetails(course);
 
   if (course.statusValue === 'not-started') {
@@ -758,4 +825,104 @@ export function startCourse(courseId: string): BffCourseActionResponse {
     ...(nextContentId ? { nextContentId } : {}),
     redirectUrl: `/courses/${course.id}`,
   };
+}
+
+function normalizeAdminCourse(course: BffCourse, courseId = course.id): BffCourse {
+  const normalizedCourse = clone({ ...course, id: courseId });
+  const chapters = normalizedCourse.details?.chapters ?? [];
+
+  normalizedCourse.chapters = chapters.length;
+  normalizedCourse.progress = normalizedCourse.progress ?? 0;
+  normalizedCourse.statusValue = normalizedCourse.statusValue ?? getStatusFromProgress(normalizedCourse.progress);
+  normalizedCourse.statusBadge = getStatusBadge(normalizedCourse.statusValue);
+
+  if (normalizedCourse.details) {
+    normalizedCourse.details = {
+      ...normalizedCourse.details,
+      title: normalizedCourse.title,
+      description: normalizedCourse.description,
+      instructor: normalizedCourse.instructor,
+      duration: normalizedCourse.duration,
+      progress: normalizedCourse.progress,
+    };
+  }
+
+  return normalizedCourse;
+}
+
+function mergeCourseProgress(nextCourse: BffCourse, currentCourse: BffCourse): BffCourse {
+  const mergedCourse = clone(nextCourse);
+  const currentContents = new Map(
+    (currentCourse.details?.chapters ?? []).flatMap((chapter) =>
+      (chapter.contents ?? []).map((content) => [content.id, content] as const),
+    ),
+  );
+
+  if (mergedCourse.details) {
+    mergedCourse.details.chapters = mergedCourse.details.chapters.map((chapter) => ({
+      ...chapter,
+      contents: chapter.contents?.map((content) => ({
+        ...content,
+        completed: currentContents.get(content.id)?.completed ?? content.completed ?? false,
+      })),
+    }));
+    mergedCourse.details.completionRating = currentCourse.details?.completionRating;
+  }
+
+  mergedCourse.rating = currentCourse.rating;
+  mergedCourse.ratingDistribution = currentCourse.ratingDistribution;
+  updateCourseProgress(mergedCourse);
+
+  return mergedCourse;
+}
+
+export function createAdminCourse(course: BffCourse): BffCourse {
+  if (courseTemplates.some((currentCourse) => currentCourse.id === course.id)) {
+    throw new ElearningRouteError(409, 'COURSE_ALREADY_EXISTS', 'Une formation possède déjà cet identifiant.', {
+      courseId: course.id,
+    });
+  }
+
+  const normalizedCourse = normalizeAdminCourse(course);
+  courseTemplates.push(clone(normalizedCourse));
+  coursesByUserId.forEach((courses) => courses.push(clone(normalizedCourse)));
+
+  return clone(normalizedCourse);
+}
+
+export function updateAdminCourse(courseId: string, course: BffCourse): BffCourse {
+  const templateIndex = courseTemplates.findIndex((currentCourse) => currentCourse.id === courseId);
+
+  if (templateIndex < 0) {
+    throw new ElearningRouteError(404, 'COURSE_NOT_FOUND', 'Formation introuvable.', { courseId });
+  }
+
+  const normalizedCourse = normalizeAdminCourse(course, courseId);
+  courseTemplates[templateIndex] = mergeCourseProgress(normalizedCourse, courseTemplates[templateIndex]);
+
+  coursesByUserId.forEach((courses) => {
+    const userCourseIndex = courses.findIndex((currentCourse) => currentCourse.id === courseId);
+
+    if (userCourseIndex >= 0) {
+      courses[userCourseIndex] = mergeCourseProgress(normalizedCourse, courses[userCourseIndex]);
+    } else {
+      courses.push(clone(normalizedCourse));
+    }
+  });
+
+  return clone(normalizedCourse);
+}
+
+export function deleteAdminCourse(courseId: string): void {
+  const templateIndex = courseTemplates.findIndex((course) => course.id === courseId);
+
+  if (templateIndex < 0) {
+    throw new ElearningRouteError(404, 'COURSE_NOT_FOUND', 'Formation introuvable.', { courseId });
+  }
+
+  courseTemplates.splice(templateIndex, 1);
+  coursesByUserId.forEach((courses) => {
+    const userCourseIndex = courses.findIndex((course) => course.id === courseId);
+    if (userCourseIndex >= 0) courses.splice(userCourseIndex, 1);
+  });
 }

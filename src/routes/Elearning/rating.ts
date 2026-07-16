@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { ApiError, CourseIdParams, RatingSubmitResponse, registry, SubmitRatingBody } from '../../openapi-registry';
 import { handleRouteError, sendValidationError, submitCourseRating } from './elearning_helpers';
+import { getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -57,7 +58,7 @@ registry.registerPath({
   },
 });
 
-router.post('/:courseId/rating', (req: Request, res: Response) => {
+router.post('/:courseId/rating', async (req: Request, res: Response) => {
   const paramsResult = CourseIdParams.safeParse(req.params);
   const bodyResult = SubmitRatingBody.safeParse(req.body);
 
@@ -70,7 +71,8 @@ router.post('/:courseId/rating', (req: Request, res: Response) => {
   }
 
   try {
-    return res.status(200).json(submitCourseRating(paramsResult.data.courseId, bodyResult.data));
+    const user = await getAuthenticatedUser(req);
+    return res.status(200).json(submitCourseRating(user.id, paramsResult.data.courseId, bodyResult.data));
   } catch (error) {
     return handleRouteError(res, error);
   }

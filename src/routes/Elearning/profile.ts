@@ -7,6 +7,7 @@ import {
   UpdateProfileBody,
 } from '../../openapi-registry';
 import { buildProfileResponse, handleRouteError, sendValidationError, updateProfile } from './elearning_helpers';
+import { getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -80,15 +81,16 @@ registry.registerPath({
   },
 });
 
-router.get('/', (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
-    return res.status(200).json(buildProfileResponse());
+    const user = await getAuthenticatedUser(req);
+    return res.status(200).json(buildProfileResponse(user));
   } catch (error) {
     return handleRouteError(res, error);
   }
 });
 
-router.patch('/', (req: Request, res: Response) => {
+router.patch('/', async (req: Request, res: Response) => {
   const bodyResult = UpdateProfileBody.safeParse(req.body);
 
   if (!bodyResult.success) {
@@ -96,7 +98,8 @@ router.patch('/', (req: Request, res: Response) => {
   }
 
   try {
-    return res.status(200).json(updateProfile(bodyResult.data));
+    const user = await getAuthenticatedUser(req);
+    return res.status(200).json(updateProfile(bodyResult.data, user));
   } catch (error) {
     return handleRouteError(res, error);
   }

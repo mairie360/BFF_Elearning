@@ -10,6 +10,7 @@ import profileRouter from './routes/Elearning/profile';
 import contentCompleteRouter from './routes/Elearning/content_complete';
 import ratingRouter from './routes/Elearning/rating';
 import startRouter from './routes/Elearning/start';
+import adminCoursesRouter from './routes/Elearning/admin_courses';
 
 dotenv.config();
 
@@ -47,5 +48,6 @@ app.use('/elearning/profile', profileRouter);
 app.use('/elearning/courses', contentCompleteRouter);
 app.use('/elearning/courses', ratingRouter);
 app.use('/elearning/courses', startRouter);
+app.use('/elearning/admin/courses', adminCoursesRouter);
 
 export default app;

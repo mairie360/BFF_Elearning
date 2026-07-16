@@ -7,6 +7,7 @@ import {
   StartCourseBody,
 } from '../../openapi-registry';
 import { handleRouteError, sendValidationError, startCourse } from './elearning_helpers';
+import { getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -71,7 +72,7 @@ registry.registerPath({
   },
 });
 
-router.post('/:courseId/start', (req: Request, res: Response) => {
+router.post('/:courseId/start', async (req: Request, res: Response) => {
   const paramsResult = CourseIdParams.safeParse(req.params);
   const bodyResult = StartCourseBody.safeParse(req.body ?? {});
 
@@ -84,7 +85,8 @@ router.post('/:courseId/start', (req: Request, res: Response) => {
   }
 
   try {
-    return res.status(200).json(startCourse(paramsResult.data.courseId));
+    const user = await getAuthenticatedUser(req);
+    return res.status(200).json(startCourse(user.id, paramsResult.data.courseId));
   } catch (error) {
     return handleRouteError(res, error);
   }

@@ -1,19 +1,21 @@
+# syntax=docker/dockerfile:1.7
 # --- Étape 1 : Build ---
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 
-# [MODIFICATION] On monte le secret npmrc au moment du npm ci
-RUN npm config set @mairie360:registry https://npm.pkg.github.coma
+# Les identifiants GitHub Packages ne sont disponibles que pendant les installations.
 RUN --mount=type=secret,id=npmrc,target=/app/.npmrc \
-    npm ci
+    --mount=type=secret,id=node_auth_token,target=/run/secrets/node_auth_token \
+    NODE_AUTH_TOKEN="$(cat /run/secrets/node_auth_token)" npm ci
 
 COPY . .
 RUN npm run build
 
 # [MODIFICATION] Idem pour l'install de prod
 RUN --mount=type=secret,id=npmrc,target=/app/.npmrc \
-    npm ci --omit=dev --ignore-scripts
+    --mount=type=secret,id=node_auth_token,target=/run/secrets/node_auth_token \
+    NODE_AUTH_TOKEN="$(cat /run/secrets/node_auth_token)" npm ci --omit=dev --ignore-scripts
 
 # --- Étape 2 : Runtime ---
 FROM node:20-alpine

@@ -190,6 +190,7 @@ export const CourseChapter = z
   .object({
     id: z.string().openapi({ example: 'accueil-1' }),
     title: z.string().openapi({ example: 'Comprendre l’organisation municipale' }),
+    description: z.string().optional(),
     duration: z.string().openapi({ example: '25 min' }),
     completed: z.boolean().optional(),
     active: z.boolean().optional(),
@@ -268,6 +269,16 @@ export const ElearningCatalogView = z
     statuses: z.array(FilterOption),
     categories: z.array(FilterOption).optional(),
     stats: z.array(StatCard).optional(),
+    adminStats: z
+      .object({
+        totalCourses: z.number().int().min(0),
+        totalLearners: z.number().int().min(0),
+        mandatoryCourses: z.number().int().min(0),
+        totalContents: z.number().int().min(0),
+        averageRating: z.number().min(0).max(5),
+        completionRate: z.number().min(0).max(100),
+      })
+      .optional(),
     courses: z.array(ElearningCourse),
   })
   .openapi({
@@ -288,6 +299,26 @@ export const ElearningCatalogResponse = z
 registry.register('ElearningCatalogQuery', ElearningCatalogQuery);
 registry.register('ElearningCatalogView', ElearningCatalogView);
 registry.register('ElearningCatalogResponse', ElearningCatalogResponse);
+
+export const AdminCourseResponse = z
+  .object({
+    course: ElearningCourse,
+  })
+  .openapi({
+    description: 'Formation créée ou mise à jour par un administrateur',
+  });
+
+export const AdminCourseDeleteResponse = z
+  .object({
+    deleted: z.boolean(),
+    courseId: z.string(),
+  })
+  .openapi({
+    description: 'Confirmation de suppression de la formation',
+  });
+
+registry.register('AdminCourseResponse', AdminCourseResponse);
+registry.register('AdminCourseDeleteResponse', AdminCourseDeleteResponse);
 
 // =====================
 // PROFILE
