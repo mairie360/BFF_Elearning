@@ -10,7 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@asteasolutions/zod-to-openapi": "8.5.0",
+    "@asteasolutions/zod-to-openapi": "9.1.0",
     "@mairie360/core-api-openapi": "0.4.0",
     "@mairie360/elearning-api-openapi": "0.0.0-dev.1054189c2bdcecf1627dbfafb6283f5c33f0c20c",
     "axios": "1.20.0",
