@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 # --- Étape 1 : Build ---
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 
@@ -18,7 +18,7 @@ RUN --mount=type=secret,id=npmrc,target=/app/.npmrc \
     NODE_AUTH_TOKEN="$(cat /run/secrets/node_auth_token)" npm ci --omit=dev --ignore-scripts
 
 # --- Étape 2 : Runtime ---
-FROM node:20-alpine
+FROM node:24-alpine
 ENV NODE_ENV=production
 RUN apk add --no-cache curl
 
