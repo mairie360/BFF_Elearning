@@ -1,8 +1,7 @@
+import { openApiDocument as swaggerSpec } from './openapi';
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import dotenv from 'dotenv';
-import { OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi';
-import { registry } from './openapi-registry';
 import healthRouter from './routes/health';
 import checkApisRouter from './routes/check_apis';
 import catalogRouter from './routes/Elearning/catalog';
@@ -17,26 +16,9 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-const openApiGenerator = new OpenApiGeneratorV3(registry.definitions);
-
-const swaggerSpec = openApiGenerator.generateDocument({
-  openapi: '3.0.0',
-  info: {
-    title: 'BFF E-learning API',
-    version: '1.0.0',
-    description: 'Contrat du BFF E-learning généré via Zod et OpenAPI.',
-  },
-  servers: [
-    {
-      url: `http://${process.env.HOST ?? 'localhost'}:${process.env.PORT ?? 4006}`,
-      description: 'Serveur local',
-    },
-  ],
-});
-
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.get('/swagger.json', (_req, res) => {
+app.get(['/openapi.json', '/swagger.json'], (_req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
 });
