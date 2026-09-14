@@ -35,7 +35,7 @@ x-db-env: &db-env
 
 services:
   postgres:
-    image: ${DB_IMAGE:-ghcr.io/mairie360/database:dev-a50c7b2}
+    image: ${DB_IMAGE:-ghcr.io/mairie360/database:1.0.0}
     container_name: bff-elearning-sec-db
     environment:
       POSTGRES_USER: postgres
@@ -54,7 +54,7 @@ services:
       retries: 10
 
   liquibase:
-    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:dev-a50c7b2}
+    image: ${LIQUIBASE_IMAGE:-ghcr.io/mairie360/liquibase-migrations:1.0.0}
     container_name: bff-elearning-sec-liquibase
     depends_on:
       postgres:
@@ -101,7 +101,7 @@ services:
       retries: 5
 
   core-api:
-    image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:dev-4048375}
+    image: ${CORE_API_IMAGE:-ghcr.io/mairie360/core-api:1.1.1}
     container_name: bff-elearning-sec-core-api
     depends_on:
       liquibase:
@@ -139,7 +139,7 @@ services:
       - backend
 
   elearning-api:
-    image: ${ELEARNING_API_IMAGE:-ghcr.io/mairie360/elearning-api:dev-1054189}
+    image: ${ELEARNING_API_IMAGE:-ghcr.io/mairie360/elearning-api:0.5.0}
     container_name: bff-elearning-sec-elearning-api
     depends_on:
       liquibase:
@@ -157,6 +157,13 @@ services:
       PUBLIC_URL: http://elearning-api:3006
       JWT_SECRET: b"secret"
       JWT_TIMEOUT: 3600
+      # Scaleway Object Storage (S3), requis depuis elearning-api 0.5.0 : placeholders
+      S3_BUCKET: mairie360-elearning
+      S3_REGION: fr-par
+      S3_ENDPOINT: https://s3.fr-par.scw.cloud
+      S3_ACCESS_KEY: ""
+      S3_SECRET_KEY: ""
+      S3_PRESIGN_TTL_SECS: 900
     expose:
       - "3006"
     networks:
@@ -177,7 +184,7 @@ services:
       - backend
 
   bff-user:
-    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:dev-latest}
+    image: ${BFF_USER_IMAGE:-ghcr.io/mairie360/bff-user:0.3.0}
     container_name: bff-elearning-sec-bff-user
     depends_on:
       seeder:
@@ -243,6 +250,8 @@ services:
     container_name: bff-elearning-sec-zap
     depends_on:
       bff-elearning:
+        condition: service_healthy
+      bff-user:
         condition: service_healthy
     volumes:
       - ./.zap/rules.tsv:/zap/wrk/rules.tsv:ro
