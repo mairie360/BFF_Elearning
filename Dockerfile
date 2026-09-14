@@ -1,28 +1,27 @@
-# syntax=docker/dockerfile:1.7
 # --- Étape 1 : Build ---
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 
-# Les identifiants GitHub Packages ne sont disponibles que pendant les installations.
+# Les identifiants GitHub Packages ne sont disponibles que pendant le npm ci.
 RUN --mount=type=secret,id=npmrc,target=/app/.npmrc \
-    --mount=type=secret,id=node_auth_token,target=/run/secrets/node_auth_token \
-    NODE_AUTH_TOKEN="$(cat /run/secrets/node_auth_token)" npm ci
+    --mount=type=secret,id=node_auth_token,env=NODE_AUTH_TOKEN \
+    npm ci
 
 COPY . .
 RUN npm run build
 
-# [MODIFICATION] Idem pour l'install de prod
 RUN --mount=type=secret,id=npmrc,target=/app/.npmrc \
-    --mount=type=secret,id=node_auth_token,target=/run/secrets/node_auth_token \
-    NODE_AUTH_TOKEN="$(cat /run/secrets/node_auth_token)" npm ci --omit=dev --ignore-scripts
+    --mount=type=secret,id=node_auth_token,env=NODE_AUTH_TOKEN \
+    npm ci --omit=dev --ignore-scripts
 
 # --- Étape 2 : Runtime ---
-FROM node:20-alpine
+FROM node:24-alpine
 ENV NODE_ENV=production
 RUN apk add --no-cache curl
 
 WORKDIR /app
+# Fichiers laissés à root : l'utilisateur node ne peut pas modifier le code exécuté.
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
