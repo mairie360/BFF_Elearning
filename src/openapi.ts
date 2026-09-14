@@ -13,5 +13,6 @@ import './routes/Elearning/start';
 // Runtime documentation and exported clients use the same mounted routes.
 export const openApiDocument = new OpenApiGeneratorV31(registry.definitions).generateDocument({
   openapi: '3.1.0',
-  info: { title: 'BFF E-learning API', version: '1.0.0' },
+  // Snake_case like the Rust APIs: orval derives endpoints/bffElearning.ts + getBffElearning() from it.
+  info: { title: 'bff_elearning', version: '1.0.0' },
 });
