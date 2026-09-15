@@ -464,3 +464,15 @@ export const ApiError = z
   });
 
 registry.register('ApiError', ApiError);
+
+// Erreurs communes aux routes qui résolvent la session auprès de BFF User (routes/Elearning/auth.ts).
+export const sessionErrorResponses = {
+  401: {
+    description: 'Session invalide, expirée ou manquante',
+    content: { 'application/json': { schema: ApiError } },
+  },
+  502: {
+    description: 'BFF User injoignable ou réponse inexploitable',
+    content: { 'application/json': { schema: ApiError } },
+  },
+};

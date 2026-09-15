@@ -68,19 +68,19 @@ Inventaire extrait de `contracts/openapi.json`. Les paramètres entre accolades 
 | --- | --- | --- | --- |
 | GET | `/health` | — | 200 |
 | GET | `/check_apis` | — | 200, 502 |
-| POST | `/elearning/admin/courses` | application/json | 201, 400, 401, 403, 409 |
-| PATCH | `/elearning/admin/courses/{courseId}` | application/json | 200, 400, 401, 403, 404 |
-| DELETE | `/elearning/admin/courses/{courseId}` | — | 200, 401, 403, 404 |
-| GET | `/elearning/catalog` | — | 200, 400, 500 |
-| POST | `/elearning/courses/{courseId}/contents/{contentId}/complete` | application/json | 200, 400, 404, 422, 500 |
-| GET | `/elearning/profile` | — | 200, 500 |
-| PATCH | `/elearning/profile` | application/json | 200, 400, 500 |
-| POST | `/elearning/courses/{courseId}/rating` | application/json | 200, 400, 404, 500 |
-| POST | `/elearning/courses/{courseId}/start` | application/json | 200, 400, 404, 422, 500 |
+| POST | `/elearning/admin/courses` | application/json | 201, 400, 401, 403, 409, 500, 502 |
+| PATCH | `/elearning/admin/courses/{courseId}` | application/json | 200, 400, 401, 403, 404, 500, 502 |
+| DELETE | `/elearning/admin/courses/{courseId}` | — | 200, 401, 403, 404, 500, 502 |
+| GET | `/elearning/catalog` | — | 200, 400, 401, 500, 502 |
+| POST | `/elearning/courses/{courseId}/contents/{contentId}/complete` | application/json | 200, 400, 401, 404, 422, 500, 502 |
+| GET | `/elearning/profile` | — | 200, 401, 500, 502 |
+| PATCH | `/elearning/profile` | application/json | 200, 400, 401, 500, 502 |
+| POST | `/elearning/courses/{courseId}/rating` | application/json | 200, 400, 401, 404, 500, 502 |
+| POST | `/elearning/courses/{courseId}/start` | application/json | 200, 400, 401, 404, 422, 500, 502 |
 
 ## Session, permissions et erreurs
 
-Les routes métier attendent un Bearer et résolvent la session via BFF User. Les refus de session produisent 401; une indisponibilité du service utilisateur produit 502. La gestion des formations est réservée au contexte administrateur selon les contrôles des routeurs.
+Les routes métier attendent un Bearer et résolvent la session via BFF User. Les refus de session produisent 401; une indisponibilité du service utilisateur, ou une réponse `/me` sans objet `user`, produit 502. Une erreur imprévue produit 500 sans exposer son message; `/check_apis` sonde Core et E-learning indépendamment et ne renvoie jamais de détail réseau. La gestion des formations est réservée au contexte administrateur selon les contrôles des routeurs.
 
 ## Synchronisation et vérifications
 
@@ -91,6 +91,8 @@ npm test -- --runInBand
 npm run lint
 npm run build
 ```
+
+Les tests de `tests/elearning.upstream-mocks.test.ts` exécutent toute l'application avec le vrai client axios contre des serveurs HTTP locaux simulant BFF User, Core API et E-learning API. Leurs contrats sont reconstruits depuis les paquets `@mairie360/bff-user-openapi`, `@mairie360/core-api-openapi` et `@mairie360/elearning-api-openapi` installés (types orval, versions épinglées dans `package.json`): chaque requête sortante (chemin, paramètres, corps JSON) et chaque réponse de succès simulée est validée contre ces contrats, et chaque réponse du BFF contre `contracts/openapi.json`. Monter la version d'un paquet suffit à tester le nouveau contrat; les statuts d'erreur ne sont pas typés par orval et sont simulés explicitement.
 
 `contracts:generate` exporte le registre runtime dans `contracts/openapi.json` et régénère `contracts/bff.d.ts`. `contracts:check` échoue si le contrat ou les types sont périmés. Exécuter ensuite `npm run contracts:sync` dans chaque web service associé et livrer les modifications de contrat ensemble.
 

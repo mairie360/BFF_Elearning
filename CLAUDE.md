@@ -61,7 +61,7 @@ Every business route:
 2. Calls `getAuthenticatedUser(req)` (`src/routes/Elearning/auth.ts`): requires `Authorization: Bearer <token>`, calls `GET {USER_BFF_URL}/me` with a 5s timeout, maps the response to `CurrentUser`. Rejection → `ElearningRouteError(401, 'UNAUTHORIZED')`; user service unreachable → `ElearningRouteError(502, 'USER_SERVICE_UNAVAILABLE')`. The user `id` is the JWT `sub` claim, **base64url-decoded but not signature-verified** (trust is delegated to BFF User); it falls back to the user's name if the token has no usable `sub`. Missing `role` defaults to `'Guest'`, missing name to `'Utilisateur'`.
 3. Admin routes (`admin_courses.ts`) then check `user.isAdmin` (derived from a case-insensitive `role === 'admin'` in the `/me` payload) → 403 `FORBIDDEN` otherwise.
 4. Delegates to a pure function in `elearning_helpers.ts`, returns its result as JSON.
-5. Wraps the try/catch in `handleRouteError(res, error)` → `ElearningRouteError` becomes `{ code, message, details }` at its status; anything else becomes 500 `INTERNAL_SERVER_ERROR`.
+5. Wraps the try/catch in `handleRouteError(res, error)` → `ElearningRouteError` becomes `{ code, message, details }` at its status; anything else becomes 500 `INTERNAL_SERVER_ERROR` with a generic message (the real error is only logged). Every authenticated route documents 401/502 through `sessionErrorResponses` (`openapi-registry.ts`); a `/me` 2xx without a `user` object is a 502, never a Guest session.
 
 ### Data is in-memory — there is no database
 
@@ -71,13 +71,21 @@ Every business route:
 - `profileOverridesByUserId: Map<string, ...>` — profile edits are stored as overrides merged onto the `/me` user, not persisted upstream.
 - Admin create/update/delete mutate both `courseTemplates` and every existing per-user array.
 
-Restarting the process resets all of it; multiple instances do not share state. `src/clients/elearningClient.ts` (`@mairie360/elearning-api-openapi`) and `src/clients/coreClient.ts` exist but are **not** wired into the business routes — persistence to the upstream E-learning API is future work, not current behavior. `/check_apis` is only a connectivity diagnostic (returns 502 if Core or E-learning `/health` fails); `/health` just reports the BFF process is up.
+Restarting the process resets all of it; multiple instances do not share state. `src/clients/elearningClient.ts` (`@mairie360/elearning-api-openapi`) and `src/clients/coreClient.ts` exist but are **not** wired into the business routes — persistence to the upstream E-learning API is future work, not current behavior. `/check_apis` is only a connectivity diagnostic (probes Core and E-learning `/health` independently from `*_API_URL` + `*_API_PORT` read per request, returns 502 with the per-API status if either fails, never the network error); `/health` just reports the BFF process is up.
 
 Values returned to the frontend are always `clone(...)`d before leaving a helper so callers cannot mutate the in-memory store.
 
 ## Tests
 
-Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/elearning.test.ts` `jest.mock`s `../src/routes/Elearning/auth` to bypass the real `/me` call — follow that pattern when testing authenticated routes. Assertions lean on exact payload shapes (e.g. `adminStats` totals), so changing the seed catalogue or the shaping logic in `elearning_helpers.ts` will require updating expected values.
+Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/elearning.test.ts` `jest.mock`s `../src/routes/Elearning/auth` to bypass the real `/me` call — follow that pattern for pure shaping tests. Assertions lean on exact payload shapes (e.g. `adminStats` totals), so changing the seed catalogue or the shaping logic in `elearning_helpers.ts` will require updating expected values.
+
+### Tests with contract-driven upstream mocks
+
+`tests/elearning.upstream-mocks.test.ts` imports the **whole app** with the **real** `auth.ts`/axios and serves BFF User (`/me`), Core API and E-learning API (`/health`) from local HTTP servers (`tests/support/contract-mock-server.ts`). Their contracts are rebuilt at test time from the **installed** `@mairie360/bff-user-openapi` (devDependency, aligned with the `bff-user` image of the test stacks), `@mairie360/core-api-openapi` and `@mairie360/elearning-api-openapi` packages (`tests/support/orval-contract.ts` parses the orval `endpoints/*.ts` + `model/*.ts` with the TypeScript compiler API), so bumping a package is enough to test a new contract. The mock rejects paths, methods, params and bodies absent from the contract and validates mocked success responses; orval does not type errors, so mocked error replies need `outOfContract: true`. Every BFF response is checked against `contracts/openapi.json` (status documented + schema), so an undocumented status fails the test. `tests/upstream-contracts.test.ts` pins package versions and the consumed operations.
+
+- `USER_BFF_URL` and `CORE_API_*`/`ELEARNING_API_*` are read per request, so tests set them in `beforeEach` (no module reload).
+- State is in-memory per process: use a distinct JWT `sub` per test (`bearer()` in `tests/support/user-fixtures.ts`) and delete admin-created courses.
+- `openapi-contract.ts`, `contract-mock-server.ts` and `orval-contract.ts` are shared verbatim with `BFF_user`, `BFF_Calendar` and `BFF_Dashboard`; keep the copies identical.
 
 ## CI / Docker
 

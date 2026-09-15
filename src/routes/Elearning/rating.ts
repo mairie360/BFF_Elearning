@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { ApiError, CourseIdParams, RatingSubmitResponse, registry, SubmitRatingBody } from '../../openapi-registry';
+import { ApiError, CourseIdParams, RatingSubmitResponse, registry, sessionErrorResponses, SubmitRatingBody } from '../../openapi-registry';
 import { handleRouteError, sendValidationError, submitCourseRating } from './elearning_helpers';
 import { getAuthenticatedUser } from './auth';
 
@@ -47,6 +47,7 @@ registry.registerPath({
         },
       },
     },
+    ...sessionErrorResponses,
     500: {
       description: 'Erreur serveur non prevue',
       content: {
