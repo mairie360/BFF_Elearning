@@ -87,13 +87,13 @@ export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser
 
   const userBffUrl = (process.env.USER_BFF_URL ?? DEFAULT_USER_BFF_URL).replace(/\/+$/, '');
 
+  let body: unknown;
   try {
-    const response = await axios.get<UserResponse>(`${userBffUrl}/me`, {
+    const response = await axios.get<unknown>(`${userBffUrl}/me`, {
       headers: { Authorization: authorization, Accept: 'application/json' },
       timeout: 5_000,
     });
-
-    return mapCurrentUser(response.data, authorization);
+    body = response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401 || error.response?.status === 403) {
@@ -110,4 +110,16 @@ export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser
 
     throw error;
   }
+
+  // Un 2xx sans objet `user` (corps vide, texte, JSON inattendu) ne prouve pas la session : il ne doit pas
+  // produire un utilisateur « Guest » authentifié.
+  if (!isRecord(body) || !isRecord(body.user)) {
+    throw new ElearningRouteError(502, 'USER_SERVICE_UNAVAILABLE', 'Le service utilisateur est indisponible.');
+  }
+
+  return mapCurrentUser(body as UserResponse, authorization);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

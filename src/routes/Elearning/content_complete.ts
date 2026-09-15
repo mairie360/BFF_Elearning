@@ -5,6 +5,7 @@ import {
   ContentCompleteResponse,
   CourseContentParams,
   registry,
+  sessionErrorResponses,
 } from '../../openapi-registry';
 import { completeCourseContent, handleRouteError, sendValidationError } from './elearning_helpers';
 import { getAuthenticatedUser } from './auth';
@@ -62,6 +63,7 @@ registry.registerPath({
         },
       },
     },
+    ...sessionErrorResponses,
     500: {
       description: 'Erreur serveur non prevue',
       content: {

@@ -69,7 +69,9 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": components["schemas"]["CheckApiResponse"];
+                    };
                 };
             };
         };
@@ -432,7 +434,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Session invalide */
+                /** @description Session invalide, expirée ou manquante */
                 401: {
                     headers: {
                         [name: string]: unknown;
@@ -474,6 +476,46 @@ export interface paths {
                 };
                 /** @description Identifiant déjà utilisé */
                 409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Erreur serveur non prevue */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description BFF User injoignable ou réponse inexploitable */
+                502: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -535,7 +577,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Session invalide */
+                /** @description Session invalide, expirée ou manquante */
                 401: {
                     headers: {
                         [name: string]: unknown;
@@ -577,6 +619,46 @@ export interface paths {
                 };
                 /** @description Formation introuvable */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Erreur serveur non prevue */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description BFF User injoignable ou réponse inexploitable */
+                502: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -944,7 +1026,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Session invalide */
+                /** @description Session invalide, expirée ou manquante */
                 401: {
                     headers: {
                         [name: string]: unknown;
@@ -986,6 +1068,46 @@ export interface paths {
                 };
                 /** @description Formation introuvable */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description Erreur serveur non prevue */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description BFF User injoignable ou réponse inexploitable */
+                502: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1308,8 +1430,48 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Session invalide, expirée ou manquante */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
                 /** @description Erreur serveur non prevue */
                 500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description BFF User injoignable ou réponse inexploitable */
+                502: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1497,6 +1659,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Session invalide, expirée ou manquante */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
                 /** @description Formation, chapitre ou contenu introuvable */
                 404: {
                     headers: {
@@ -1539,6 +1721,26 @@ export interface paths {
                 };
                 /** @description Erreur serveur non prevue */
                 500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description BFF User injoignable ou réponse inexploitable */
+                502: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1643,8 +1845,48 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Session invalide, expirée ou manquante */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
                 /** @description Erreur serveur non prevue */
                 500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description BFF User injoignable ou réponse inexploitable */
+                502: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1758,8 +2000,48 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Session invalide, expirée ou manquante */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
                 /** @description Erreur serveur non prevue */
                 500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description BFF User injoignable ou réponse inexploitable */
+                502: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1864,6 +2146,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Session invalide, expirée ou manquante */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
                 /** @description Formation introuvable */
                 404: {
                     headers: {
@@ -1886,6 +2188,26 @@ export interface paths {
                 };
                 /** @description Erreur serveur non prevue */
                 500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description BFF User injoignable ou réponse inexploitable */
+                502: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -2126,6 +2448,26 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Session invalide, expirée ou manquante */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
                 /** @description Formation introuvable */
                 404: {
                     headers: {
@@ -2168,6 +2510,26 @@ export interface paths {
                 };
                 /** @description Erreur serveur non prevue */
                 500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example COURSE_NOT_FOUND */
+                            code: string;
+                            /** @example Formation introuvable. */
+                            message: string;
+                            /**
+                             * @example {
+                             *       "courseId": "accueil-agents"
+                             *     }
+                             */
+                            details?: unknown;
+                        };
+                    };
+                };
+                /** @description BFF User injoignable ou réponse inexploitable */
+                502: {
                     headers: {
                         [name: string]: unknown;
                     };

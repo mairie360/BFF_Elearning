@@ -68,19 +68,19 @@ Inventory extracted from `contracts/openapi.json`. Replace brace parameters with
 | --- | --- | --- | --- |
 | GET | `/health` | — | 200 |
 | GET | `/check_apis` | — | 200, 502 |
-| POST | `/elearning/admin/courses` | application/json | 201, 400, 401, 403, 409 |
-| PATCH | `/elearning/admin/courses/{courseId}` | application/json | 200, 400, 401, 403, 404 |
-| DELETE | `/elearning/admin/courses/{courseId}` | — | 200, 401, 403, 404 |
-| GET | `/elearning/catalog` | — | 200, 400, 500 |
-| POST | `/elearning/courses/{courseId}/contents/{contentId}/complete` | application/json | 200, 400, 404, 422, 500 |
-| GET | `/elearning/profile` | — | 200, 500 |
-| PATCH | `/elearning/profile` | application/json | 200, 400, 500 |
-| POST | `/elearning/courses/{courseId}/rating` | application/json | 200, 400, 404, 500 |
-| POST | `/elearning/courses/{courseId}/start` | application/json | 200, 400, 404, 422, 500 |
+| POST | `/elearning/admin/courses` | application/json | 201, 400, 401, 403, 409, 500, 502 |
+| PATCH | `/elearning/admin/courses/{courseId}` | application/json | 200, 400, 401, 403, 404, 500, 502 |
+| DELETE | `/elearning/admin/courses/{courseId}` | — | 200, 401, 403, 404, 500, 502 |
+| GET | `/elearning/catalog` | — | 200, 400, 401, 500, 502 |
+| POST | `/elearning/courses/{courseId}/contents/{contentId}/complete` | application/json | 200, 400, 401, 404, 422, 500, 502 |
+| GET | `/elearning/profile` | — | 200, 401, 500, 502 |
+| PATCH | `/elearning/profile` | application/json | 200, 400, 401, 500, 502 |
+| POST | `/elearning/courses/{courseId}/rating` | application/json | 200, 400, 401, 404, 500, 502 |
+| POST | `/elearning/courses/{courseId}/start` | application/json | 200, 400, 401, 404, 422, 500, 502 |
 
 ## Session, permissions and errors
 
-Business routes expect a Bearer token and resolve the session through BFF User. Session rejection produces 401; user-service unavailability produces 502. Course management is restricted to an administrator context by router checks.
+Business routes expect a Bearer token and resolve the session through BFF User. Session rejection produces 401; user-service unavailability, or a `/me` response without a `user` object, produces 502. An unexpected error produces 500 without exposing its message; `/check_apis` probes Core and E-learning independently and never returns network details. Course management is restricted to an administrator context by router checks.
 
 ## Synchronization and verification
 
@@ -91,6 +91,8 @@ npm test -- --runInBand
 npm run lint
 npm run build
 ```
+
+The tests in `tests/elearning.upstream-mocks.test.ts` run the whole app with the real axios client against local HTTP servers simulating BFF User, Core API and E-learning API. Their contracts are rebuilt from the installed `@mairie360/bff-user-openapi`, `@mairie360/core-api-openapi` and `@mairie360/elearning-api-openapi` packages (orval types, versions pinned in `package.json`): every outgoing request (path, parameters, JSON body) and every mocked success response is validated against those contracts, and every BFF response against `contracts/openapi.json`. Bumping a package version is enough to test against the new contract; error statuses are not typed by orval and are mocked explicitly.
 
 `contracts:generate` exports the runtime registry to `contracts/openapi.json` and regenerates `contracts/bff.d.ts`. `contracts:check` fails when the contract or types are stale. Then run `npm run contracts:sync` in each associated web service and deliver contract changes together.
 

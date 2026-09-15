@@ -4,6 +4,7 @@ import {
   ElearningProfileResponse,
   ProfileUpdateResponse,
   registry,
+  sessionErrorResponses,
   UpdateProfileBody,
 } from '../../openapi-registry';
 import { buildProfileResponse, handleRouteError, sendValidationError, updateProfile } from './elearning_helpers';
@@ -26,6 +27,7 @@ registry.registerPath({
         },
       },
     },
+    ...sessionErrorResponses,
     500: {
       description: 'Erreur serveur non prevue',
       content: {
@@ -70,6 +72,7 @@ registry.registerPath({
         },
       },
     },
+    ...sessionErrorResponses,
     500: {
       description: 'Erreur serveur non prevue',
       content: {

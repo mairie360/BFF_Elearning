@@ -5,9 +5,6 @@ import { registry } from '../openapi-registry';
 
 const router = Router();
 
-const CORE_FULL_URL = `http://${process.env.CORE_API_URL}:${process.env.CORE_API_PORT}`;
-const ELEARNING_FULL_URL = `http://${process.env.ELEARNING_API_URL}:${process.env.ELEARNING_API_PORT}`;
-
 registry.registerPath({
   method: 'get',
   path: '/check_apis',
@@ -24,33 +21,42 @@ registry.registerPath({
     },
     502: {
       description: 'API Core injoignable ou API E-learning injoignable',
+      content: {
+        'application/json': {
+          schema: CheckApiResponseSchema,
+        },
+      },
     },
   },
 });
 
-router.get('/', async (_, res) => {
-  try {
-    const coreResponse = await axios.get(`${CORE_FULL_URL}/health`, { timeout: 5000 });
-    console.log(coreResponse);
-    const core_is_reachable = coreResponse.status === 200;
-    
-    const elearningResponse = await axios.get(`${ELEARNING_FULL_URL}/health`, { timeout: 5000 });
-    console.log(elearningResponse);
-    const elearning_is_reachable = elearningResponse.status === 200;
-    const result: CheckApiResponse = {
-      status: 'OK',
-      core_api: core_is_reachable ? 'Connected' : 'Unreachable',
-      elearning_api: elearning_is_reachable ? 'Connected' : 'Unreachable'
-    };
-    res.status(200).json(result);
-  } catch (error) {
-    res.status(502).json({
-      status: 'Error',
-      core_api: 'Unreachable',
-      elearning_api: 'Unreachable',
-      message: (error as Error).message
-    });
+async function isReachable(service: 'CORE_API' | 'ELEARNING_API'): Promise<boolean> {
+  // URL relue à chaque appel : la configuration peut changer sans recharger le module.
+  const host = process.env[`${service}_URL`];
+  const port = process.env[`${service}_PORT`];
+  if (!host || !port) {
+    return false;
   }
+
+  try {
+    const response = await axios.get(`http://${host}:${port}/health`, { timeout: 5000 });
+    return response.status === 200;
+  } catch {
+    return false;
+  }
+}
+
+router.get('/', async (_, res) => {
+  // Les deux API sont sondées indépendamment : une panne de l'une ne masque pas l'état de l'autre,
+  // et aucun détail réseau n'est renvoyé au client.
+  const [coreReachable, elearningReachable] = await Promise.all([isReachable('CORE_API'), isReachable('ELEARNING_API')]);
+  const result: CheckApiResponse = {
+    status: coreReachable && elearningReachable ? 'OK' : 'Error',
+    core_api: coreReachable ? 'Connected' : 'Unreachable',
+    elearning_api: elearningReachable ? 'Connected' : 'Unreachable',
+  };
+
+  res.status(coreReachable && elearningReachable ? 200 : 502).json(result);
 });
 
 export default router;
