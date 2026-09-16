@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { Request } from 'express';
+import { userBffClient, userBffOptions } from '../../clients/userBffClient';
 import { z } from 'zod';
 import { CurrentUser } from '../../openapi-registry';
 import { ElearningRouteError } from './elearning_helpers';
@@ -22,8 +23,6 @@ type UserResponse = {
 type JwtPayload = {
   sub?: unknown;
 };
-
-const DEFAULT_USER_BFF_URL = 'http://localhost:4000';
 
 function decodeJwtSubject(authorization: string): string | null {
   const token = authorization.replace(/^Bearer\s+/i, '').trim();
@@ -85,14 +84,9 @@ export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser
     throw new ElearningRouteError(401, 'UNAUTHORIZED', 'Session invalide ou manquante.');
   }
 
-  const userBffUrl = (process.env.USER_BFF_URL ?? DEFAULT_USER_BFF_URL).replace(/\/+$/, '');
-
   let body: unknown;
   try {
-    const response = await axios.get<unknown>(`${userBffUrl}/me`, {
-      headers: { Authorization: authorization, Accept: 'application/json' },
-      timeout: 5_000,
-    });
+    const response = await userBffClient.getMe(userBffOptions(authorization));
     body = response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
