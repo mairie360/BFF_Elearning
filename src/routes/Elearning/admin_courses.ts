@@ -6,6 +6,7 @@ import {
   CourseIdParams,
   ElearningCourse,
   registry,
+  sessionErrorResponses,
 } from '../../openapi-registry';
 import { getAuthenticatedUser } from './auth';
 import {
@@ -24,12 +25,13 @@ const commonResponses = {
     description: 'Payload invalide',
     content: { 'application/json': { schema: ApiError } },
   },
-  401: {
-    description: 'Session invalide',
-    content: { 'application/json': { schema: ApiError } },
-  },
+  ...sessionErrorResponses,
   403: {
     description: 'Accès réservé aux administrateurs',
+    content: { 'application/json': { schema: ApiError } },
+  },
+  500: {
+    description: 'Erreur serveur non prevue',
     content: { 'application/json': { schema: ApiError } },
   },
 };
@@ -90,6 +92,8 @@ registry.registerPath({
     },
     401: commonResponses[401],
     403: commonResponses[403],
+    500: commonResponses[500],
+    502: commonResponses[502],
     404: {
       description: 'Formation introuvable',
       content: { 'application/json': { schema: ApiError } },

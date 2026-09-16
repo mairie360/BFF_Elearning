@@ -4,6 +4,7 @@ import {
   CourseActionResponse,
   CourseIdParams,
   registry,
+  sessionErrorResponses,
   StartCourseBody,
 } from '../../openapi-registry';
 import { handleRouteError, sendValidationError, startCourse } from './elearning_helpers';
@@ -61,6 +62,7 @@ registry.registerPath({
         },
       },
     },
+    ...sessionErrorResponses,
     500: {
       description: 'Erreur serveur non prevue',
       content: {

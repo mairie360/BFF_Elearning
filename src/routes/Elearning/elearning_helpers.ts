@@ -659,8 +659,9 @@ export function handleRouteError(res: Response, error: unknown): Response {
     return sendError(res, error.status, error.code, error.message, error.details);
   }
 
-  const message = error instanceof Error ? error.message : 'Erreur serveur non prevue.';
-  return sendError(res, 500, 'INTERNAL_SERVER_ERROR', message);
+  // Le détail d'une erreur imprévue reste dans les logs : il ne doit pas fuiter vers le client.
+  console.error('[BFF] Unexpected route error', error);
+  return sendError(res, 500, 'INTERNAL_SERVER_ERROR', 'Erreur serveur non prevue.');
 }
 
 export function buildCatalogResponse(
