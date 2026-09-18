@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getCoreApi } from '@mairie360/core-api-openapi/endpoints/coreApi';
+import { getCoreAPIMairie360 } from '@mairie360/core-api-openapi/endpoints/coreAPIMairie360';
 
 function getCoreApiBaseUrl(): string {
   const configuredUrl = process.env.CORE_API_URL ?? 'localhost';
@@ -18,6 +18,6 @@ const coreApiAxios = axios.create({
   timeout: 5_000,
 });
 
-const coreClient = getCoreApi(coreApiAxios);
+const coreClient = getCoreAPIMairie360(coreApiAxios);
 
 export default coreClient;

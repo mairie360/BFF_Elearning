@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getElearningApi } from '@mairie360/elearning-api-openapi/endpoints/elearningApi';
+import { getELearningAPIMairie360 } from '@mairie360/elearning-api-openapi/endpoints/eLearningAPIMairie360';
 
 function getElearningApiBaseUrl(): string {
   const configuredUrl = process.env.ELEARNING_API_URL ?? 'localhost';
@@ -18,6 +18,6 @@ const elearningApiAxios = axios.create({
   timeout: 5_000,
 });
 
-const elearningClient = getElearningApi(elearningApiAxios);
+const elearningClient = getELearningAPIMairie360(elearningApiAxios);
 
 export default elearningClient;

@@ -4,19 +4,23 @@ import app from '../src/app';
 import { ContractMockServer, unreachableUrl, type MockReply } from './support/contract-mock-server';
 import { OpenApiContract } from './support/openapi-contract';
 import { loadOrvalContract } from './support/orval-contract';
-import { bearer, group, sessionResponse } from './support/user-fixtures';
+import { bearer, coreApiUrls, elearningApiUrls, group, sessionResponse, userBffUrls } from './support/user-fixtures';
 
 // Toute l'application est testée avec le vrai client axios contre de vrais serveurs HTTP simulant BFF User
 // (résolution de session), Core API et E-learning API (/check_apis). Leurs contrats sont reconstruits depuis les
 // paquets @mairie360/*-openapi installés (versions épinglées dans package.json) : chaque mock refuse les routes et
 // paramètres absents du contrat amont et valide ses réponses de succès. Les erreurs ne sont pas typées par orval :
 // toute réponse d'erreur simulée est marquée `outOfContract`. Chaque réponse du BFF est validée contre
-// contracts/openapi.json.
+// contracts/openapi.json. Les corps simulés sont typés par les modèles générés et les chemins attendus viennent des
+// helpers d'URL des clients générés.
 
 const userBff = new ContractMockServer('USER_BFF', loadOrvalContract('@mairie360/bff-user-openapi'));
 const coreApi = new ContractMockServer('CORE_API', loadOrvalContract('@mairie360/core-api-openapi'));
 const elearningApi = new ContractMockServer('ELEARNING_API', loadOrvalContract('@mairie360/elearning-api-openapi'));
 const mocks = [userBff, coreApi, elearningApi];
+// Gabarits des contrats amont (clés des mocks) ; les chemins concrets attendus viennent des helpers d'URL.
+const USER_BFF = { me: '/me' } as const;
+const HEALTH = '/health';
 const bffContract = OpenApiContract.load(path.join(__dirname, '..', 'contracts', 'openapi.json'));
 
 beforeAll(async () => { await Promise.all(mocks.map((mock) => mock.start())); });
@@ -52,7 +56,7 @@ const withSession = (call: request.Test, sub: string | number) => call.set('Auth
 describe('BFF E-learning with contract-driven upstream mocks', () => {
   describe('session resolution through BFF User GET /me', () => {
     test('forwards the caller session to the contract /me operation and maps the SessionResponse', async () => {
-      userBff.on('get', '/me', { body: sessionResponse() });
+      userBff.on('get', USER_BFF.me, { body: sessionResponse() });
 
       const response = await withSession(request(app).get('/elearning/profile'), 'agent-42');
 
@@ -68,8 +72,9 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
         role: 'User',
         isAdmin: false,
       });
-      const [me] = userBff.calls('/me', 'get');
+      const [me] = userBff.calls(USER_BFF.me, 'get');
       expect(userBff.requests).toHaveLength(1);
+      expect(me.url.pathname).toBe(userBffUrls.getGetMeUrl());
       expect(me.headers.authorization).toBe(bearer('agent-42'));
       expect(me.headers.accept).toBe('application/json');
       expect(me.undeclaredQuery).toEqual([]);
@@ -77,8 +82,8 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
     test('omits null or missing optional fields and defaults the role to Guest', async () => {
       const body = sessionResponse({ phone: null }, []);
-      delete (body.user as { role?: string }).role;
-      userBff.on('get', '/me', { body });
+      delete body.user.role;
+      userBff.on('get', USER_BFF.me, { body });
 
       const response = await withSession(request(app).get('/elearning/profile'), 'agent-guest');
 
@@ -104,7 +109,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test.each([401, 403])('turns a BFF User %i into a 401', async (status) => {
-      userBff.on('get', '/me', userBffError(status));
+      userBff.on('get', USER_BFF.me, userBffError(status));
 
       const response = await withSession(request(app).get('/elearning/catalog'), 'agent-expired');
 
@@ -114,7 +119,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('maps a BFF User 5xx to 502 without leaking the upstream body', async () => {
-      userBff.on('get', '/me', { status: 500, body: { message: 'panic in handler' }, outOfContract: true });
+      userBff.on('get', USER_BFF.me, { status: 500, body: { message: 'panic in handler' }, outOfContract: true });
 
       const response = await withSession(request(app).get('/elearning/catalog'), 'agent-500');
 
@@ -129,7 +134,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       ['a text body', { raw: 'OK', contentType: 'text/plain', outOfContract: true }],
       ['a JSON body without user', { body: { groups: [], roles: [] }, outOfContract: true }],
     ])('answers 502 when BFF User returns %s', async (_label, reply) => {
-      userBff.on('get', '/me', reply);
+      userBff.on('get', USER_BFF.me, reply);
 
       const response = await withSession(request(app).get('/elearning/profile'), 'agent-broken');
 
@@ -150,7 +155,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
   });
 
   describe('learner routes', () => {
-    beforeEach(() => { userBff.on('get', '/me', { body: sessionResponse() }); });
+    beforeEach(() => { userBff.on('get', USER_BFF.me, { body: sessionResponse() }); });
 
     test('GET /elearning/catalog returns a contract-valid, filtered catalogue', async () => {
       const response = await withSession(request(app).get('/elearning/catalog?status=not-started&pageSize=10'), 'catalog-agent');
@@ -262,7 +267,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     };
 
     test.each(['Admin', 'admin', 'ADMIN'])('lets a BFF User role %s create, update and delete a course', async (role) => {
-      userBff.on('get', '/me', { body: sessionResponse({ role }) });
+      userBff.on('get', USER_BFF.me, { body: sessionResponse({ role }) });
       const id = `${course.id}-${role}`;
 
       const created = await withSession(request(app).post('/elearning/admin/courses'), 'admin-agent').send({ ...course, id });
@@ -289,7 +294,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('forbids non-administrators and leaves the catalogue untouched', async () => {
-      userBff.on('get', '/me', { body: sessionResponse({ role: 'Administrateur' }, [group(1, 'admin')]) });
+      userBff.on('get', USER_BFF.me, { body: sessionResponse({ role: 'Administrateur' }, [group(1, 'admin')]) });
 
       const created = await withSession(request(app).post('/elearning/admin/courses'), 'fake-admin').send(course);
       const removed = await withSession(request(app).delete('/elearning/admin/courses/accueil-agents'), 'fake-admin');
@@ -305,7 +310,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('propagates a BFF User outage as 502 before any mutation', async () => {
-      userBff.on('get', '/me', { dropConnection: true });
+      userBff.on('get', USER_BFF.me, { dropConnection: true });
 
       const response = await withSession(request(app).delete('/elearning/admin/courses/accueil-agents'), 'admin-offline');
 
@@ -316,8 +321,8 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
   describe('GET /check_apis', () => {
     beforeEach(() => {
-      coreApi.on('get', '/health', { raw: 'OK', contentType: 'text/plain' });
-      elearningApi.on('get', '/health', { raw: 'OK', contentType: 'text/plain' });
+      coreApi.on('get', HEALTH, { raw: 'OK', contentType: 'text/plain' });
+      elearningApi.on('get', HEALTH, { raw: 'OK', contentType: 'text/plain' });
     });
 
     test('reports both APIs connected through their contract /health operations', async () => {
@@ -326,8 +331,8 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(response.status).toBe(200);
       expectBffContract('get', '/check_apis', response);
       expect(response.body).toEqual({ status: 'OK', core_api: 'Connected', elearning_api: 'Connected' });
-      expect(coreApi.requests.map((call) => call.url.pathname)).toEqual(['/health']);
-      expect(elearningApi.requests.map((call) => call.url.pathname)).toEqual(['/health']);
+      expect(coreApi.requests.map((call) => call.url.pathname)).toEqual([coreApiUrls.getHealthUrl()]);
+      expect(elearningApi.requests.map((call) => call.url.pathname)).toEqual([elearningApiUrls.getHealthUrl()]);
       expect(userBff.requests).toHaveLength(0);
     });
 
@@ -342,7 +347,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('reports E-learning API unreachable when it answers an error', async () => {
-      elearningApi.on('get', '/health', { status: 503, raw: 'down', contentType: 'text/plain', outOfContract: true });
+      elearningApi.on('get', HEALTH, { status: 503, raw: 'down', contentType: 'text/plain', outOfContract: true });
 
       const response = await request(app).get('/check_apis');
 
