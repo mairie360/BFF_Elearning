@@ -1,9 +1,11 @@
 import { Request, Response, Router } from 'express';
 import {
+  AdminCourseCreateBody,
   AdminCourseDeleteResponse,
   AdminCourseResponse,
   ApiError,
   CourseIdParams,
+  DeletedCourseIdParams,
   ElearningCourse,
   registry,
   sessionErrorResponses,
@@ -42,7 +44,7 @@ registry.registerPath({
   tags: ['E-learning administration'],
   summary: 'Crée une formation complète',
   request: {
-    body: { required: true, content: { 'application/json': { schema: ElearningCourse } } },
+    body: { required: true, content: { 'application/json': { schema: AdminCourseCreateBody } } },
   },
   responses: {
     201: {
@@ -84,7 +86,7 @@ registry.registerPath({
   path: '/elearning/admin/courses/{courseId}',
   tags: ['E-learning administration'],
   summary: 'Supprime une formation',
-  request: { params: CourseIdParams },
+  request: { params: DeletedCourseIdParams },
   responses: {
     200: {
       description: 'Formation supprimée',
@@ -106,7 +108,7 @@ function ensureAdmin(isAdmin: boolean, res: Response): Response | null {
 }
 
 router.post('/', async (req: Request, res: Response) => {
-  const bodyResult = ElearningCourse.safeParse(req.body);
+  const bodyResult = AdminCourseCreateBody.safeParse(req.body);
   if (!bodyResult.success) return sendValidationError(res, bodyResult.error.issues);
 
   try {
@@ -140,7 +142,7 @@ router.patch('/:courseId', async (req: Request, res: Response) => {
 });
 
 router.delete('/:courseId', async (req: Request, res: Response) => {
-  const paramsResult = CourseIdParams.safeParse(req.params);
+  const paramsResult = DeletedCourseIdParams.safeParse(req.params);
   if (!paramsResult.success) return sendValidationError(res, paramsResult.error.issues);
 
   try {
