@@ -102,155 +102,7 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": {
-                        /** @example accueil-agents */
-                        id: string;
-                        /** @example Accueil des nouveaux agents */
-                        title: string;
-                        description: string;
-                        instructor?: string;
-                        /** @example 4.8 */
-                        rating?: number | string;
-                        /** @example 2 h 15 */
-                        duration?: string;
-                        /** @example 4 */
-                        chapters?: number | string;
-                        /** @example 128 */
-                        learners?: number | string;
-                        /** @example Intégration */
-                        category?: string;
-                        /**
-                         * @description Statut de progression de la formation pour l’utilisateur connecté
-                         * @example in-progress
-                         * @enum {string}
-                         */
-                        statusValue?: "not-started" | "in-progress" | "completed";
-                        /** @description Badge associé à une formation */
-                        titleBadge?: {
-                            /** @example Obligatoire */
-                            label: string;
-                            /**
-                             * @description Variante visuelle utilisée par les badges de formation
-                             * @example mandatory
-                             * @enum {string}
-                             */
-                            variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
-                        };
-                        /** @description Badge associé à une formation */
-                        levelBadge?: {
-                            /** @example Obligatoire */
-                            label: string;
-                            /**
-                             * @description Variante visuelle utilisée par les badges de formation
-                             * @example mandatory
-                             * @enum {string}
-                             */
-                            variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
-                        };
-                        /** @description Badge associé à une formation */
-                        statusBadge?: {
-                            /** @example Obligatoire */
-                            label: string;
-                            /**
-                             * @description Variante visuelle utilisée par les badges de formation
-                             * @example mandatory
-                             * @enum {string}
-                             */
-                            variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
-                        };
-                        progress?: number;
-                        /** @example 30 juin 2026 */
-                        deadline?: string;
-                        /**
-                         * @description Répartition des notes par valeur, de 1 à 5
-                         * @example {
-                         *       "1": 0,
-                         *       "2": 1,
-                         *       "3": 4,
-                         *       "4": 35,
-                         *       "5": 88
-                         *     }
-                         */
-                        ratingDistribution?: {
-                            1?: number;
-                            2?: number;
-                            3?: number;
-                            4?: number;
-                            5?: number;
-                        };
-                        /** @description Détail complet affiché dans la modale de formation */
-                        details?: {
-                            title: string;
-                            subtitle?: string;
-                            description: string;
-                            instructor?: string;
-                            duration?: string;
-                            rating?: number | string;
-                            ratingLabel?: string;
-                            /**
-                             * @description Répartition des notes par valeur, de 1 à 5
-                             * @example {
-                             *       "1": 0,
-                             *       "2": 1,
-                             *       "3": 4,
-                             *       "4": 35,
-                             *       "5": 88
-                             *     }
-                             */
-                            ratingDistribution?: {
-                                1?: number;
-                                2?: number;
-                                3?: number;
-                                4?: number;
-                                5?: number;
-                            };
-                            progress?: number;
-                            completed?: boolean;
-                            /** @description Configuration du composant de notation de fin de formation */
-                            completionRating?: {
-                                initialValue?: number;
-                                max?: number;
-                                submitted?: boolean;
-                                disabled?: boolean;
-                                title?: string;
-                                helperText?: string;
-                                submitLabel?: string;
-                                submittedLabel?: string;
-                            };
-                            chapters: {
-                                /** @example accueil-1 */
-                                id: string;
-                                /** @example Comprendre l’organisation municipale */
-                                title: string;
-                                description?: string;
-                                /** @example 25 min */
-                                duration: string;
-                                completed?: boolean;
-                                active?: boolean;
-                                contents?: {
-                                    /** @example accueil-1-video */
-                                    id: string;
-                                    /** @example Présentation des directions et services */
-                                    title: string;
-                                    /**
-                                     * @description Type de contenu pédagogique
-                                     * @example video
-                                     * @enum {string}
-                                     */
-                                    type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
-                                    description?: string;
-                                    /** @example 12 min */
-                                    duration?: string;
-                                    /** @example organigramme-mairie360.pdf */
-                                    fileName?: string;
-                                    /** @example /documents/organigramme-mairie360.pdf */
-                                    href?: string;
-                                    completed?: boolean;
-                                    required?: boolean;
-                                }[];
-                            }[];
-                        };
-                    };
+                    "application/json": components["schemas"]["AdminCourseCreateBody"];
                 };
             };
             responses: {
@@ -277,7 +129,7 @@ export interface paths {
                                 chapters?: number | string;
                                 /** @example 128 */
                                 learners?: number | string;
-                                /** @example Intégration */
+                                /** @example Integration */
                                 category?: string;
                                 /**
                                  * @description Statut de progression de la formation pour l’utilisateur connecté
@@ -380,7 +232,7 @@ export interface paths {
                                     chapters: {
                                         /** @example accueil-1 */
                                         id: string;
-                                        /** @example Comprendre l’organisation municipale */
+                                        /** @example Municipal organisation */
                                         title: string;
                                         description?: string;
                                         /** @example 25 min */
@@ -709,7 +561,7 @@ export interface paths {
                         chapters?: number | string;
                         /** @example 128 */
                         learners?: number | string;
-                        /** @example Intégration */
+                        /** @example Integration */
                         category?: string;
                         /**
                          * @description Statut de progression de la formation pour l’utilisateur connecté
@@ -812,7 +664,7 @@ export interface paths {
                             chapters: {
                                 /** @example accueil-1 */
                                 id: string;
-                                /** @example Comprendre l’organisation municipale */
+                                /** @example Municipal organisation */
                                 title: string;
                                 description?: string;
                                 /** @example 25 min */
@@ -869,7 +721,7 @@ export interface paths {
                                 chapters?: number | string;
                                 /** @example 128 */
                                 learners?: number | string;
-                                /** @example Intégration */
+                                /** @example Integration */
                                 category?: string;
                                 /**
                                  * @description Statut de progression de la formation pour l’utilisateur connecté
@@ -972,7 +824,7 @@ export interface paths {
                                     chapters: {
                                         /** @example accueil-1 */
                                         id: string;
-                                        /** @example Comprendre l’organisation municipale */
+                                        /** @example Municipal organisation */
                                         title: string;
                                         description?: string;
                                         /** @example 25 min */
@@ -1259,7 +1111,7 @@ export interface paths {
                                     chapters?: number | string;
                                     /** @example 128 */
                                     learners?: number | string;
-                                    /** @example Intégration */
+                                    /** @example Integration */
                                     category?: string;
                                     /**
                                      * @description Statut de progression de la formation pour l’utilisateur connecté
@@ -1362,7 +1214,7 @@ export interface paths {
                                         chapters: {
                                             /** @example accueil-1 */
                                             id: string;
-                                            /** @example Comprendre l’organisation municipale */
+                                            /** @example Municipal organisation */
                                             title: string;
                                             description?: string;
                                             /** @example 25 min */
@@ -1552,7 +1404,7 @@ export interface paths {
                             chapters: {
                                 /** @example accueil-1 */
                                 id: string;
-                                /** @example Comprendre l’organisation municipale */
+                                /** @example Municipal organisation */
                                 title: string;
                                 description?: string;
                                 /** @example 25 min */
@@ -1585,7 +1437,7 @@ export interface paths {
                             chapter: {
                                 /** @example accueil-1 */
                                 id: string;
-                                /** @example Comprendre l’organisation municipale */
+                                /** @example Municipal organisation */
                                 title: string;
                                 description?: string;
                                 /** @example 25 min */
@@ -1926,10 +1778,16 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        /** Format: email */
+                        /**
+                         * Format: email
+                         * @example security-admin@mairie360.fr
+                         */
                         email?: string;
+                        /** @example 0612345678 */
                         phone?: string;
+                        /** @example 1 place de la Mairie */
                         address?: string;
+                        /** @example Paris */
                         city?: string;
                     };
                 };
@@ -2289,7 +2147,7 @@ export interface paths {
                                 chapters?: number | string;
                                 /** @example 128 */
                                 learners?: number | string;
-                                /** @example Intégration */
+                                /** @example Integration */
                                 category?: string;
                                 /**
                                  * @description Statut de progression de la formation pour l’utilisateur connecté
@@ -2392,7 +2250,7 @@ export interface paths {
                                     chapters: {
                                         /** @example accueil-1 */
                                         id: string;
-                                        /** @example Comprendre l’organisation municipale */
+                                        /** @example Municipal organisation */
                                         title: string;
                                         description?: string;
                                         /** @example 25 min */
@@ -2726,7 +2584,7 @@ export interface components {
         CourseChapter: {
             /** @example accueil-1 */
             id: string;
-            /** @example Comprendre l’organisation municipale */
+            /** @example Municipal organisation */
             title: string;
             description?: string;
             /** @example 25 min */
@@ -2797,7 +2655,7 @@ export interface components {
             chapters: {
                 /** @example accueil-1 */
                 id: string;
-                /** @example Comprendre l’organisation municipale */
+                /** @example Municipal organisation */
                 title: string;
                 description?: string;
                 /** @example 25 min */
@@ -2843,7 +2701,7 @@ export interface components {
             chapters?: number | string;
             /** @example 128 */
             learners?: number | string;
-            /** @example Intégration */
+            /** @example Integration */
             category?: string;
             /**
              * @description Statut de progression de la formation pour l’utilisateur connecté
@@ -2946,7 +2804,157 @@ export interface components {
                 chapters: {
                     /** @example accueil-1 */
                     id: string;
-                    /** @example Comprendre l’organisation municipale */
+                    /** @example Municipal organisation */
+                    title: string;
+                    description?: string;
+                    /** @example 25 min */
+                    duration: string;
+                    completed?: boolean;
+                    active?: boolean;
+                    contents?: {
+                        /** @example accueil-1-video */
+                        id: string;
+                        /** @example Présentation des directions et services */
+                        title: string;
+                        /**
+                         * @description Type de contenu pédagogique
+                         * @example video
+                         * @enum {string}
+                         */
+                        type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
+                        description?: string;
+                        /** @example 12 min */
+                        duration?: string;
+                        /** @example organigramme-mairie360.pdf */
+                        fileName?: string;
+                        /** @example /documents/organigramme-mairie360.pdf */
+                        href?: string;
+                        completed?: boolean;
+                        required?: boolean;
+                    }[];
+                }[];
+            };
+        };
+        /** @description Formation à créer */
+        AdminCourseCreateBody: {
+            /** @example scan-course */
+            id: string;
+            /** @example Accueil des nouveaux agents */
+            title: string;
+            description: string;
+            instructor?: string;
+            /** @example 4.8 */
+            rating?: number | string;
+            /** @example 2 h 15 */
+            duration?: string;
+            /** @example 4 */
+            chapters?: number | string;
+            /** @example 128 */
+            learners?: number | string;
+            /** @example Integration */
+            category?: string;
+            /**
+             * @description Statut de progression de la formation pour l’utilisateur connecté
+             * @example in-progress
+             * @enum {string}
+             */
+            statusValue?: "not-started" | "in-progress" | "completed";
+            /** @description Badge associé à une formation */
+            titleBadge?: {
+                /** @example Obligatoire */
+                label: string;
+                /**
+                 * @description Variante visuelle utilisée par les badges de formation
+                 * @example mandatory
+                 * @enum {string}
+                 */
+                variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
+            };
+            /** @description Badge associé à une formation */
+            levelBadge?: {
+                /** @example Obligatoire */
+                label: string;
+                /**
+                 * @description Variante visuelle utilisée par les badges de formation
+                 * @example mandatory
+                 * @enum {string}
+                 */
+                variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
+            };
+            /** @description Badge associé à une formation */
+            statusBadge?: {
+                /** @example Obligatoire */
+                label: string;
+                /**
+                 * @description Variante visuelle utilisée par les badges de formation
+                 * @example mandatory
+                 * @enum {string}
+                 */
+                variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
+            };
+            progress?: number;
+            /** @example 30 juin 2026 */
+            deadline?: string;
+            /**
+             * @description Répartition des notes par valeur, de 1 à 5
+             * @example {
+             *       "1": 0,
+             *       "2": 1,
+             *       "3": 4,
+             *       "4": 35,
+             *       "5": 88
+             *     }
+             */
+            ratingDistribution?: {
+                1?: number;
+                2?: number;
+                3?: number;
+                4?: number;
+                5?: number;
+            };
+            /** @description Détail complet affiché dans la modale de formation */
+            details?: {
+                title: string;
+                subtitle?: string;
+                description: string;
+                instructor?: string;
+                duration?: string;
+                rating?: number | string;
+                ratingLabel?: string;
+                /**
+                 * @description Répartition des notes par valeur, de 1 à 5
+                 * @example {
+                 *       "1": 0,
+                 *       "2": 1,
+                 *       "3": 4,
+                 *       "4": 35,
+                 *       "5": 88
+                 *     }
+                 */
+                ratingDistribution?: {
+                    1?: number;
+                    2?: number;
+                    3?: number;
+                    4?: number;
+                    5?: number;
+                };
+                progress?: number;
+                completed?: boolean;
+                /** @description Configuration du composant de notation de fin de formation */
+                completionRating?: {
+                    initialValue?: number;
+                    max?: number;
+                    submitted?: boolean;
+                    disabled?: boolean;
+                    title?: string;
+                    helperText?: string;
+                    submitLabel?: string;
+                    submittedLabel?: string;
+                };
+                chapters: {
+                    /** @example accueil-1 */
+                    id: string;
+                    /** @example Municipal organisation */
                     title: string;
                     description?: string;
                     /** @example 25 min */
@@ -2978,7 +2986,9 @@ export interface components {
             };
         };
         ElearningCatalogQuery: {
+            /** @example accueil */
             search?: string;
+            /** @example Integration */
             category?: string;
             /**
              * @description Filtre de statut disponible dans le catalogue
@@ -2986,7 +2996,9 @@ export interface components {
              * @enum {string}
              */
             status?: "all" | "not-started" | "in-progress" | "completed";
+            /** @example 1 */
             page?: number;
+            /** @example 10 */
             pageSize?: number;
         };
         /** @description Modèle complet du catalogue E-learning */
@@ -3044,7 +3056,7 @@ export interface components {
                 chapters?: number | string;
                 /** @example 128 */
                 learners?: number | string;
-                /** @example Intégration */
+                /** @example Integration */
                 category?: string;
                 /**
                  * @description Statut de progression de la formation pour l’utilisateur connecté
@@ -3147,7 +3159,7 @@ export interface components {
                     chapters: {
                         /** @example accueil-1 */
                         id: string;
-                        /** @example Comprendre l’organisation municipale */
+                        /** @example Municipal organisation */
                         title: string;
                         description?: string;
                         /** @example 25 min */
@@ -3276,7 +3288,7 @@ export interface components {
                     chapters?: number | string;
                     /** @example 128 */
                     learners?: number | string;
-                    /** @example Intégration */
+                    /** @example Integration */
                     category?: string;
                     /**
                      * @description Statut de progression de la formation pour l’utilisateur connecté
@@ -3379,7 +3391,7 @@ export interface components {
                         chapters: {
                             /** @example accueil-1 */
                             id: string;
-                            /** @example Comprendre l’organisation municipale */
+                            /** @example Municipal organisation */
                             title: string;
                             description?: string;
                             /** @example 25 min */
@@ -3443,7 +3455,7 @@ export interface components {
                 chapters?: number | string;
                 /** @example 128 */
                 learners?: number | string;
-                /** @example Intégration */
+                /** @example Integration */
                 category?: string;
                 /**
                  * @description Statut de progression de la formation pour l’utilisateur connecté
@@ -3546,7 +3558,7 @@ export interface components {
                     chapters: {
                         /** @example accueil-1 */
                         id: string;
-                        /** @example Comprendre l’organisation municipale */
+                        /** @example Municipal organisation */
                         title: string;
                         description?: string;
                         /** @example 25 min */
@@ -3636,10 +3648,16 @@ export interface components {
         };
         /** @description Champs éditables du profil utilisateur */
         UpdateProfileBody: {
-            /** Format: email */
+            /**
+             * Format: email
+             * @example security-admin@mairie360.fr
+             */
             email?: string;
+            /** @example 0612345678 */
             phone?: string;
+            /** @example 1 place de la Mairie */
             address?: string;
+            /** @example Paris */
             city?: string;
         };
         /** @description Profil mis à jour */
@@ -3717,7 +3735,7 @@ export interface components {
             chapters: {
                 /** @example accueil-1 */
                 id: string;
-                /** @example Comprendre l’organisation municipale */
+                /** @example Municipal organisation */
                 title: string;
                 description?: string;
                 /** @example 25 min */
@@ -3750,7 +3768,7 @@ export interface components {
             chapter: {
                 /** @example accueil-1 */
                 id: string;
-                /** @example Comprendre l’organisation municipale */
+                /** @example Municipal organisation */
                 title: string;
                 description?: string;
                 /** @example 25 min */
@@ -3853,7 +3871,7 @@ export interface components {
                 chapters?: number | string;
                 /** @example 128 */
                 learners?: number | string;
-                /** @example Intégration */
+                /** @example Integration */
                 category?: string;
                 /**
                  * @description Statut de progression de la formation pour l’utilisateur connecté
@@ -3956,7 +3974,7 @@ export interface components {
                     chapters: {
                         /** @example accueil-1 */
                         id: string;
-                        /** @example Comprendre l’organisation municipale */
+                        /** @example Municipal organisation */
                         title: string;
                         description?: string;
                         /** @example 25 min */
