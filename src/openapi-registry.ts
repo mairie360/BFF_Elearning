@@ -6,6 +6,16 @@ extendZodWithOpenApi(z);
 
 export const registry = new OpenAPIRegistry();
 
+// Bearer JWT read by `getAuthenticatedUser` (src/routes/Elearning/auth.ts) and resolved against BFF
+// User `/me`. The document requires it on every operation (`openapi.ts`); public operations opt out
+// with `security: []`. The ZAP OpenAPI coverage gate reads this to tell which operations must be
+// reached authenticated.
+export const bearerAuth = registry.registerComponent('securitySchemes', 'bearerAuth', {
+  type: 'http',
+  scheme: 'bearer',
+  bearerFormat: 'JWT',
+});
+
 // =====================
 // ENUMS
 // =====================
