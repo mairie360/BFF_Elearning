@@ -100,5 +100,13 @@ Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/elearni
 the pinned `cicd_version` (`CICD_VERSION=<branch>` overrides it). ZAP runs its `zap_hooks.py` with
 `--hook`: every operation of the served spec must be reached, and non-public ones with a
 non-401/403 answer. The spec requires `bearerAuth` at the top level (`openapi.ts`); `/health` and
-`/check_apis` set `security: []` in `registerPath`. The k6 side (`coverage.js`, one handler per
-operation in `load-test.js`) is not wired yet.
+`/check_apis` set `security: []` in `registerPath`.
+
+k6 mounts `coverage.js` and `contracts/openapi.json`: `load-test.js` has **one handler per
+operation**, and a new route without a handler makes k6 abort at init. Two scenarios: `crud` (2 VUs)
+runs every handler through `coverage.run()` and carries the gate; `reads` (ramp to 20 VUs) replays
+the GET handlers only, so GET handlers must not read `state`. Handlers run path by path in contract
+order and, per path, get → put → post → delete → patch: `POST /elearning/admin/courses` creates a kept
+and a disposable course (unique ids, the in-memory catalogue is shared by the process), DELETE removes
+the disposable one and `cleanup()` the kept one. Every operation gets a `p(95)` threshold from its
+family (`budgetOf`).
