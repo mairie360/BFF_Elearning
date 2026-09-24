@@ -90,6 +90,15 @@ Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/elearni
 ## CI / Docker
 
 - `contracts.yml`: Node 22, `npm ci`, `npm run contracts:check`, `npm test -- --runInBand`.
-- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v1.13.2` (Node 22).
+- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v3.0.0` (Node 22).
 - Contract tooling targets **Node 22**; the production `Dockerfile` still builds/runs on `node:20-alpine` with `CMD ["node", "dist/index.js"]` and a 180 MB heap cap.
 - `docker-compose.yml` is the local dev stack (redis + `elearning-api` + this BFF via `development.Dockerfile`, with `develop.watch` sync on `./src`). GitHub Packages secrets are passed as build secrets (`npmrc`, `node_auth_token`).
+
+### ZAP OpenAPI coverage gate
+
+`security_test.sh` / `performance_test.sh` clone `mairie360/CICD` into `cicd-repo/` (gitignored) at
+the pinned `cicd_version` (`CICD_VERSION=<branch>` overrides it). ZAP runs its `zap_hooks.py` with
+`--hook`: every operation of the served spec must be reached, and non-public ones with a
+non-401/403 answer. The spec requires `bearerAuth` at the top level (`openapi.ts`); `/health` and
+`/check_apis` set `security: []` in `registerPath`. The k6 side (`coverage.js`, one handler per
+operation in `load-test.js`) is not wired yet.
