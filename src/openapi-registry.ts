@@ -189,7 +189,7 @@ export const CourseContent = z
 export const CourseChapter = z
   .object({
     id: z.string().openapi({ example: 'accueil-1' }),
-    title: z.string().openapi({ example: 'Comprendre l’organisation municipale' }),
+    title: z.string().openapi({ example: 'Municipal organisation' }),
     description: z.string().optional(),
     duration: z.string().openapi({ example: '25 min' }),
     completed: z.boolean().optional(),
@@ -229,7 +229,7 @@ export const ElearningCourse = z
     duration: z.string().optional().openapi({ example: '2 h 15' }),
     chapters: z.union([z.number(), z.string()]).optional().openapi({ example: 4 }),
     learners: z.union([z.number(), z.string()]).optional().openapi({ example: 128 }),
-    category: z.string().optional().openapi({ example: 'Intégration' }),
+    category: z.string().optional().openapi({ example: 'Integration' }),
     statusValue: CourseStatus.optional(),
     titleBadge: CourseBadge.optional(),
     levelBadge: CourseBadge.optional(),
@@ -248,16 +248,25 @@ registry.register('CourseChapter', CourseChapter);
 registry.register('ElearningCourseDetails', ElearningCourseDetails);
 registry.register('ElearningCourse', ElearningCourse);
 
+// Creation body: the course with an example id that no seeded course uses, so a generated request
+// (ZAP, Swagger UI) creates a course instead of hitting the 409 of an existing id. Built from the
+// shape (not .extend()) so it is published as a plain object, not an allOf.
+export const AdminCourseCreateBody = z
+  .object({ ...ElearningCourse.shape, id: z.string().openapi({ example: 'scan-course' }) })
+  .openapi('AdminCourseCreateBody', { description: 'Formation à créer' });
+
+registry.register('AdminCourseCreateBody', AdminCourseCreateBody);
+
 // =====================
 // CATALOG
 // =====================
 
 export const ElearningCatalogQuery = z.object({
-  search: z.string().optional(),
-  category: z.string().optional(),
+  search: z.string().optional().openapi({ example: 'accueil' }),
+  category: z.string().optional().openapi({ example: 'Integration' }),
   status: CatalogStatusFilter.optional(),
-  page: z.coerce.number().int().min(1).optional(),
-  pageSize: z.coerce.number().int().min(1).max(100).optional(),
+  page: z.coerce.number().int().min(1).optional().openapi({ example: 1 }),
+  pageSize: z.coerce.number().int().min(1).max(100).optional().openapi({ example: 10 }),
 });
 
 export const ElearningCatalogView = z
@@ -335,10 +344,10 @@ export const ElearningProfileResponse = z
 
 export const UpdateProfileBody = z
   .object({
-    email: z.string().email().optional(),
-    phone: z.string().optional(),
-    address: z.string().optional(),
-    city: z.string().optional(),
+    email: z.string().email().optional().openapi({ example: 'security-admin@mairie360.fr' }),
+    phone: z.string().optional().openapi({ example: '0612345678' }),
+    address: z.string().optional().openapi({ example: '1 place de la Mairie' }),
+    city: z.string().optional().openapi({ example: 'Paris' }),
   })
   .openapi({
     description: 'Champs éditables du profil utilisateur',
@@ -364,6 +373,15 @@ export const CourseIdParams = z.object({
   courseId: z.string().openapi({
     description: 'Identifiant de la formation',
     example: 'accueil-agents',
+  }),
+});
+
+// DELETE gets another seeded course: a scan replaying the examples must not delete the course that
+// the other routes read or update.
+export const DeletedCourseIdParams = z.object({
+  courseId: z.string().openapi({
+    description: 'Identifiant de la formation',
+    example: 'relation-usager',
   }),
 });
 
