@@ -93,3 +93,7 @@ Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/elearni
 - `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v1.13.2` (Node 22).
 - Contract tooling targets **Node 22**; the production `Dockerfile` still builds/runs on `node:20-alpine` with `CMD ["node", "dist/index.js"]` and a 180 MB heap cap.
 - `docker-compose.yml` is the local dev stack (redis + `elearning-api` + this BFF via `development.Dockerfile`, with `develop.watch` sync on `./src`). GitHub Packages secrets are passed as build secrets (`npmrc`, `node_auth_token`).
+
+## Pull request reviewers
+
+Every PR requests a review from the whole team, minus its author: `CarolinHugo`, `LAURETbenjamin`, `MathTek` and `Quentintnrl` (`gh pr create … --reviewer CarolinHugo,LAURETbenjamin,MathTek`). `.github/CODEOWNERS` makes GitHub request them automatically as well.
