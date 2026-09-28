@@ -401,7 +401,7 @@
           },
           "title": {
             "type": "string",
-            "example": "Comprendre l’organisation municipale"
+            "example": "Municipal organisation"
           },
           "description": {
             "type": "string"
@@ -597,7 +597,7 @@
                 },
                 "title": {
                   "type": "string",
-                  "example": "Comprendre l’organisation municipale"
+                  "example": "Municipal organisation"
                 },
                 "description": {
                   "type": "string"
@@ -742,7 +742,7 @@
           },
           "category": {
             "type": "string",
-            "example": "Intégration"
+            "example": "Integration"
           },
           "statusValue": {
             "type": "string",
@@ -996,7 +996,7 @@
                     },
                     "title": {
                       "type": "string",
-                      "example": "Comprendre l’organisation municipale"
+                      "example": "Municipal organisation"
                     },
                     "description": {
                       "type": "string"
@@ -1093,14 +1093,423 @@
         ],
         "description": "Formation affichée dans le catalogue"
       },
+      "AdminCourseCreateBody": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "scan-course"
+          },
+          "title": {
+            "type": "string",
+            "example": "Accueil des nouveaux agents"
+          },
+          "description": {
+            "type": "string"
+          },
+          "instructor": {
+            "type": "string"
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "example": 4.8
+          },
+          "duration": {
+            "type": "string",
+            "example": "2 h 15"
+          },
+          "chapters": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "example": 4
+          },
+          "learners": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "example": 128
+          },
+          "category": {
+            "type": "string",
+            "example": "Integration"
+          },
+          "statusValue": {
+            "type": "string",
+            "enum": [
+              "not-started",
+              "in-progress",
+              "completed"
+            ],
+            "description": "Statut de progression de la formation pour l’utilisateur connecté",
+            "example": "in-progress"
+          },
+          "titleBadge": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "example": "Obligatoire"
+              },
+              "variant": {
+                "type": "string",
+                "enum": [
+                  "default",
+                  "beginner",
+                  "intermediate",
+                  "advanced",
+                  "inProgress",
+                  "completed",
+                  "mandatory",
+                  "notStarted"
+                ],
+                "description": "Variante visuelle utilisée par les badges de formation",
+                "example": "mandatory"
+              }
+            },
+            "required": [
+              "label"
+            ],
+            "description": "Badge associé à une formation"
+          },
+          "levelBadge": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "example": "Obligatoire"
+              },
+              "variant": {
+                "type": "string",
+                "enum": [
+                  "default",
+                  "beginner",
+                  "intermediate",
+                  "advanced",
+                  "inProgress",
+                  "completed",
+                  "mandatory",
+                  "notStarted"
+                ],
+                "description": "Variante visuelle utilisée par les badges de formation",
+                "example": "mandatory"
+              }
+            },
+            "required": [
+              "label"
+            ],
+            "description": "Badge associé à une formation"
+          },
+          "statusBadge": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "example": "Obligatoire"
+              },
+              "variant": {
+                "type": "string",
+                "enum": [
+                  "default",
+                  "beginner",
+                  "intermediate",
+                  "advanced",
+                  "inProgress",
+                  "completed",
+                  "mandatory",
+                  "notStarted"
+                ],
+                "description": "Variante visuelle utilisée par les badges de formation",
+                "example": "mandatory"
+              }
+            },
+            "required": [
+              "label"
+            ],
+            "description": "Badge associé à une formation"
+          },
+          "progress": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "deadline": {
+            "type": "string",
+            "example": "30 juin 2026"
+          },
+          "ratingDistribution": {
+            "type": "object",
+            "properties": {
+              "1": {
+                "type": "number",
+                "minimum": 0
+              },
+              "2": {
+                "type": "number",
+                "minimum": 0
+              },
+              "3": {
+                "type": "number",
+                "minimum": 0
+              },
+              "4": {
+                "type": "number",
+                "minimum": 0
+              },
+              "5": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "description": "Répartition des notes par valeur, de 1 à 5",
+            "example": {
+              "1": 0,
+              "2": 1,
+              "3": 4,
+              "4": 35,
+              "5": 88
+            }
+          },
+          "details": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "subtitle": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "instructor": {
+                "type": "string"
+              },
+              "duration": {
+                "type": "string"
+              },
+              "rating": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "ratingLabel": {
+                "type": "string"
+              },
+              "ratingDistribution": {
+                "type": "object",
+                "properties": {
+                  "1": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "2": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "3": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "4": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "5": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "description": "Répartition des notes par valeur, de 1 à 5",
+                "example": {
+                  "1": 0,
+                  "2": 1,
+                  "3": 4,
+                  "4": 35,
+                  "5": 88
+                }
+              },
+              "progress": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "completed": {
+                "type": "boolean"
+              },
+              "completionRating": {
+                "type": "object",
+                "properties": {
+                  "initialValue": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "max": {
+                    "type": "number",
+                    "minimum": 1
+                  },
+                  "submitted": {
+                    "type": "boolean"
+                  },
+                  "disabled": {
+                    "type": "boolean"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "helperText": {
+                    "type": "string"
+                  },
+                  "submitLabel": {
+                    "type": "string"
+                  },
+                  "submittedLabel": {
+                    "type": "string"
+                  }
+                },
+                "description": "Configuration du composant de notation de fin de formation"
+              },
+              "chapters": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "accueil-1"
+                    },
+                    "title": {
+                      "type": "string",
+                      "example": "Municipal organisation"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "duration": {
+                      "type": "string",
+                      "example": "25 min"
+                    },
+                    "completed": {
+                      "type": "boolean"
+                    },
+                    "active": {
+                      "type": "boolean"
+                    },
+                    "contents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "accueil-1-video"
+                          },
+                          "title": {
+                            "type": "string",
+                            "example": "Présentation des directions et services"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "video",
+                              "pdf",
+                              "document",
+                              "link",
+                              "quiz",
+                              "audio",
+                              "other"
+                            ],
+                            "description": "Type de contenu pédagogique",
+                            "example": "video"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "duration": {
+                            "type": "string",
+                            "example": "12 min"
+                          },
+                          "fileName": {
+                            "type": "string",
+                            "example": "organigramme-mairie360.pdf"
+                          },
+                          "href": {
+                            "type": "string",
+                            "example": "/documents/organigramme-mairie360.pdf"
+                          },
+                          "completed": {
+                            "type": "boolean"
+                          },
+                          "required": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "type"
+                        ],
+                        "description": "Contenu pédagogique d’un chapitre"
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "duration"
+                  ],
+                  "description": "Chapitre d’une formation"
+                }
+              }
+            },
+            "required": [
+              "title",
+              "description",
+              "chapters"
+            ],
+            "description": "Détail complet affiché dans la modale de formation"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description"
+        ],
+        "description": "Formation à créer"
+      },
       "ElearningCatalogQuery": {
         "type": "object",
         "properties": {
           "search": {
-            "type": "string"
+            "type": "string",
+            "example": "accueil"
           },
           "category": {
-            "type": "string"
+            "type": "string",
+            "example": "Integration"
           },
           "status": {
             "type": "string",
@@ -1115,12 +1524,14 @@
           },
           "page": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "example": 1
           },
           "pageSize": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 100
+            "maximum": 100,
+            "example": 10
           }
         }
       },
@@ -1321,7 +1732,7 @@
                 },
                 "category": {
                   "type": "string",
-                  "example": "Intégration"
+                  "example": "Integration"
                 },
                 "statusValue": {
                   "type": "string",
@@ -1575,7 +1986,7 @@
                           },
                           "title": {
                             "type": "string",
-                            "example": "Comprendre l’organisation municipale"
+                            "example": "Municipal organisation"
                           },
                           "description": {
                             "type": "string"
@@ -1963,7 +2374,7 @@
                     },
                     "category": {
                       "type": "string",
-                      "example": "Intégration"
+                      "example": "Integration"
                     },
                     "statusValue": {
                       "type": "string",
@@ -2217,7 +2628,7 @@
                               },
                               "title": {
                                 "type": "string",
-                                "example": "Comprendre l’organisation municipale"
+                                "example": "Municipal organisation"
                               },
                               "description": {
                                 "type": "string"
@@ -2432,7 +2843,7 @@
               },
               "category": {
                 "type": "string",
-                "example": "Intégration"
+                "example": "Integration"
               },
               "statusValue": {
                 "type": "string",
@@ -2686,7 +3097,7 @@
                         },
                         "title": {
                           "type": "string",
-                          "example": "Comprendre l’organisation municipale"
+                          "example": "Municipal organisation"
                         },
                         "description": {
                           "type": "string"
@@ -2925,16 +3336,20 @@
         "properties": {
           "email": {
             "type": "string",
-            "format": "email"
+            "format": "email",
+            "example": "security-admin@mairie360.fr"
           },
           "phone": {
-            "type": "string"
+            "type": "string",
+            "example": "0612345678"
           },
           "address": {
-            "type": "string"
+            "type": "string",
+            "example": "1 place de la Mairie"
           },
           "city": {
-            "type": "string"
+            "type": "string",
+            "example": "Paris"
           }
         },
         "description": "Champs éditables du profil utilisateur"
@@ -3102,7 +3517,7 @@
                 },
                 "title": {
                   "type": "string",
-                  "example": "Comprendre l’organisation municipale"
+                  "example": "Municipal organisation"
                 },
                 "description": {
                   "type": "string"
@@ -3192,7 +3607,7 @@
               },
               "title": {
                 "type": "string",
-                "example": "Comprendre l’organisation municipale"
+                "example": "Municipal organisation"
               },
               "description": {
                 "type": "string"
@@ -3481,7 +3896,7 @@
               },
               "category": {
                 "type": "string",
-                "example": "Intégration"
+                "example": "Integration"
               },
               "statusValue": {
                 "type": "string",
@@ -3735,7 +4150,7 @@
                         },
                         "title": {
                           "type": "string",
-                          "example": "Comprendre l’organisation municipale"
+                          "example": "Municipal organisation"
                         },
                         "description": {
                           "type": "string"
@@ -3947,411 +4362,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "id": {
-                    "type": "string",
-                    "example": "accueil-agents"
-                  },
-                  "title": {
-                    "type": "string",
-                    "example": "Accueil des nouveaux agents"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "instructor": {
-                    "type": "string"
-                  },
-                  "rating": {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "string"
-                      }
-                    ],
-                    "example": 4.8
-                  },
-                  "duration": {
-                    "type": "string",
-                    "example": "2 h 15"
-                  },
-                  "chapters": {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "string"
-                      }
-                    ],
-                    "example": 4
-                  },
-                  "learners": {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "string"
-                      }
-                    ],
-                    "example": 128
-                  },
-                  "category": {
-                    "type": "string",
-                    "example": "Intégration"
-                  },
-                  "statusValue": {
-                    "type": "string",
-                    "enum": [
-                      "not-started",
-                      "in-progress",
-                      "completed"
-                    ],
-                    "description": "Statut de progression de la formation pour l’utilisateur connecté",
-                    "example": "in-progress"
-                  },
-                  "titleBadge": {
-                    "type": "object",
-                    "properties": {
-                      "label": {
-                        "type": "string",
-                        "example": "Obligatoire"
-                      },
-                      "variant": {
-                        "type": "string",
-                        "enum": [
-                          "default",
-                          "beginner",
-                          "intermediate",
-                          "advanced",
-                          "inProgress",
-                          "completed",
-                          "mandatory",
-                          "notStarted"
-                        ],
-                        "description": "Variante visuelle utilisée par les badges de formation",
-                        "example": "mandatory"
-                      }
-                    },
-                    "required": [
-                      "label"
-                    ],
-                    "description": "Badge associé à une formation"
-                  },
-                  "levelBadge": {
-                    "type": "object",
-                    "properties": {
-                      "label": {
-                        "type": "string",
-                        "example": "Obligatoire"
-                      },
-                      "variant": {
-                        "type": "string",
-                        "enum": [
-                          "default",
-                          "beginner",
-                          "intermediate",
-                          "advanced",
-                          "inProgress",
-                          "completed",
-                          "mandatory",
-                          "notStarted"
-                        ],
-                        "description": "Variante visuelle utilisée par les badges de formation",
-                        "example": "mandatory"
-                      }
-                    },
-                    "required": [
-                      "label"
-                    ],
-                    "description": "Badge associé à une formation"
-                  },
-                  "statusBadge": {
-                    "type": "object",
-                    "properties": {
-                      "label": {
-                        "type": "string",
-                        "example": "Obligatoire"
-                      },
-                      "variant": {
-                        "type": "string",
-                        "enum": [
-                          "default",
-                          "beginner",
-                          "intermediate",
-                          "advanced",
-                          "inProgress",
-                          "completed",
-                          "mandatory",
-                          "notStarted"
-                        ],
-                        "description": "Variante visuelle utilisée par les badges de formation",
-                        "example": "mandatory"
-                      }
-                    },
-                    "required": [
-                      "label"
-                    ],
-                    "description": "Badge associé à une formation"
-                  },
-                  "progress": {
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 100
-                  },
-                  "deadline": {
-                    "type": "string",
-                    "example": "30 juin 2026"
-                  },
-                  "ratingDistribution": {
-                    "type": "object",
-                    "properties": {
-                      "1": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "2": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "3": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "4": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "5": {
-                        "type": "number",
-                        "minimum": 0
-                      }
-                    },
-                    "description": "Répartition des notes par valeur, de 1 à 5",
-                    "example": {
-                      "1": 0,
-                      "2": 1,
-                      "3": 4,
-                      "4": 35,
-                      "5": 88
-                    }
-                  },
-                  "details": {
-                    "type": "object",
-                    "properties": {
-                      "title": {
-                        "type": "string"
-                      },
-                      "subtitle": {
-                        "type": "string"
-                      },
-                      "description": {
-                        "type": "string"
-                      },
-                      "instructor": {
-                        "type": "string"
-                      },
-                      "duration": {
-                        "type": "string"
-                      },
-                      "rating": {
-                        "anyOf": [
-                          {
-                            "type": "number"
-                          },
-                          {
-                            "type": "string"
-                          }
-                        ]
-                      },
-                      "ratingLabel": {
-                        "type": "string"
-                      },
-                      "ratingDistribution": {
-                        "type": "object",
-                        "properties": {
-                          "1": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "2": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "3": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "4": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "5": {
-                            "type": "number",
-                            "minimum": 0
-                          }
-                        },
-                        "description": "Répartition des notes par valeur, de 1 à 5",
-                        "example": {
-                          "1": 0,
-                          "2": 1,
-                          "3": 4,
-                          "4": 35,
-                          "5": 88
-                        }
-                      },
-                      "progress": {
-                        "type": "number",
-                        "minimum": 0,
-                        "maximum": 100
-                      },
-                      "completed": {
-                        "type": "boolean"
-                      },
-                      "completionRating": {
-                        "type": "object",
-                        "properties": {
-                          "initialValue": {
-                            "type": "number",
-                            "minimum": 1,
-                            "maximum": 5
-                          },
-                          "max": {
-                            "type": "number",
-                            "minimum": 1
-                          },
-                          "submitted": {
-                            "type": "boolean"
-                          },
-                          "disabled": {
-                            "type": "boolean"
-                          },
-                          "title": {
-                            "type": "string"
-                          },
-                          "helperText": {
-                            "type": "string"
-                          },
-                          "submitLabel": {
-                            "type": "string"
-                          },
-                          "submittedLabel": {
-                            "type": "string"
-                          }
-                        },
-                        "description": "Configuration du composant de notation de fin de formation"
-                      },
-                      "chapters": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "string",
-                              "example": "accueil-1"
-                            },
-                            "title": {
-                              "type": "string",
-                              "example": "Comprendre l’organisation municipale"
-                            },
-                            "description": {
-                              "type": "string"
-                            },
-                            "duration": {
-                              "type": "string",
-                              "example": "25 min"
-                            },
-                            "completed": {
-                              "type": "boolean"
-                            },
-                            "active": {
-                              "type": "boolean"
-                            },
-                            "contents": {
-                              "type": "array",
-                              "items": {
-                                "type": "object",
-                                "properties": {
-                                  "id": {
-                                    "type": "string",
-                                    "example": "accueil-1-video"
-                                  },
-                                  "title": {
-                                    "type": "string",
-                                    "example": "Présentation des directions et services"
-                                  },
-                                  "type": {
-                                    "type": "string",
-                                    "enum": [
-                                      "video",
-                                      "pdf",
-                                      "document",
-                                      "link",
-                                      "quiz",
-                                      "audio",
-                                      "other"
-                                    ],
-                                    "description": "Type de contenu pédagogique",
-                                    "example": "video"
-                                  },
-                                  "description": {
-                                    "type": "string"
-                                  },
-                                  "duration": {
-                                    "type": "string",
-                                    "example": "12 min"
-                                  },
-                                  "fileName": {
-                                    "type": "string",
-                                    "example": "organigramme-mairie360.pdf"
-                                  },
-                                  "href": {
-                                    "type": "string",
-                                    "example": "/documents/organigramme-mairie360.pdf"
-                                  },
-                                  "completed": {
-                                    "type": "boolean"
-                                  },
-                                  "required": {
-                                    "type": "boolean"
-                                  }
-                                },
-                                "required": [
-                                  "id",
-                                  "title",
-                                  "type"
-                                ],
-                                "description": "Contenu pédagogique d’un chapitre"
-                              }
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "title",
-                            "duration"
-                          ],
-                          "description": "Chapitre d’une formation"
-                        }
-                      }
-                    },
-                    "required": [
-                      "title",
-                      "description",
-                      "chapters"
-                    ],
-                    "description": "Détail complet affiché dans la modale de formation"
-                  }
-                },
-                "required": [
-                  "id",
-                  "title",
-                  "description"
-                ],
-                "description": "Formation affichée dans le catalogue"
+                "$ref": "#/components/schemas/AdminCourseCreateBody"
               }
             }
           }
@@ -4420,7 +4431,7 @@
                         },
                         "category": {
                           "type": "string",
-                          "example": "Intégration"
+                          "example": "Integration"
                         },
                         "statusValue": {
                           "type": "string",
@@ -4674,7 +4685,7 @@
                                   },
                                   "title": {
                                     "type": "string",
-                                    "example": "Comprendre l’organisation municipale"
+                                    "example": "Municipal organisation"
                                   },
                                   "description": {
                                     "type": "string"
@@ -5042,7 +5053,7 @@
                   },
                   "category": {
                     "type": "string",
-                    "example": "Intégration"
+                    "example": "Integration"
                   },
                   "statusValue": {
                     "type": "string",
@@ -5296,7 +5307,7 @@
                             },
                             "title": {
                               "type": "string",
-                              "example": "Comprendre l’organisation municipale"
+                              "example": "Municipal organisation"
                             },
                             "description": {
                               "type": "string"
@@ -5460,7 +5471,7 @@
                         },
                         "category": {
                           "type": "string",
-                          "example": "Intégration"
+                          "example": "Integration"
                         },
                         "statusValue": {
                           "type": "string",
@@ -5714,7 +5725,7 @@
                                   },
                                   "title": {
                                     "type": "string",
-                                    "example": "Comprendre l’organisation municipale"
+                                    "example": "Municipal organisation"
                                   },
                                   "description": {
                                     "type": "string"
@@ -6012,7 +6023,7 @@
             "schema": {
               "type": "string",
               "description": "Identifiant de la formation",
-              "example": "accueil-agents"
+              "example": "relation-usager"
             },
             "required": true,
             "description": "Identifiant de la formation",
@@ -6207,7 +6218,8 @@
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "accueil"
             },
             "required": false,
             "name": "search",
@@ -6215,7 +6227,8 @@
           },
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "Integration"
             },
             "required": false,
             "name": "category",
@@ -6241,7 +6254,8 @@
           {
             "schema": {
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "example": 1
             },
             "required": false,
             "name": "page",
@@ -6251,7 +6265,8 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 100
+              "maximum": 100,
+              "example": 10
             },
             "required": false,
             "name": "pageSize",
@@ -6543,7 +6558,7 @@
                               },
                               "category": {
                                 "type": "string",
-                                "example": "Intégration"
+                                "example": "Integration"
                               },
                               "statusValue": {
                                 "type": "string",
@@ -6797,7 +6812,7 @@
                                         },
                                         "title": {
                                           "type": "string",
-                                          "example": "Comprendre l’organisation municipale"
+                                          "example": "Municipal organisation"
                                         },
                                         "description": {
                                           "type": "string"
@@ -7178,7 +7193,7 @@
                           },
                           "title": {
                             "type": "string",
-                            "example": "Comprendre l’organisation municipale"
+                            "example": "Municipal organisation"
                           },
                           "description": {
                             "type": "string"
@@ -7268,7 +7283,7 @@
                         },
                         "title": {
                           "type": "string",
-                          "example": "Comprendre l’organisation municipale"
+                          "example": "Municipal organisation"
                         },
                         "description": {
                           "type": "string"
@@ -7839,16 +7854,20 @@
                 "properties": {
                   "email": {
                     "type": "string",
-                    "format": "email"
+                    "format": "email",
+                    "example": "security-admin@mairie360.fr"
                   },
                   "phone": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "0612345678"
                   },
                   "address": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "1 place de la Mairie"
                   },
                   "city": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Paris"
                   }
                 },
                 "description": "Champs éditables du profil utilisateur"
@@ -8423,7 +8442,7 @@
                         },
                         "category": {
                           "type": "string",
-                          "example": "Intégration"
+                          "example": "Integration"
                         },
                         "statusValue": {
                           "type": "string",
@@ -8677,7 +8696,7 @@
                                   },
                                   "title": {
                                     "type": "string",
-                                    "example": "Comprendre l’organisation municipale"
+                                    "example": "Municipal organisation"
                                   },
                                   "description": {
                                     "type": "string"
