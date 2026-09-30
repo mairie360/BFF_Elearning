@@ -1,4 +1,4 @@
-import type { Response } from 'express';
+import { HttpError } from '@mairie360/bffs-lib';
 import { z } from 'zod';
 import {
   CompleteContentBody,
@@ -37,16 +37,14 @@ type BffRatingSubmitResponse = z.infer<typeof RatingSubmitResponse>;
 type BffCourseActionResponse = z.infer<typeof CourseActionResponse>;
 type RatingKey = '1' | '2' | '3' | '4' | '5';
 
-export class ElearningRouteError extends Error {
-  constructor(
-    public readonly status: number,
-    public readonly code: string,
-    message: string,
-    public readonly details: unknown = {},
-  ) {
-    super(message);
-    this.name = 'ElearningRouteError';
-  }
+/** 400 for a request that fails its zod schema, one detail per issue (`path` like `body.title`). */
+export function validationError(location: 'body' | 'params' | 'query', issues: readonly z.core.$ZodIssue[]): HttpError {
+  return new HttpError(400, 'Invalid request payload.', {
+    details: issues.map((issue) => ({
+      path: [location, ...issue.path.map(String)].join('.'),
+      message: issue.message,
+    })),
+  });
 }
 
 const footerConfig: BffFooterConfig = {
@@ -579,7 +577,7 @@ function findCourse(userId: string, courseId: string): BffCourse {
   const course = courses.find((entry) => entry.id === courseId);
 
   if (!course) {
-    throw new ElearningRouteError(404, 'COURSE_NOT_FOUND', 'Formation introuvable.', { courseId });
+    throw new HttpError(404, 'Course not found.', { details: [{ path: 'params.courseId', message: `No course ${courseId}.` }] });
   }
 
   return course;
@@ -587,8 +585,8 @@ function findCourse(userId: string, courseId: string): BffCourse {
 
 function findCourseDetails(course: BffCourse) {
   if (!course.details) {
-    throw new ElearningRouteError(422, 'COURSE_DETAILS_UNAVAILABLE', 'Detail de formation indisponible.', {
-      courseId: course.id,
+    throw new HttpError(422, 'Course details unavailable.', {
+      details: [{ path: 'params.courseId', message: `Course ${course.id} has no details.` }],
     });
   }
 
@@ -634,34 +632,6 @@ function buildAdminStats(courses: BffCourse[]) {
     averageRating,
     completionRate,
   };
-}
-
-export function sendError(
-  res: Response,
-  status: number,
-  code: string,
-  message: string,
-  details: unknown = {},
-): Response {
-  return res.status(status).json({
-    code,
-    message,
-    details,
-  });
-}
-
-export function sendValidationError(res: Response, details: unknown): Response {
-  return sendError(res, 400, 'BAD_REQUEST', 'Payload invalide.', details);
-}
-
-export function handleRouteError(res: Response, error: unknown): Response {
-  if (error instanceof ElearningRouteError) {
-    return sendError(res, error.status, error.code, error.message, error.details);
-  }
-
-  // Le détail d'une erreur imprévue reste dans les logs : il ne doit pas fuiter vers le client.
-  console.error('[BFF] Unexpected route error', error);
-  return sendError(res, 500, 'INTERNAL_SERVER_ERROR', 'Erreur serveur non prevue.');
 }
 
 export function buildCatalogResponse(
@@ -751,19 +721,16 @@ export function completeCourseContent(
   const chapter = details.chapters.find((entry) => entry.id === body.chapterId);
 
   if (!chapter) {
-    throw new ElearningRouteError(404, 'CHAPTER_NOT_FOUND', 'Chapitre introuvable.', {
-      courseId,
-      chapterId: body.chapterId,
+    throw new HttpError(404, 'Chapter not found.', {
+      details: [{ path: 'body.chapterId', message: `No chapter ${body.chapterId} in course ${courseId}.` }],
     });
   }
 
   const content = chapter.contents?.find((entry) => entry.id === contentId);
 
   if (!content) {
-    throw new ElearningRouteError(404, 'CONTENT_NOT_FOUND', 'Contenu introuvable.', {
-      courseId,
-      chapterId: body.chapterId,
-      contentId,
+    throw new HttpError(404, 'Content not found.', {
+      details: [{ path: 'params.contentId', message: `No content ${contentId} in chapter ${body.chapterId}.` }],
     });
   }
 
@@ -879,8 +846,8 @@ function mergeCourseProgress(nextCourse: BffCourse, currentCourse: BffCourse): B
 
 export function createAdminCourse(course: BffCourse): BffCourse {
   if (courseTemplates.some((currentCourse) => currentCourse.id === course.id)) {
-    throw new ElearningRouteError(409, 'COURSE_ALREADY_EXISTS', 'Une formation possède déjà cet identifiant.', {
-      courseId: course.id,
+    throw new HttpError(409, 'A course already has this id.', {
+      details: [{ path: 'body.id', message: `Course ${course.id} already exists.` }],
     });
   }
 
@@ -895,7 +862,7 @@ export function updateAdminCourse(courseId: string, course: BffCourse): BffCours
   const templateIndex = courseTemplates.findIndex((currentCourse) => currentCourse.id === courseId);
 
   if (templateIndex < 0) {
-    throw new ElearningRouteError(404, 'COURSE_NOT_FOUND', 'Formation introuvable.', { courseId });
+    throw new HttpError(404, 'Course not found.', { details: [{ path: 'params.courseId', message: `No course ${courseId}.` }] });
   }
 
   const normalizedCourse = normalizeAdminCourse(course, courseId);
@@ -918,7 +885,7 @@ export function deleteAdminCourse(courseId: string): void {
   const templateIndex = courseTemplates.findIndex((course) => course.id === courseId);
 
   if (templateIndex < 0) {
-    throw new ElearningRouteError(404, 'COURSE_NOT_FOUND', 'Formation introuvable.', { courseId });
+    throw new HttpError(404, 'Course not found.', { details: [{ path: 'params.courseId', message: `No course ${courseId}.` }] });
   }
 
   courseTemplates.splice(templateIndex, 1);

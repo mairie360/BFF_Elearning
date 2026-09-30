@@ -1,9 +1,10 @@
+import { HttpError } from '@mairie360/bffs-lib';
 import { Request, Response, Router } from 'express';
 import {
   AdminCourseCreateBody,
   AdminCourseDeleteResponse,
   AdminCourseResponse,
-  ApiError,
+  ErrorResponse,
   CourseIdParams,
   DeletedCourseIdParams,
   ElearningCourse,
@@ -11,30 +12,23 @@ import {
   sessionErrorResponses,
 } from '../../openapi-registry';
 import { getAuthenticatedUser } from './auth';
-import {
-  createAdminCourse,
-  deleteAdminCourse,
-  handleRouteError,
-  sendError,
-  sendValidationError,
-  updateAdminCourse,
-} from './elearning_helpers';
+import { createAdminCourse, deleteAdminCourse, updateAdminCourse, validationError } from './elearning_helpers';
 
 const router = Router();
 
 const commonResponses = {
   400: {
-    description: 'Payload invalide',
-    content: { 'application/json': { schema: ApiError } },
+    description: 'Invalid request payload',
+    content: { 'application/json': { schema: ErrorResponse } },
   },
   ...sessionErrorResponses,
   403: {
-    description: 'Accès réservé aux administrateurs',
-    content: { 'application/json': { schema: ApiError } },
+    description: 'Restricted to administrators',
+    content: { 'application/json': { schema: ErrorResponse } },
   },
   500: {
-    description: 'Erreur serveur non prevue',
-    content: { 'application/json': { schema: ApiError } },
+    description: 'Unexpected server error',
+    content: { 'application/json': { schema: ErrorResponse } },
   },
 };
 
@@ -53,8 +47,8 @@ registry.registerPath({
     },
     ...commonResponses,
     409: {
-      description: 'Identifiant déjà utilisé',
-      content: { 'application/json': { schema: ApiError } },
+      description: 'A course already has this id',
+      content: { 'application/json': { schema: ErrorResponse } },
     },
   },
 });
@@ -75,8 +69,8 @@ registry.registerPath({
     },
     ...commonResponses,
     404: {
-      description: 'Formation introuvable',
-      content: { 'application/json': { schema: ApiError } },
+      description: 'Course not found',
+      content: { 'application/json': { schema: ErrorResponse } },
     },
   },
 });
@@ -97,64 +91,49 @@ registry.registerPath({
     500: commonResponses[500],
     502: commonResponses[502],
     404: {
-      description: 'Formation introuvable',
-      content: { 'application/json': { schema: ApiError } },
+      description: 'Course not found',
+      content: { 'application/json': { schema: ErrorResponse } },
     },
   },
 });
 
-function ensureAdmin(isAdmin: boolean, res: Response): Response | null {
-  return isAdmin ? null : sendError(res, 403, 'FORBIDDEN', 'Cette action est réservée aux administrateurs.');
+function ensureAdmin(isAdmin: boolean): void {
+  if (!isAdmin) throw new HttpError(403, 'This action is restricted to administrators.');
 }
 
 router.post('/', async (req: Request, res: Response) => {
   const bodyResult = AdminCourseCreateBody.safeParse(req.body);
-  if (!bodyResult.success) return sendValidationError(res, bodyResult.error.issues);
+  if (!bodyResult.success) throw validationError('body', bodyResult.error.issues);
 
-  try {
-    const user = await getAuthenticatedUser(req);
-    const forbiddenResponse = ensureAdmin(user.isAdmin, res);
-    if (forbiddenResponse) return forbiddenResponse;
+  const user = await getAuthenticatedUser(req);
+  ensureAdmin(user.isAdmin);
 
-    return res.status(201).json({ course: createAdminCourse(bodyResult.data) });
-  } catch (error) {
-    return handleRouteError(res, error);
-  }
+  return res.status(201).json({ course: createAdminCourse(bodyResult.data) });
 });
 
 router.patch('/:courseId', async (req: Request, res: Response) => {
   const paramsResult = CourseIdParams.safeParse(req.params);
   const bodyResult = ElearningCourse.safeParse(req.body);
-  if (!paramsResult.success) return sendValidationError(res, paramsResult.error.issues);
-  if (!bodyResult.success) return sendValidationError(res, bodyResult.error.issues);
+  if (!paramsResult.success) throw validationError('params', paramsResult.error.issues);
+  if (!bodyResult.success) throw validationError('body', bodyResult.error.issues);
 
-  try {
-    const user = await getAuthenticatedUser(req);
-    const forbiddenResponse = ensureAdmin(user.isAdmin, res);
-    if (forbiddenResponse) return forbiddenResponse;
+  const user = await getAuthenticatedUser(req);
+  ensureAdmin(user.isAdmin);
 
-    return res.status(200).json({
-      course: updateAdminCourse(paramsResult.data.courseId, bodyResult.data),
-    });
-  } catch (error) {
-    return handleRouteError(res, error);
-  }
+  return res.status(200).json({
+    course: updateAdminCourse(paramsResult.data.courseId, bodyResult.data),
+  });
 });
 
 router.delete('/:courseId', async (req: Request, res: Response) => {
   const paramsResult = DeletedCourseIdParams.safeParse(req.params);
-  if (!paramsResult.success) return sendValidationError(res, paramsResult.error.issues);
+  if (!paramsResult.success) throw validationError('params', paramsResult.error.issues);
 
-  try {
-    const user = await getAuthenticatedUser(req);
-    const forbiddenResponse = ensureAdmin(user.isAdmin, res);
-    if (forbiddenResponse) return forbiddenResponse;
+  const user = await getAuthenticatedUser(req);
+  ensureAdmin(user.isAdmin);
 
-    deleteAdminCourse(paramsResult.data.courseId);
-    return res.status(200).json({ deleted: true, courseId: paramsResult.data.courseId });
-  } catch (error) {
-    return handleRouteError(res, error);
-  }
+  deleteAdminCourse(paramsResult.data.courseId);
+  return res.status(200).json({ deleted: true, courseId: paramsResult.data.courseId });
 });
 
 export default router;

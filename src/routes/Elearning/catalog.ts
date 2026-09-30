@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { ApiError, ElearningCatalogQuery, ElearningCatalogResponse, registry, sessionErrorResponses } from '../../openapi-registry';
-import { buildCatalogResponse, handleRouteError, sendValidationError } from './elearning_helpers';
+import { ErrorResponse, ElearningCatalogQuery, ElearningCatalogResponse, registry, sessionErrorResponses } from '../../openapi-registry';
+import { buildCatalogResponse, validationError } from './elearning_helpers';
 import { getAuthenticatedUser } from './auth';
 
 const router = Router();
@@ -25,19 +25,19 @@ registry.registerPath({
       },
     },
     400: {
-      description: 'Parametres de recherche invalides',
+      description: 'Invalid search parameters',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
     ...sessionErrorResponses,
     500: {
-      description: 'Erreur serveur non prevue',
+      description: 'Unexpected server error',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
@@ -48,15 +48,11 @@ router.get('/', async (req: Request, res: Response) => {
   const queryResult = ElearningCatalogQuery.safeParse(req.query);
 
   if (!queryResult.success) {
-    return sendValidationError(res, queryResult.error.issues);
+    throw validationError('query', queryResult.error.issues);
   }
 
-  try {
-    const user = await getAuthenticatedUser(req);
-    return res.status(200).json(buildCatalogResponse(queryResult.data, user));
-  } catch (error) {
-    return handleRouteError(res, error);
-  }
+  const user = await getAuthenticatedUser(req);
+  return res.status(200).json(buildCatalogResponse(queryResult.data, user));
 });
 
 export default router;
