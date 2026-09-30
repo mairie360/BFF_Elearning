@@ -1,9 +1,10 @@
+import { HttpError } from '@mairie360/bffs-lib';
 import axios from 'axios';
 import type { Request } from 'express';
 import { userBffClient, userBffOptions } from '../../clients/userBffClient';
 import { z } from 'zod';
 import { CurrentUser } from '../../openapi-registry';
-import { ElearningRouteError } from './elearning_helpers';
+
 
 type BffCurrentUser = z.infer<typeof CurrentUser>;
 
@@ -81,7 +82,7 @@ export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser
   const authorization = req.header('authorization')?.trim();
 
   if (!authorization || !/^Bearer\s+\S+$/i.test(authorization)) {
-    throw new ElearningRouteError(401, 'UNAUTHORIZED', 'Session invalide ou manquante.');
+    throw new HttpError(401, 'Missing or invalid session.');
   }
 
   let body: unknown;
@@ -91,24 +92,20 @@ export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new ElearningRouteError(401, 'UNAUTHORIZED', 'Session expirée ou invalide.');
+        throw new HttpError(401, 'Expired or invalid session.');
       }
 
-      throw new ElearningRouteError(
-        502,
-        'USER_SERVICE_UNAVAILABLE',
-        'Le service utilisateur est indisponible.',
-        { status: error.response?.status },
-      );
+      // Any other status, a timeout or a network failure: the upstream answer is never relayed.
+      throw new HttpError(502, 'The user service is unavailable.');
     }
 
     throw error;
   }
 
-  // Un 2xx sans objet `user` (corps vide, texte, JSON inattendu) ne prouve pas la session : il ne doit pas
-  // produire un utilisateur « Guest » authentifié.
+  // A 2xx without a `user` object (empty body, text, unexpected JSON) does not prove the session: it must
+  // not produce an authenticated "Guest" user.
   if (!isRecord(body) || !isRecord(body.user)) {
-    throw new ElearningRouteError(502, 'USER_SERVICE_UNAVAILABLE', 'Le service utilisateur est indisponible.');
+    throw new HttpError(502, 'The user service is unavailable.');
   }
 
   return mapCurrentUser(body as UserResponse, authorization);

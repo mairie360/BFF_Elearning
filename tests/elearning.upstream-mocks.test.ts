@@ -104,7 +104,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(401);
       expectBffContract('get', '/elearning/catalog', response);
-      expect(response.body).toMatchObject({ code: 'UNAUTHORIZED' });
+      expect(response.body).toEqual({ error: { code: 'UNAUTHORIZED', message: 'Missing or invalid session.', details: [] } });
       expect(userBff.requests).toHaveLength(0);
     });
 
@@ -115,7 +115,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(401);
       expectBffContract('get', '/elearning/catalog', response);
-      expect(response.body).toEqual({ code: 'UNAUTHORIZED', message: 'Session expirée ou invalide.', details: {} });
+      expect(response.body).toEqual({ error: { code: 'UNAUTHORIZED', message: 'Expired or invalid session.', details: [] } });
     });
 
     test('maps a BFF User 5xx to 502 without leaking the upstream body', async () => {
@@ -125,8 +125,18 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(502);
       expectBffContract('get', '/elearning/catalog', response);
-      expect(response.body).toEqual({ code: 'USER_SERVICE_UNAVAILABLE', message: 'Le service utilisateur est indisponible.', details: { status: 500 } });
+      expect(response.body).toEqual({ error: { code: 'BAD_GATEWAY', message: 'The user service is unavailable.', details: [] } });
       expect(JSON.stringify(response.body)).not.toContain('panic');
+    });
+
+    test.each([404, 409, 422, 429])('turns an undeclared BFF User %i into a 502', async (status) => {
+      userBff.on('get', USER_BFF.me, userBffError(status));
+
+      const response = await withSession(request(app).get('/elearning/catalog'), 'agent-odd');
+
+      expect(response.status).toBe(502);
+      expectBffContract('get', '/elearning/catalog', response);
+      expect(response.body).toEqual({ error: { code: 'BAD_GATEWAY', message: 'The user service is unavailable.', details: [] } });
     });
 
     test.each<[string, MockReply]>([
@@ -140,7 +150,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(502);
       expectBffContract('get', '/elearning/profile', response);
-      expect(response.body).toMatchObject({ code: 'USER_SERVICE_UNAVAILABLE' });
+      expect(response.body).toEqual({ error: { code: 'BAD_GATEWAY', message: 'The user service is unavailable.', details: [] } });
     });
 
     test('answers 502 when BFF User is unreachable', async () => {
@@ -150,7 +160,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(502);
       expectBffContract('get', '/elearning/profile', response);
-      expect(response.body).toMatchObject({ code: 'USER_SERVICE_UNAVAILABLE' });
+      expect(response.body).toEqual({ error: { code: 'BAD_GATEWAY', message: 'The user service is unavailable.', details: [] } });
     });
   });
 
@@ -172,7 +182,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(400);
       expectBffContract('get', '/elearning/catalog', response);
-      expect(response.body).toMatchObject({ code: 'BAD_REQUEST' });
+      expect(response.body).toEqual({ error: { code: 'BAD_REQUEST', message: 'Invalid request payload.', details: [{ path: 'query.pageSize', message: expect.any(String) }] } });
       expect(userBff.requests).toHaveLength(0);
     });
 
@@ -203,15 +213,15 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test.each([
-      ['an unknown chapter', 'rgpd-collectivites', 'rgpd-1-video', { chapterId: 'nope', completed: true }, 'CHAPTER_NOT_FOUND'],
-      ['an unknown content', 'rgpd-collectivites', 'nope', { chapterId: 'rgpd-1', completed: true }, 'CONTENT_NOT_FOUND'],
-      ['an unknown course', 'nope', 'rgpd-1-video', { chapterId: 'rgpd-1', completed: true }, 'COURSE_NOT_FOUND'],
-    ])('POST .../complete answers 404 for %s', async (_label, courseId, contentId, body, code) => {
+      ['an unknown chapter', 'rgpd-collectivites', 'rgpd-1-video', { chapterId: 'nope', completed: true }, 'Chapter not found.', 'body.chapterId'],
+      ['an unknown content', 'rgpd-collectivites', 'nope', { chapterId: 'rgpd-1', completed: true }, 'Content not found.', 'params.contentId'],
+      ['an unknown course', 'nope', 'rgpd-1-video', { chapterId: 'rgpd-1', completed: true }, 'Course not found.', 'params.courseId'],
+    ])('POST .../complete answers 404 for %s', async (_label, courseId, contentId, body, message, path) => {
       const response = await withSession(request(app).post(`/elearning/courses/${courseId}/contents/${contentId}/complete`), 'missing-agent').send(body);
 
       expect(response.status).toBe(404);
       expectBffContract('post', '/elearning/courses/{courseId}/contents/{contentId}/complete', response);
-      expect(response.body.code).toBe(code);
+      expect(response.body).toEqual({ error: { code: 'NOT_FOUND', message, details: [{ path, message: expect.any(String) }] } });
     });
 
     test('POST .../rating records a contract-valid rating and rejects out-of-range values before BFF User', async () => {
@@ -250,7 +260,8 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(500);
       expectBffContract('get', '/elearning/profile', response);
-      expect(response.body).toEqual({ code: 'INTERNAL_SERVER_ERROR', message: 'Erreur serveur non prevue.', details: {} });
+      expect(response.body).toEqual({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error', details: [] } });
+      expect(JSON.stringify(response.body)).not.toContain('secret');
     });
   });
 
@@ -277,6 +288,9 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       const duplicate = await withSession(request(app).post('/elearning/admin/courses'), 'admin-agent').send({ ...course, id });
       expect(duplicate.status).toBe(409);
       expectBffContract('post', '/elearning/admin/courses', duplicate);
+      expect(duplicate.body).toEqual({
+        error: { code: 'CONFLICT', message: 'A course already has this id.', details: [{ path: 'body.id', message: `Course ${id} already exists.` }] },
+      });
 
       const updated = await withSession(request(app).patch(`/elearning/admin/courses/${id}`), 'admin-agent').send({ ...course, id, title: 'Accessibilité' });
       expect(updated.status).toBe(200);
@@ -302,7 +316,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       for (const [response, method, template] of [[created, 'post', '/elearning/admin/courses'], [removed, 'delete', '/elearning/admin/courses/{courseId}']] as const) {
         expect(response.status).toBe(403);
         expectBffContract(method, template, response);
-        expect(response.body.code).toBe('FORBIDDEN');
+        expect(response.body).toEqual({ error: { code: 'FORBIDDEN', message: 'This action is restricted to administrators.', details: [] } });
       }
       const catalog = await withSession(request(app).get('/elearning/catalog'), 'fake-admin');
       expect(catalog.body.catalog.courses.map((entry: { id: string }) => entry.id)).toEqual(expect.arrayContaining(['accueil-agents']));
@@ -354,6 +368,26 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(response.status).toBe(502);
       expectBffContract('get', '/check_apis', response);
       expect(response.body).toEqual({ status: 'Error', core_api: 'Connected', elearning_api: 'Unreachable' });
+    });
+  });
+
+  describe('final handlers', () => {
+    test('answers an unknown route with the 404 envelope', async () => {
+      const response = await request(app).get('/unknown');
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: { code: 'NOT_FOUND', message: 'Route not found', details: [] } });
+    });
+
+    test('answers an unparsable JSON body with the 400 envelope, before resolving the session', async () => {
+      const response = await withSession(request(app).post('/elearning/courses/accueil-agents/rating'), 'broken-json')
+        .set('Content-Type', 'application/json')
+        .send('{"rating"');
+
+      expect(response.status).toBe(400);
+      expectBffContract('post', '/elearning/courses/{courseId}/rating', response);
+      expect(response.body).toEqual({ error: { code: 'BAD_REQUEST', message: 'Invalid request', details: [] } });
+      expect(userBff.requests).toHaveLength(0);
     });
   });
 });

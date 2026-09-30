@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
 import {
-  ApiError,
+  ErrorResponse,
   CompleteContentBody,
   ContentCompleteResponse,
   CourseContentParams,
   registry,
   sessionErrorResponses,
 } from '../../openapi-registry';
-import { completeCourseContent, handleRouteError, sendValidationError } from './elearning_helpers';
+import { completeCourseContent, validationError } from './elearning_helpers';
 import { getAuthenticatedUser } from './auth';
 
 const router = Router();
@@ -40,35 +40,35 @@ registry.registerPath({
       },
     },
     400: {
-      description: 'Payload invalide',
+      description: 'Invalid request payload',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
     404: {
-      description: 'Formation, chapitre ou contenu introuvable',
+      description: 'Course, chapter or content not found',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
     422: {
-      description: 'Formation incoherente ou detail indisponible',
+      description: 'Course details unavailable',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
     ...sessionErrorResponses,
     500: {
-      description: 'Erreur serveur non prevue',
+      description: 'Unexpected server error',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
@@ -80,21 +80,17 @@ router.post('/:courseId/contents/:contentId/complete', async (req: Request, res:
   const bodyResult = CompleteContentBody.safeParse(req.body);
 
   if (!paramsResult.success) {
-    return sendValidationError(res, paramsResult.error.issues);
+    throw validationError('params', paramsResult.error.issues);
   }
 
   if (!bodyResult.success) {
-    return sendValidationError(res, bodyResult.error.issues);
+    throw validationError('body', bodyResult.error.issues);
   }
 
-  try {
-    const user = await getAuthenticatedUser(req);
-    return res
-      .status(200)
-      .json(completeCourseContent(user.id, paramsResult.data.courseId, paramsResult.data.contentId, bodyResult.data));
-  } catch (error) {
-    return handleRouteError(res, error);
-  }
+  const user = await getAuthenticatedUser(req);
+  return res
+    .status(200)
+    .json(completeCourseContent(user.id, paramsResult.data.courseId, paramsResult.data.contentId, bodyResult.data));
 });
 
 export default router;

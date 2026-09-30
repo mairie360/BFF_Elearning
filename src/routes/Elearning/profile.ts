@@ -1,13 +1,13 @@
 import { Router, Request, Response } from 'express';
 import {
-  ApiError,
+  ErrorResponse,
   ElearningProfileResponse,
   ProfileUpdateResponse,
   registry,
   sessionErrorResponses,
   UpdateProfileBody,
 } from '../../openapi-registry';
-import { buildProfileResponse, handleRouteError, sendValidationError, updateProfile } from './elearning_helpers';
+import { buildProfileResponse, updateProfile, validationError } from './elearning_helpers';
 import { getAuthenticatedUser } from './auth';
 
 const router = Router();
@@ -29,10 +29,10 @@ registry.registerPath({
     },
     ...sessionErrorResponses,
     500: {
-      description: 'Erreur serveur non prevue',
+      description: 'Unexpected server error',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
@@ -65,19 +65,19 @@ registry.registerPath({
       },
     },
     400: {
-      description: 'Payload invalide',
+      description: 'Invalid request payload',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
     ...sessionErrorResponses,
     500: {
-      description: 'Erreur serveur non prevue',
+      description: 'Unexpected server error',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
@@ -85,27 +85,19 @@ registry.registerPath({
 });
 
 router.get('/', async (req: Request, res: Response) => {
-  try {
-    const user = await getAuthenticatedUser(req);
-    return res.status(200).json(buildProfileResponse(user));
-  } catch (error) {
-    return handleRouteError(res, error);
-  }
+  const user = await getAuthenticatedUser(req);
+  return res.status(200).json(buildProfileResponse(user));
 });
 
 router.patch('/', async (req: Request, res: Response) => {
   const bodyResult = UpdateProfileBody.safeParse(req.body);
 
   if (!bodyResult.success) {
-    return sendValidationError(res, bodyResult.error.issues);
+    throw validationError('body', bodyResult.error.issues);
   }
 
-  try {
-    const user = await getAuthenticatedUser(req);
-    return res.status(200).json(updateProfile(bodyResult.data, user));
-  } catch (error) {
-    return handleRouteError(res, error);
-  }
+  const user = await getAuthenticatedUser(req);
+  return res.status(200).json(updateProfile(bodyResult.data, user));
 });
 
 export default router;

@@ -232,7 +232,7 @@ describe('E-learning BFF routes', () => {
     });
 
     expect(res.status).toBe(403);
-    expect(res.body.code).toBe('FORBIDDEN');
+    expect(res.body.error.code).toBe('FORBIDDEN');
   });
 
   it('exposes the E-learning routes in swagger.json', async () => {

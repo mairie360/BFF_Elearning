@@ -1,3 +1,4 @@
+import { ErrorResponseSchema } from '@mairie360/bffs-lib';
 import { OpenAPIRegistry, extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
@@ -481,26 +482,19 @@ registry.register('CourseActionResponse', CourseActionResponse);
 // ERROR
 // =====================
 
-export const ApiError = z
-  .object({
-    code: z.string().openapi({ example: 'COURSE_NOT_FOUND' }),
-    message: z.string().openapi({ example: 'Formation introuvable.' }),
-    details: z.unknown().optional().openapi({ example: { courseId: 'accueil-agents' } }),
-  })
-  .openapi({
-    description: 'Format d’erreur commun du BFF E-learning',
-  });
+// Body of every error answer, shared by every BFF (`@mairie360/bffs-lib`): `{ error: { code, message, details } }`.
+// clone(): the lib builds its schemas on import, before extendZodWithOpenApi() above, and zod 4 only
+// adds .openapi() to schemas created after the extension.
+export const ErrorResponse = registry.register('ErrorResponse', ErrorResponseSchema.clone());
 
-registry.register('ApiError', ApiError);
-
-// Erreurs communes aux routes qui résolvent la session auprès de BFF User (routes/Elearning/auth.ts).
+// Errors shared by the routes that resolve the session against BFF User (routes/Elearning/auth.ts).
 export const sessionErrorResponses = {
   401: {
-    description: 'Session invalide, expirée ou manquante',
-    content: { 'application/json': { schema: ApiError } },
+    description: 'Missing, expired or invalid session',
+    content: { 'application/json': { schema: ErrorResponse } },
   },
   502: {
-    description: 'BFF User injoignable ou réponse inexploitable',
-    content: { 'application/json': { schema: ApiError } },
+    description: 'BFF User is unreachable, failed or answered an unusable body',
+    content: { 'application/json': { schema: ErrorResponse } },
   },
 };

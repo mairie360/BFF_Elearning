@@ -82,6 +82,8 @@ Inventory extracted from `contracts/openapi.json`. Replace brace parameters with
 
 Business routes expect a Bearer token and resolve the session through BFF User. Session rejection produces 401; user-service unavailability, or a `/me` response without a `user` object, produces 502. An unexpected error produces 500 without exposing its message; `/check_apis` probes Core and E-learning independently and never returns network details. Course management is restricted to an administrator context by router checks.
 
+Every error, 404 on an unknown route and 400 on an unparsable body included, is answered in the envelope shared by every BFF (`@mairie360/bffs-lib`): `{ "error": { "code": "NOT_FOUND", "message": "Course not found.", "details": [{ "path": "params.courseId", "message": "..." }] } }`. `code` derives from the status (`BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `INTERNAL_ERROR`, `BAD_GATEWAY`); `details` is always an array (one entry per invalid field on a 400). A BFF User status other than 401/403 answers 502.
+
 ## Synchronization and verification
 
 ```bash

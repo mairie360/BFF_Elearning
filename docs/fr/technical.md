@@ -82,6 +82,8 @@ Inventaire extrait de `contracts/openapi.json`. Les paramètres entre accolades 
 
 Les routes métier attendent un Bearer et résolvent la session via BFF User. Les refus de session produisent 401; une indisponibilité du service utilisateur, ou une réponse `/me` sans objet `user`, produit 502. Une erreur imprévue produit 500 sans exposer son message; `/check_apis` sonde Core et E-learning indépendamment et ne renvoie jamais de détail réseau. La gestion des formations est réservée au contexte administrateur selon les contrôles des routeurs.
 
+Toutes les erreurs, y compris le 404 d'une route inconnue et le 400 d'un corps illisible, sont renvoyées dans l'enveloppe commune à tous les BFFs (`@mairie360/bffs-lib`) : `{ "error": { "code": "NOT_FOUND", "message": "Course not found.", "details": [{ "path": "params.courseId", "message": "..." }] } }`. `code` découle du statut (`BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `INTERNAL_ERROR`, `BAD_GATEWAY`) ; `details` est toujours un tableau (une entrée par champ invalide sur un 400). Un statut de BFF User autre que 401/403 donne 502.
+
 ## Synchronisation et vérifications
 
 ```bash

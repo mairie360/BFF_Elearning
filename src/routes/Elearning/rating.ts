@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { ApiError, CourseIdParams, RatingSubmitResponse, registry, sessionErrorResponses, SubmitRatingBody } from '../../openapi-registry';
-import { handleRouteError, sendValidationError, submitCourseRating } from './elearning_helpers';
+import { ErrorResponse, CourseIdParams, RatingSubmitResponse, registry, sessionErrorResponses, SubmitRatingBody } from '../../openapi-registry';
+import { submitCourseRating, validationError } from './elearning_helpers';
 import { getAuthenticatedUser } from './auth';
 
 const router = Router();
@@ -32,27 +32,27 @@ registry.registerPath({
       },
     },
     400: {
-      description: 'Payload invalide',
+      description: 'Invalid request payload',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
     404: {
-      description: 'Formation introuvable',
+      description: 'Course not found',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
     ...sessionErrorResponses,
     500: {
-      description: 'Erreur serveur non prevue',
+      description: 'Unexpected server error',
       content: {
         'application/json': {
-          schema: ApiError,
+          schema: ErrorResponse,
         },
       },
     },
@@ -64,19 +64,15 @@ router.post('/:courseId/rating', async (req: Request, res: Response) => {
   const bodyResult = SubmitRatingBody.safeParse(req.body);
 
   if (!paramsResult.success) {
-    return sendValidationError(res, paramsResult.error.issues);
+    throw validationError('params', paramsResult.error.issues);
   }
 
   if (!bodyResult.success) {
-    return sendValidationError(res, bodyResult.error.issues);
+    throw validationError('body', bodyResult.error.issues);
   }
 
-  try {
-    const user = await getAuthenticatedUser(req);
-    return res.status(200).json(submitCourseRating(user.id, paramsResult.data.courseId, bodyResult.data));
-  } catch (error) {
-    return handleRouteError(res, error);
-  }
+  const user = await getAuthenticatedUser(req);
+  return res.status(200).json(submitCourseRating(user.id, paramsResult.data.courseId, bodyResult.data));
 });
 
 export default router;
