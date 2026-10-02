@@ -45,7 +45,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Vérifie la connexion avec l'API Core et E-learning (Rust) */
+        /** Checks that Core API and E-learning API answer their /health probe */
         get: {
             parameters: {
                 query?: never;
@@ -55,7 +55,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Connexion réussie */
+                /** @description Both APIs are reachable */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -64,7 +64,7 @@ export interface paths {
                         "application/json": components["schemas"]["CheckApiResponse"];
                     };
                 };
-                /** @description API Core injoignable ou API E-learning injoignable */
+                /** @description Core API or E-learning API is unreachable or not configured */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -92,7 +92,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Crée une formation complète */
+        /** Creates a course (not available yet: 501) */
         post: {
             parameters: {
                 query?: never;
@@ -106,7 +106,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Formation créée */
+                /** @description Course created */
                 201: {
                     headers: {
                         [name: string]: unknown;
@@ -236,7 +236,7 @@ export interface paths {
                                         title: string;
                                         description?: string;
                                         /** @example 25 min */
-                                        duration: string;
+                                        duration?: string;
                                         completed?: boolean;
                                         active?: boolean;
                                         contents?: {
@@ -293,15 +293,6 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description A course already has this id */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -311,7 +302,16 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User is unreachable, failed or answered an unusable body */
+                /** @description Not available: no upstream service stores this data yet */
+                501: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -338,20 +338,20 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Supprime une formation */
+        /** Deletes a course (not available yet: 501) */
         delete: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Identifiant de la formation */
+                    /** @description Course (E-learning API formation) identifier */
                     courseId: string;
                 };
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description Formation supprimée */
+                /** @description Course deleted */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -381,15 +381,6 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Course not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -399,7 +390,16 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User is unreachable, failed or answered an unusable body */
+                /** @description Not available: no upstream service stores this data yet */
+                501: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -412,13 +412,13 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** Modifie une formation complète */
+        /** Updates a course (not available yet: 501) */
         patch: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Identifiant de la formation */
+                    /** @description Course (E-learning API formation) identifier */
                     courseId: string;
                 };
                 cookie?: never;
@@ -547,7 +547,7 @@ export interface paths {
                                 title: string;
                                 description?: string;
                                 /** @example 25 min */
-                                duration: string;
+                                duration?: string;
                                 completed?: boolean;
                                 active?: boolean;
                                 contents?: {
@@ -577,7 +577,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Formation mise à jour */
+                /** @description Course updated */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -707,7 +707,7 @@ export interface paths {
                                         title: string;
                                         description?: string;
                                         /** @example 25 min */
-                                        duration: string;
+                                        duration?: string;
                                         completed?: boolean;
                                         active?: boolean;
                                         contents?: {
@@ -764,15 +764,6 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Course not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -782,7 +773,16 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User is unreachable, failed or answered an unusable body */
+                /** @description Not available: no upstream service stores this data yet */
+                501: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -803,8 +803,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Charge le catalogue E-learning
-         * @description Retourne les donnees pretes a afficher pour le catalogue : utilisateur, notifications, filtres, statistiques, formations et footer.
+         * Loads the E-learning catalogue
+         * @description Ready-to-render catalogue: user, filters, statistics, footer and the courses the caller is enrolled in, with their chapters, contents and progress, read from the E-learning API.
          */
         get: {
             parameters: {
@@ -822,7 +822,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Catalogue charge avec succes */
+                /** @description Catalogue loaded */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1031,7 +1031,7 @@ export interface paths {
                                             title: string;
                                             description?: string;
                                             /** @example 25 min */
-                                            duration: string;
+                                            duration?: string;
                                             completed?: boolean;
                                             active?: boolean;
                                             contents?: {
@@ -1102,7 +1102,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User is unreachable, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -1131,17 +1131,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Marque un contenu comme termine ou non termine
-         * @description Met a jour la progression de la formation et retourne les chapitres, le chapitre et le contenu actualises.
+         * Marks a content as completed
+         * @description Records the completion in the E-learning API, which tracks progress per chapter: completing a content completes its whole chapter. Returns the updated progress, chapters, chapter and content. `completed: false` answers 501 (the E-learning API cannot undo a completion).
          */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Identifiant de la formation */
+                    /** @description Course (E-learning API formation) identifier */
                     courseId: string;
-                    /** @description Identifiant du contenu */
+                    /** @description Content (E-learning API attachment) identifier */
                     contentId: string;
                 };
                 cookie?: never;
@@ -1149,15 +1149,21 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        /** @example accueil-1 */
+                        /**
+                         * @description Chapter (E-learning API module) identifier
+                         * @example 11
+                         */
                         chapterId: string;
-                        /** @example true */
+                        /**
+                         * @description Only `true` is supported: the E-learning API cannot mark a module as not completed (501).
+                         * @example true
+                         */
                         completed: boolean;
                     };
                 };
             };
             responses: {
-                /** @description Progression mise a jour */
+                /** @description Progress updated */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1177,7 +1183,7 @@ export interface paths {
                                 title: string;
                                 description?: string;
                                 /** @example 25 min */
-                                duration: string;
+                                duration?: string;
                                 completed?: boolean;
                                 active?: boolean;
                                 contents?: {
@@ -1210,7 +1216,7 @@ export interface paths {
                                 title: string;
                                 description?: string;
                                 /** @example 25 min */
-                                duration: string;
+                                duration?: string;
                                 completed?: boolean;
                                 active?: boolean;
                                 contents?: {
@@ -1278,17 +1284,8 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Course, chapter or content not found */
+                /** @description Course, chapter or content not found, or the caller is not enrolled in the course */
                 404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Course details unavailable */
-                422: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1305,7 +1302,16 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User is unreachable, failed or answered an unusable body */
+                /** @description Not available: no upstream service stores this data yet */
+                501: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -1330,8 +1336,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Charge le profil E-learning
-         * @description Retourne les informations necessaires au rendu direct de la page profil.
+         * Loads the E-learning profile
+         * @description The caller as resolved by BFF User `/me`, ready to render on the profile page.
          */
         get: {
             parameters: {
@@ -1342,7 +1348,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Profil charge avec succes */
+                /** @description Profile loaded */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1418,7 +1424,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User is unreachable, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -1435,8 +1441,8 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Met a jour les champs editables du profil
-         * @description Ignore les champs non editables comme role, isAdmin, service, position et lastConnection.
+         * Updates the editable profile fields
+         * @description `email` and `phone` are saved by Core API (`PATCH /api/v1/user/me/`), then the profile is read again from BFF User. `address` and `city` are stored by no upstream service: a body carrying them answers 501 and nothing is written. Non-editable fields (role, isAdmin, service, position, lastConnection) are ignored.
          */
         patch: {
             parameters: {
@@ -1463,7 +1469,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Profil mis a jour */
+                /** @description Profile saved, then read again */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1508,7 +1514,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Invalid request payload */
+                /** @description Invalid request payload, or a value Core API refuses (e.g. a phone number that is not 10 to 15 digits) */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -1526,6 +1532,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description The e-mail address is already used by another account */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1535,7 +1550,16 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User is unreachable, failed or answered an unusable body */
+                /** @description Not available: no upstream service stores this data yet */
+                501: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -1558,15 +1582,15 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Note une formation
-         * @description Enregistre une note utilisateur entre 1 et 5 et retourne la repartition mise a jour.
+         * Rates a course
+         * @description Not available yet: the E-learning API does not store ratings, so a valid request from an authenticated caller answers 501. The 200 answer is the contract the route will keep once ratings are persisted upstream.
          */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Identifiant de la formation */
+                    /** @description Course (E-learning API formation) identifier */
                     courseId: string;
                 };
                 cookie?: never;
@@ -1580,7 +1604,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Note enregistree */
+                /** @description Rating recorded */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1628,15 +1652,6 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Course not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1646,7 +1661,16 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User is unreachable, failed or answered an unusable body */
+                /** @description Not available: no upstream service stores this data yet */
+                501: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -1673,15 +1697,15 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Demarre ou reprend une formation
-         * @description Retourne la formation actualisee, le prochain contenu et une URL de reprise optionnelle.
+         * Starts or resumes a course
+         * @description Returns the course with its progress, the next content to open and the course URL. Nothing is written: the E-learning API records the start of a course when its first chapter is completed.
          */
         post: {
             parameters: {
                 query?: never;
                 header?: never;
                 path: {
-                    /** @description Identifiant de la formation */
+                    /** @description Course (E-learning API formation) identifier */
                     courseId: string;
                 };
                 cookie?: never;
@@ -1695,7 +1719,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description Formation demarree ou reprise */
+                /** @description Course to start or resume */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1825,7 +1849,7 @@ export interface paths {
                                         title: string;
                                         description?: string;
                                         /** @example 25 min */
-                                        duration: string;
+                                        duration?: string;
                                         completed?: boolean;
                                         active?: boolean;
                                         contents?: {
@@ -1875,17 +1899,8 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Course not found */
+                /** @description Unknown course, or the caller is not enrolled in it */
                 404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Course details unavailable */
-                422: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1902,7 +1917,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User is unreachable, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -2093,7 +2108,7 @@ export interface components {
             title: string;
             description?: string;
             /** @example 25 min */
-            duration: string;
+            duration?: string;
             completed?: boolean;
             active?: boolean;
             contents?: {
@@ -2164,7 +2179,7 @@ export interface components {
                 title: string;
                 description?: string;
                 /** @example 25 min */
-                duration: string;
+                duration?: string;
                 completed?: boolean;
                 active?: boolean;
                 contents?: {
@@ -2313,7 +2328,7 @@ export interface components {
                     title: string;
                     description?: string;
                     /** @example 25 min */
-                    duration: string;
+                    duration?: string;
                     completed?: boolean;
                     active?: boolean;
                     contents?: {
@@ -2463,7 +2478,7 @@ export interface components {
                     title: string;
                     description?: string;
                     /** @example 25 min */
-                    duration: string;
+                    duration?: string;
                     completed?: boolean;
                     active?: boolean;
                     contents?: {
@@ -2668,7 +2683,7 @@ export interface components {
                         title: string;
                         description?: string;
                         /** @example 25 min */
-                        duration: string;
+                        duration?: string;
                         completed?: boolean;
                         active?: boolean;
                         contents?: {
@@ -2900,7 +2915,7 @@ export interface components {
                             title: string;
                             description?: string;
                             /** @example 25 min */
-                            duration: string;
+                            duration?: string;
                             completed?: boolean;
                             active?: boolean;
                             contents?: {
@@ -3067,7 +3082,7 @@ export interface components {
                         title: string;
                         description?: string;
                         /** @example 25 min */
-                        duration: string;
+                        duration?: string;
                         completed?: boolean;
                         active?: boolean;
                         contents?: {
@@ -3205,28 +3220,34 @@ export interface components {
         };
         CourseIdParams: {
             /**
-             * @description Identifiant de la formation
-             * @example accueil-agents
+             * @description Course (E-learning API formation) identifier
+             * @example 4
              */
             courseId: string;
         };
         CourseContentParams: {
             /**
-             * @description Identifiant de la formation
-             * @example accueil-agents
+             * @description Course (E-learning API formation) identifier
+             * @example 4
              */
             courseId: string;
             /**
-             * @description Identifiant du contenu
-             * @example accueil-1-video
+             * @description Content (E-learning API attachment) identifier
+             * @example 27
              */
             contentId: string;
         };
-        /** @description Payload de complétion d’un contenu */
+        /** @description Content completion. Progress is tracked per chapter by the E-learning API: completing a content completes its whole chapter. */
         CompleteContentBody: {
-            /** @example accueil-1 */
+            /**
+             * @description Chapter (E-learning API module) identifier
+             * @example 11
+             */
             chapterId: string;
-            /** @example true */
+            /**
+             * @description Only `true` is supported: the E-learning API cannot mark a module as not completed (501).
+             * @example true
+             */
             completed: boolean;
         };
         /** @description Progression mise à jour après complétion d’un contenu */
@@ -3244,7 +3265,7 @@ export interface components {
                 title: string;
                 description?: string;
                 /** @example 25 min */
-                duration: string;
+                duration?: string;
                 completed?: boolean;
                 active?: boolean;
                 contents?: {
@@ -3277,7 +3298,7 @@ export interface components {
                 title: string;
                 description?: string;
                 /** @example 25 min */
-                duration: string;
+                duration?: string;
                 completed?: boolean;
                 active?: boolean;
                 contents?: {
@@ -3483,7 +3504,7 @@ export interface components {
                         title: string;
                         description?: string;
                         /** @example 25 min */
-                        duration: string;
+                        duration?: string;
                         completed?: boolean;
                         active?: boolean;
                         contents?: {

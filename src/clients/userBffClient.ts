@@ -1,19 +1,15 @@
 import { getBffUser } from '@mairie360/bff-user-openapi/endpoints/bffUser';
 import axios, { type AxiosRequestConfig } from 'axios';
+import { asCaller } from './upstream';
 
-// BFF User n'est appelé que par les opérations de son contrat publié (@mairie360/bff-user-openapi).
+// BFF User is only called through the operations of its published contract (@mairie360/bff-user-openapi).
 const userBffAxios = axios.create({ timeout: 5_000, headers: { Accept: 'application/json' } });
 
 export const userBffClient = getBffUser(userBffAxios);
 
-/** URL relue à chaque appel : la variable d'environnement peut changer sans redémarrage. */
+/** URL read on every call (the environment can change without a restart); 502 when `USER_BFF_URL` is unset. */
 export function userBffOptions(authorization: string): AxiosRequestConfig {
-  const configured = process.env.USER_BFF_URL ?? 'http://localhost:4000';
-  const baseUrl = /^https?:\/\//i.test(configured) ? configured : `http://${configured}`;
-  return {
-    baseURL: baseUrl.replace(/\/+$/, ''),
-    headers: { Authorization: authorization },
-  };
+  return asCaller('USER_BFF', authorization);
 }
 
 export default userBffClient;

@@ -1,41 +1,37 @@
 import { HttpError } from '@mairie360/bffs-lib';
+import type { File as UpstreamFile, Module as UpstreamModule } from '@mairie360/elearning-api-openapi/model';
 import { z } from 'zod';
 import {
-  CompleteContentBody,
-  ContentCompleteResponse,
-  CourseActionResponse,
   CourseChapter,
   CourseContent,
   CurrentUser,
   ElearningCatalogQuery,
   ElearningCatalogResponse,
   ElearningCourse,
-  ElearningProfileResponse,
   FooterConfig,
-  ProfileUpdateResponse,
-  RatingDistribution,
-  RatingSubmitResponse,
-  SubmitRatingBody,
-  UpdateProfileBody,
 } from '../../openapi-registry';
 
-type BffCurrentUser = z.infer<typeof CurrentUser>;
+// Pure shaping of E-learning API data into the payloads of the E-learning web service. Nothing is
+// stored here: every value comes from the upstream answer of the current request.
+
+export type BffCurrentUser = z.infer<typeof CurrentUser>;
+export type BffCourse = z.infer<typeof ElearningCourse>;
+export type BffChapter = z.infer<typeof CourseChapter>;
+export type BffContent = z.infer<typeof CourseContent>;
 type BffFooterConfig = z.infer<typeof FooterConfig>;
-type BffCourse = z.infer<typeof ElearningCourse>;
-type BffChapter = z.infer<typeof CourseChapter>;
-type BffContent = z.infer<typeof CourseContent>;
 type BffCatalogQuery = z.infer<typeof ElearningCatalogQuery>;
 type BffCatalogResponse = z.infer<typeof ElearningCatalogResponse>;
-type BffProfileResponse = z.infer<typeof ElearningProfileResponse>;
-type BffUpdateProfileBody = z.infer<typeof UpdateProfileBody>;
-type BffProfileUpdateResponse = z.infer<typeof ProfileUpdateResponse>;
-type BffCompleteContentBody = z.infer<typeof CompleteContentBody>;
-type BffContentCompleteResponse = z.infer<typeof ContentCompleteResponse>;
-type BffSubmitRatingBody = z.infer<typeof SubmitRatingBody>;
-type BffRatingDistribution = z.infer<typeof RatingDistribution>;
-type BffRatingSubmitResponse = z.infer<typeof RatingSubmitResponse>;
-type BffCourseActionResponse = z.infer<typeof CourseActionResponse>;
-type RatingKey = '1' | '2' | '3' | '4' | '5';
+type CourseStatus = NonNullable<BffCourse['statusValue']>;
+
+/**
+ * Formation of `GET /api/v1/formations/`. The published package types it as `AdminFormation`
+ * (two upstream schemas share the name `GetFormationsResultView`), but the API also returns the
+ * caller's progress `status`, read here when present.
+ */
+export type UpstreamFormation = { id: number; name: string; description?: string | null; status?: unknown };
+
+/** A module with the attachments of `GET /api/v1/formations/{formation_id}/{module_id}/`. */
+export type UpstreamChapter = { module: UpstreamModule; files: UpstreamFile[] };
 
 /** 400 for a request that fails its zod schema, one detail per issue (`path` like `body.title`). */
 export function validationError(location: 'body' | 'params' | 'query', issues: readonly z.core.$ZodIssue[]): HttpError {
@@ -45,6 +41,11 @@ export function validationError(location: 'body' | 'params' | 'query', issues: r
       message: issue.message,
     })),
   });
+}
+
+/** 501 for a feature no upstream service supports yet: the BFF never fakes its persistence. */
+export function notImplemented(message: string): HttpError {
+  return new HttpError(501, message);
 }
 
 const footerConfig: BffFooterConfig = {
@@ -57,620 +58,134 @@ const footerConfig: BffFooterConfig = {
   ],
 };
 
-const fallbackUser: BffCurrentUser = {
-  id: 'user-123',
-  name: 'Admin Systeme',
-  initials: 'AS',
-  email: 'admin@mairie360.fr',
-  phone: '+262 692 00 00 00',
-  service: 'Administration',
-  position: 'Administrateur systeme',
-  role: 'admin',
-  isAdmin: true,
-  address: '1 rue de la Mairie',
-  city: 'Saint-Denis',
-  lastConnection: '3 juillet 2026 a 09:15',
+export function footer(): BffFooterConfig {
+  return { ...footerConfig, links: footerConfig.links.map((link) => ({ ...link })) };
+}
+
+const STATUS_BY_UPSTREAM: Record<string, CourseStatus> = {
+  NotStarted: 'not-started',
+  InProgress: 'in-progress',
+  Completed: 'completed',
 };
 
-const courseTemplates: BffCourse[] = [
-  {
-    id: 'accueil-agents',
-    title: 'Accueil des nouveaux agents',
-    description:
-      "Un parcours court pour comprendre l'organisation municipale, les outils internes et les premiers reflexes de service public.",
-    instructor: 'Direction des ressources humaines',
-    rating: 4.8,
-    duration: '2 h 15',
-    chapters: 4,
-    learners: 128,
-    category: 'Integration',
-    statusValue: 'in-progress',
-    titleBadge: { label: 'Obligatoire', variant: 'mandatory' },
-    levelBadge: { label: 'Debutant', variant: 'beginner' },
-    statusBadge: { label: 'En cours', variant: 'inProgress' },
-    progress: 50,
-    deadline: '30 juin 2026',
-    ratingDistribution: { '1': 0, '2': 1, '3': 4, '4': 35, '5': 88 },
-    details: {
-      title: 'Accueil des nouveaux agents',
-      subtitle: "Parcours d'integration",
-      description:
-        'Cette formation accompagne les agents dans leurs premieres semaines : cadre administratif, canaux de communication, securite des donnees et bonnes pratiques terrain.',
-      instructor: 'Direction des ressources humaines',
-      duration: '2 h 15',
-      progress: 50,
-      ratingDistribution: { '1': 0, '2': 1, '3': 4, '4': 35, '5': 88 },
-      chapters: [
-        {
-          id: 'accueil-1',
-          title: "Comprendre l'organisation municipale",
-          duration: '25 min',
-          completed: true,
-          contents: [
-            {
-              id: 'accueil-1-video',
-              title: 'Presentation des directions et services',
-              type: 'video',
-              duration: '12 min',
-              completed: true,
-            },
-            {
-              id: 'accueil-1-doc',
-              title: 'Organigramme et contacts utiles',
-              type: 'pdf',
-              fileName: 'organigramme-mairie360.pdf',
-              completed: true,
-            },
-          ],
-        },
-        {
-          id: 'accueil-2',
-          title: 'Utiliser les outils internes',
-          duration: '40 min',
-          active: true,
-          contents: [
-            {
-              id: 'accueil-2-video',
-              title: 'Messagerie, agenda et portail RH',
-              type: 'video',
-              duration: '18 min',
-              completed: true,
-            },
-            {
-              id: 'accueil-2-quiz',
-              title: 'Verifier ses premiers acquis',
-              type: 'quiz',
-              duration: '8 min',
-              completed: false,
-            },
-          ],
-        },
-        {
-          id: 'accueil-3',
-          title: 'Adopter les reflexes de service public',
-          duration: '35 min',
-          contents: [
-            {
-              id: 'accueil-3-video',
-              title: 'Accueil, impartialite et confidentialite',
-              type: 'video',
-              duration: '16 min',
-              completed: false,
-            },
-            {
-              id: 'accueil-3-support',
-              title: "Charte de l'agent municipal",
-              type: 'document',
-              fileName: 'charte-agent.pdf',
-              completed: false,
-            },
-          ],
-        },
-        {
-          id: 'accueil-4',
-          title: 'Finaliser son integration',
-          duration: '35 min',
-          contents: [
-            {
-              id: 'accueil-4-check',
-              title: "Checklist des demarches d'arrivee",
-              type: 'document',
-              completed: false,
-            },
-            {
-              id: 'accueil-4-quiz',
-              title: 'Evaluation finale',
-              type: 'quiz',
-              duration: '12 min',
-              completed: false,
-            },
-          ],
-        },
-      ],
-      completionRating: {
-        title: 'Evaluer ce parcours',
-        helperText: "Votre retour aide a ameliorer l'accueil des prochains agents.",
-        submitted: false,
-      },
-    },
-  },
-  {
-    id: 'rgpd-collectivites',
-    title: 'RGPD et donnees communales',
-    description:
-      "Identifier les donnees personnelles, appliquer les bonnes pratiques et reagir correctement en cas d'incident.",
-    instructor: 'Delegue a la protection des donnees',
-    rating: 4.6,
-    duration: '3 h',
-    chapters: 5,
-    learners: 86,
-    category: 'Conformite',
-    statusValue: 'not-started',
-    titleBadge: { label: 'Obligatoire', variant: 'mandatory' },
-    levelBadge: { label: 'Intermediaire', variant: 'intermediate' },
-    statusBadge: { label: 'Non commence', variant: 'notStarted' },
-    progress: 0,
-    deadline: '15 juillet 2026',
-    ratingDistribution: { '1': 1, '2': 2, '3': 8, '4': 31, '5': 44 },
-    details: {
-      title: 'RGPD et donnees communales',
-      subtitle: 'Protection des donnees au quotidien',
-      description:
-        'Le parcours presente les obligations RGPD dans un contexte de mairie : demandes citoyennes, dossiers administratifs, conservation, partage et signalement.',
-      instructor: 'Delegue a la protection des donnees',
-      duration: '3 h',
-      progress: 0,
-      ratingDistribution: { '1': 1, '2': 2, '3': 8, '4': 31, '5': 44 },
-      chapters: [
-        {
-          id: 'rgpd-1',
-          title: 'Reconnaitre une donnee personnelle',
-          duration: '30 min',
-          active: true,
-          contents: [
-            {
-              id: 'rgpd-1-video',
-              title: 'Donnees citoyennes et donnees sensibles',
-              type: 'video',
-              duration: '15 min',
-            },
-            {
-              id: 'rgpd-1-quiz',
-              title: 'Cas pratiques de qualification',
-              type: 'quiz',
-              duration: '10 min',
-            },
-          ],
-        },
-        {
-          id: 'rgpd-2',
-          title: 'Collecter le strict necessaire',
-          duration: '35 min',
-          contents: [
-            {
-              id: 'rgpd-2-video',
-              title: 'Minimisation et information des usagers',
-              type: 'video',
-              duration: '18 min',
-            },
-            {
-              id: 'rgpd-2-doc',
-              title: "Modele de mention d'information",
-              type: 'pdf',
-              fileName: 'mention-information-rgpd.pdf',
-            },
-          ],
-        },
-        {
-          id: 'rgpd-3',
-          title: 'Partager et conserver les dossiers',
-          duration: '45 min',
-          contents: [
-            {
-              id: 'rgpd-3-video',
-              title: 'Regles de conservation et habilitations',
-              type: 'video',
-              duration: '20 min',
-            },
-            {
-              id: 'rgpd-3-link',
-              title: 'Referentiel interne des durees de conservation',
-              type: 'link',
-              href: '#',
-              required: false,
-            },
-          ],
-        },
-        {
-          id: 'rgpd-4',
-          title: 'Reagir a une violation de donnees',
-          duration: '40 min',
-          contents: [
-            {
-              id: 'rgpd-4-audio',
-              title: "Scenario commente d'incident",
-              type: 'audio',
-              duration: '9 min',
-            },
-            {
-              id: 'rgpd-4-doc',
-              title: 'Fiche reflexe de signalement',
-              type: 'document',
-            },
-          ],
-        },
-        {
-          id: 'rgpd-5',
-          title: 'Evaluation RGPD',
-          duration: '30 min',
-          contents: [
-            {
-              id: 'rgpd-5-quiz',
-              title: 'Evaluation finale',
-              type: 'quiz',
-              duration: '20 min',
-            },
-          ],
-        },
-      ],
-      completionRating: {
-        title: 'Noter la formation RGPD',
-        submitted: false,
-      },
-    },
-  },
-  {
-    id: 'relation-usager',
-    title: 'Relation usager en situation sensible',
-    description:
-      'Des methodes concretes pour accueillir, apaiser et orienter un usager dans les situations de tension.',
-    instructor: 'Pole accueil citoyen',
-    rating: 4.9,
-    duration: '2 h 45',
-    chapters: 4,
-    learners: 211,
-    category: 'Relation usager',
-    statusValue: 'completed',
-    levelBadge: { label: 'Intermediaire', variant: 'intermediate' },
-    statusBadge: { label: 'Termine', variant: 'completed' },
-    progress: 100,
-    ratingDistribution: { '1': 0, '2': 1, '3': 3, '4': 39, '5': 168 },
-    details: {
-      title: 'Relation usager en situation sensible',
-      subtitle: 'Accueil et posture professionnelle',
-      description:
-        "Le parcours combine apports courts, mises en situation et quiz pour renforcer les reflexes d'accueil dans les moments difficiles.",
-      instructor: 'Pole accueil citoyen',
-      duration: '2 h 45',
-      progress: 100,
-      completed: true,
-      ratingDistribution: { '1': 0, '2': 1, '3': 3, '4': 39, '5': 168 },
-      chapters: [
-        {
-          id: 'usager-1',
-          title: "Installer un cadre d'echange clair",
-          duration: '35 min',
-          completed: true,
-          contents: [
-            {
-              id: 'usager-1-video',
-              title: 'Ecoute active et reformulation',
-              type: 'video',
-              duration: '14 min',
-              completed: true,
-            },
-            {
-              id: 'usager-1-quiz',
-              title: 'Identifier les signaux faibles',
-              type: 'quiz',
-              duration: '8 min',
-              completed: true,
-            },
-          ],
-        },
-        {
-          id: 'usager-2',
-          title: 'Desamorcer une tension',
-          duration: '45 min',
-          completed: true,
-          contents: [
-            {
-              id: 'usager-2-video',
-              title: 'Postures et mots utiles',
-              type: 'video',
-              duration: '20 min',
-              completed: true,
-            },
-            {
-              id: 'usager-2-audio',
-              title: "Analyse d'un dialogue d'accueil",
-              type: 'audio',
-              duration: '7 min',
-              completed: true,
-            },
-          ],
-        },
-        {
-          id: 'usager-3',
-          title: 'Orienter vers le bon interlocuteur',
-          duration: '35 min',
-          completed: true,
-          contents: [
-            {
-              id: 'usager-3-doc',
-              title: 'Cartographie des relais internes',
-              type: 'document',
-              completed: true,
-            },
-          ],
-        },
-        {
-          id: 'usager-4',
-          title: 'Evaluation finale',
-          duration: '50 min',
-          completed: true,
-          contents: [
-            {
-              id: 'usager-4-quiz',
-              title: 'Mise en situation finale',
-              type: 'quiz',
-              duration: '25 min',
-              completed: true,
-            },
-          ],
-        },
-      ],
-      completionRating: {
-        title: 'Votre avis sur la formation',
-        submitted: false,
-      },
-    },
-  },
-];
-
-function clone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
-
-const coursesByUserId = new Map<string, BffCourse[]>();
-const profileOverridesByUserId = new Map<string, BffUpdateProfileBody>();
-
-function getCourses(userId: string): BffCourse[] {
-  const existingCourses = coursesByUserId.get(userId);
-
-  if (existingCourses) return existingCourses;
-
-  const userCourses = clone(courseTemplates);
-  coursesByUserId.set(userId, userCourses);
-  return userCourses;
-}
-
-function getUserWithOverrides(user: BffCurrentUser): BffCurrentUser {
-  return {
-    ...user,
-    ...profileOverridesByUserId.get(user.id),
-  };
-}
-
-function normalize(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .trim();
-}
-
-function getStatusBadge(status: BffCourse['statusValue']): BffCourse['statusBadge'] {
-  if (status === 'completed') {
-    return { label: 'Termine', variant: 'completed' };
-  }
-
-  if (status === 'in-progress') {
-    return { label: 'En cours', variant: 'inProgress' };
-  }
-
+function statusBadge(status: CourseStatus): NonNullable<BffCourse['statusBadge']> {
+  if (status === 'completed') return { label: 'Termine', variant: 'completed' };
+  if (status === 'in-progress') return { label: 'En cours', variant: 'inProgress' };
   return { label: 'Non commence', variant: 'notStarted' };
 }
 
-function getStatusFromProgress(progress: number): BffCourse['statusValue'] {
-  if (progress >= 100) {
-    return 'completed';
-  }
-
-  if (progress > 0) {
-    return 'in-progress';
-  }
-
-  return 'not-started';
+function statusFromProgress(progress: number): CourseStatus {
+  if (progress >= 100) return 'completed';
+  return progress > 0 ? 'in-progress' : 'not-started';
 }
 
-function getRequiredContents(chapters: BffChapter[]): BffContent[] {
-  return chapters.flatMap((chapter) => chapter.contents ?? []).filter((content) => content.required !== false);
+function contentType(file: UpstreamFile): BffContent['type'] {
+  if (file.file_type === 'Video') return 'video';
+  if (file.file_type === 'Pdf') return 'pdf';
+  return 'other';
 }
 
-function getFirstIncompleteContent(chapters: BffChapter[]): BffContent | undefined {
-  return getRequiredContents(chapters).find((content) => !content.completed);
+/** Progress is tracked per module upstream: a content is completed when its chapter is. */
+export function toChapter({ module, files }: UpstreamChapter): BffChapter {
+  return {
+    id: String(module.id),
+    title: module.name,
+    ...(module.description ? { description: module.description } : {}),
+    completed: module.completed,
+    active: false,
+    contents: files.map((file) => ({
+      id: String(file.id),
+      title: file.file_name,
+      type: contentType(file),
+      fileName: file.file_name,
+      completed: module.completed,
+    })),
+  };
 }
 
-function getRatingCount(distribution: BffRatingDistribution): number {
-  return (['1', '2', '3', '4', '5'] as RatingKey[]).reduce((total, key) => total + (distribution[key] ?? 0), 0);
-}
-
-function getRatingAverage(distribution: BffRatingDistribution): number {
-  const ratingCount = getRatingCount(distribution);
-
-  if (ratingCount === 0) {
-    return 0;
-  }
-
-  const total = (['1', '2', '3', '4', '5'] as RatingKey[]).reduce(
-    (sum, key) => sum + Number(key) * (distribution[key] ?? 0),
-    0,
-  );
-
-  return Math.round((total / ratingCount) * 10) / 10;
-}
-
-function ensureRatingDistribution(course: BffCourse): BffRatingDistribution {
-  const ratingDistribution = course.ratingDistribution ?? { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
-  course.ratingDistribution = ratingDistribution;
-
-  if (course.details) {
-    course.details.ratingDistribution = ratingDistribution;
-  }
-
-  return ratingDistribution;
-}
-
-function updateCourseProgress(course: BffCourse): {
+export type CourseProgress = {
   completedRequiredContents: number;
   totalRequiredContents: number;
   completedChapters: number;
   totalChapters: number;
   progress: number;
   completed: boolean;
-} {
-  const chapters = course.details?.chapters ?? [];
-  const requiredContents = getRequiredContents(chapters);
-  const totalRequiredContents = requiredContents.length;
-  const completedRequiredContents = requiredContents.filter((content) => content.completed).length;
-  const progress =
-    totalRequiredContents === 0 ? 0 : Math.round((completedRequiredContents / totalRequiredContents) * 100);
-  const completed = totalRequiredContents > 0 && completedRequiredContents === totalRequiredContents;
-  let activeChapterAssigned = false;
+};
 
-  for (const chapter of chapters) {
-    const chapterRequiredContents = (chapter.contents ?? []).filter((content) => content.required !== false);
-    const chapterCompleted =
-      chapterRequiredContents.length > 0 && chapterRequiredContents.every((content) => content.completed);
-
-    chapter.completed = chapterCompleted;
-    chapter.active = false;
-
-    if (!chapterCompleted && !activeChapterAssigned) {
-      chapter.active = true;
-      activeChapterAssigned = true;
-    }
-  }
-
-  if (course.details) {
-    course.details.progress = progress;
-    course.details.completed = completed;
-  }
-
-  course.progress = progress;
-  course.statusValue = getStatusFromProgress(progress);
-  course.statusBadge = getStatusBadge(course.statusValue);
+export function courseProgress(chapters: BffChapter[]): CourseProgress {
+  const contents = chapters.flatMap((chapter) => chapter.contents ?? []);
+  const completedChapters = chapters.filter((chapter) => chapter.completed).length;
+  const progress = chapters.length ? Math.round((completedChapters / chapters.length) * 100) : 0;
 
   return {
-    completedRequiredContents,
-    totalRequiredContents,
-    completedChapters: chapters.filter((chapter) => chapter.completed).length,
+    completedRequiredContents: contents.filter((content) => content.completed).length,
+    totalRequiredContents: contents.length,
+    completedChapters,
     totalChapters: chapters.length,
     progress,
-    completed,
+    completed: chapters.length > 0 && completedChapters === chapters.length,
   };
 }
 
-function findCourse(userId: string, courseId: string): BffCourse {
-  const courses = getCourses(userId);
-  const course = courses.find((entry) => entry.id === courseId);
+export function toCourse(formation: UpstreamFormation, upstreamChapters: UpstreamChapter[]): BffCourse {
+  const chapters = upstreamChapters.map(toChapter);
+  const activeChapter = chapters.find((chapter) => !chapter.completed);
+  if (activeChapter) activeChapter.active = true;
 
-  if (!course) {
-    throw new HttpError(404, 'Course not found.', { details: [{ path: 'params.courseId', message: `No course ${courseId}.` }] });
-  }
-
-  return course;
-}
-
-function findCourseDetails(course: BffCourse) {
-  if (!course.details) {
-    throw new HttpError(422, 'Course details unavailable.', {
-      details: [{ path: 'params.courseId', message: `Course ${course.id} has no details.` }],
-    });
-  }
-
-  return course.details;
-}
-
-function parseNumericValue(value: number | string | undefined): number {
-  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-  if (typeof value === 'string') {
-    const parsedValue = Number.parseInt(value, 10);
-    return Number.isNaN(parsedValue) ? 0 : parsedValue;
-  }
-
-  return 0;
-}
-
-function buildAdminStats(courses: BffCourse[]) {
-  const coursesWithRating = courses.filter((course) => typeof course.rating === 'number');
-  const averageRating = coursesWithRating.length
-    ? Math.round(
-        (coursesWithRating.reduce((total, course) => total + Number(course.rating), 0) /
-          coursesWithRating.length) *
-          10,
-      ) / 10
-    : 0;
-  const completionRate = courses.length
-    ? Math.round(courses.reduce((total, course) => total + (course.progress ?? 0), 0) / courses.length)
-    : 0;
+  const { progress, completed } = courseProgress(chapters);
+  const statusValue =
+    (typeof formation.status === 'string' ? STATUS_BY_UPSTREAM[formation.status] : undefined) ?? statusFromProgress(progress);
+  const description = formation.description ?? '';
 
   return {
-    totalCourses: courses.length,
-    totalLearners: courses.reduce((total, course) => total + parseNumericValue(course.learners), 0),
-    mandatoryCourses: courses.filter((course) => course.titleBadge?.variant === 'mandatory').length,
-    totalContents: courses.reduce(
-      (total, course) =>
-        total +
-        (course.details?.chapters ?? []).reduce(
-          (chapterTotal, chapter) => chapterTotal + (chapter.contents?.length ?? 0),
-          0,
-        ),
-      0,
-    ),
-    averageRating,
-    completionRate,
+    id: String(formation.id),
+    title: formation.name,
+    description,
+    chapters: chapters.length,
+    statusValue,
+    statusBadge: statusBadge(statusValue),
+    progress,
+    details: { title: formation.name, description, progress, completed, chapters },
   };
 }
 
-export function buildCatalogResponse(
-  query: BffCatalogQuery,
-  user: BffCurrentUser = fallbackUser,
-): BffCatalogResponse {
-  const courses = getCourses(user.id);
+/** First content of the first chapter not completed yet, where a learner resumes the course. */
+export function nextContentId(course: BffCourse): string | undefined {
+  return course.details?.chapters.find((chapter) => !chapter.completed && chapter.contents?.length)?.contents?.[0]?.id;
+}
+
+function normalize(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+export function buildCatalogResponse(query: BffCatalogQuery, user: BffCurrentUser, courses: BffCourse[]): BffCatalogResponse {
   const search = query.search ? normalize(query.search) : '';
   const category = query.category && query.category !== 'all' ? query.category : undefined;
   const status = query.status && query.status !== 'all' ? query.status : undefined;
   const filteredCourses = courses.filter((course) => {
-    const searchableText = normalize(
-      [course.title, course.description, course.instructor, course.category].filter(Boolean).join(' '),
+    const searchableText = normalize([course.title, course.description, course.category].filter(Boolean).join(' '));
+    return (
+      (!search || searchableText.includes(search)) &&
+      (!category || course.category === category) &&
+      (!status || course.statusValue === status)
     );
-    const matchesSearch = search ? searchableText.includes(search) : true;
-    const matchesCategory = category ? course.category === category : true;
-    const matchesStatus = status ? course.statusValue === status : true;
-
-    return matchesSearch && matchesCategory && matchesStatus;
   });
   const page = query.page ?? 1;
   const pageSize = query.pageSize ?? (filteredCourses.length || 20);
-  const pagedCourses = filteredCourses.slice((page - 1) * pageSize, page * pageSize);
-  const categories = Array.from(
-    new Set(courses.map((course) => course.category).filter((value): value is string => Boolean(value))),
-  ).map((value) => ({
-    label: value,
-    value,
-  }));
+  const completedCourses = courses.filter((course) => course.statusValue === 'completed').length;
 
   return {
-    user: clone(getUserWithOverrides(user)),
-    notifications: {
-      unreadCount: 3,
-    },
+    user,
+    // No notification source is wired into this BFF: nothing is reported as unread.
+    notifications: { unreadCount: 0 },
     catalog: {
       title: 'Centre de Formation',
       subtitle: 'Developpez vos competences professionnelles',
-      certificationCount: 14,
+      certificationCount: completedCourses,
       emptyLabel: 'Aucune formation ne correspond a votre recherche.',
       statuses: [
         { label: 'Tous les statuts', value: 'all' },
@@ -678,219 +193,15 @@ export function buildCatalogResponse(
         { label: 'En cours', value: 'in-progress' },
         { label: 'Termine', value: 'completed' },
       ],
-      categories: [{ label: 'Toutes les categories', value: 'all' }, ...categories],
+      // The E-learning API has no course category.
+      categories: [{ label: 'Toutes les categories', value: 'all' }],
       stats: [
         { label: 'Formations disponibles', value: courses.length },
         { label: 'En cours', value: courses.filter((course) => course.statusValue === 'in-progress').length },
-        { label: 'Terminees', value: courses.filter((course) => course.statusValue === 'completed').length },
+        { label: 'Terminees', value: completedCourses },
       ],
-      ...(user.isAdmin ? { adminStats: buildAdminStats(courses) } : {}),
-      courses: clone(pagedCourses),
+      courses: filteredCourses.slice((page - 1) * pageSize, page * pageSize),
     },
-    footer: clone(footerConfig),
+    footer: footer(),
   };
-}
-
-export function buildProfileResponse(user: BffCurrentUser = fallbackUser): BffProfileResponse {
-  return {
-    user: clone(getUserWithOverrides(user)),
-    footer: clone(footerConfig),
-  };
-}
-
-export function updateProfile(
-  body: BffUpdateProfileBody,
-  user: BffCurrentUser = fallbackUser,
-): BffProfileUpdateResponse {
-  const currentOverrides = profileOverridesByUserId.get(user.id) ?? {};
-  profileOverridesByUserId.set(user.id, { ...currentOverrides, ...body });
-
-  return {
-    user: clone(getUserWithOverrides(user)),
-  };
-}
-
-export function completeCourseContent(
-  userId: string,
-  courseId: string,
-  contentId: string,
-  body: BffCompleteContentBody,
-): BffContentCompleteResponse {
-  const course = findCourse(userId, courseId);
-  const details = findCourseDetails(course);
-  const chapter = details.chapters.find((entry) => entry.id === body.chapterId);
-
-  if (!chapter) {
-    throw new HttpError(404, 'Chapter not found.', {
-      details: [{ path: 'body.chapterId', message: `No chapter ${body.chapterId} in course ${courseId}.` }],
-    });
-  }
-
-  const content = chapter.contents?.find((entry) => entry.id === contentId);
-
-  if (!content) {
-    throw new HttpError(404, 'Content not found.', {
-      details: [{ path: 'params.contentId', message: `No content ${contentId} in chapter ${body.chapterId}.` }],
-    });
-  }
-
-  content.completed = body.completed;
-  const progress = updateCourseProgress(course);
-
-  return {
-    ...progress,
-    chapters: clone(details.chapters),
-    chapter: clone(chapter),
-    content: clone(content),
-  };
-}
-
-export function submitCourseRating(
-  userId: string,
-  courseId: string,
-  body: BffSubmitRatingBody,
-): BffRatingSubmitResponse {
-  const course = findCourse(userId, courseId);
-  const ratingDistribution = ensureRatingDistribution(course);
-  const ratingKey = String(body.rating) as RatingKey;
-  ratingDistribution[ratingKey] = (ratingDistribution[ratingKey] ?? 0) + 1;
-  const rating = getRatingAverage(ratingDistribution);
-
-  course.rating = rating;
-
-  if (course.details) {
-    course.details.rating = rating;
-    course.details.completionRating = {
-      ...course.details.completionRating,
-      initialValue: body.rating,
-      submitted: true,
-    };
-  }
-
-  return {
-    rating,
-    ratingCount: getRatingCount(ratingDistribution),
-    ratingDistribution: clone(ratingDistribution),
-    submitted: true,
-  };
-}
-
-export function startCourse(userId: string, courseId: string): BffCourseActionResponse {
-  const course = findCourse(userId, courseId);
-  const details = findCourseDetails(course);
-
-  if (course.statusValue === 'not-started') {
-    course.statusValue = 'in-progress';
-    course.statusBadge = getStatusBadge('in-progress');
-    course.progress = course.progress ?? 0;
-    details.progress = details.progress ?? 0;
-  }
-
-  const nextContentId = getFirstIncompleteContent(details.chapters)?.id;
-
-  return {
-    course: clone(course),
-    ...(nextContentId ? { nextContentId } : {}),
-    redirectUrl: `/courses/${course.id}`,
-  };
-}
-
-function normalizeAdminCourse(course: BffCourse, courseId = course.id): BffCourse {
-  const normalizedCourse = clone({ ...course, id: courseId });
-  const chapters = normalizedCourse.details?.chapters ?? [];
-
-  normalizedCourse.chapters = chapters.length;
-  normalizedCourse.progress = normalizedCourse.progress ?? 0;
-  normalizedCourse.statusValue = normalizedCourse.statusValue ?? getStatusFromProgress(normalizedCourse.progress);
-  normalizedCourse.statusBadge = getStatusBadge(normalizedCourse.statusValue);
-
-  if (normalizedCourse.details) {
-    normalizedCourse.details = {
-      ...normalizedCourse.details,
-      title: normalizedCourse.title,
-      description: normalizedCourse.description,
-      instructor: normalizedCourse.instructor,
-      duration: normalizedCourse.duration,
-      progress: normalizedCourse.progress,
-    };
-  }
-
-  return normalizedCourse;
-}
-
-function mergeCourseProgress(nextCourse: BffCourse, currentCourse: BffCourse): BffCourse {
-  const mergedCourse = clone(nextCourse);
-  const currentContents = new Map(
-    (currentCourse.details?.chapters ?? []).flatMap((chapter) =>
-      (chapter.contents ?? []).map((content) => [content.id, content] as const),
-    ),
-  );
-
-  if (mergedCourse.details) {
-    mergedCourse.details.chapters = mergedCourse.details.chapters.map((chapter) => ({
-      ...chapter,
-      contents: chapter.contents?.map((content) => ({
-        ...content,
-        completed: currentContents.get(content.id)?.completed ?? content.completed ?? false,
-      })),
-    }));
-    mergedCourse.details.completionRating = currentCourse.details?.completionRating;
-  }
-
-  mergedCourse.rating = currentCourse.rating;
-  mergedCourse.ratingDistribution = currentCourse.ratingDistribution;
-  updateCourseProgress(mergedCourse);
-
-  return mergedCourse;
-}
-
-export function createAdminCourse(course: BffCourse): BffCourse {
-  if (courseTemplates.some((currentCourse) => currentCourse.id === course.id)) {
-    throw new HttpError(409, 'A course already has this id.', {
-      details: [{ path: 'body.id', message: `Course ${course.id} already exists.` }],
-    });
-  }
-
-  const normalizedCourse = normalizeAdminCourse(course);
-  courseTemplates.push(clone(normalizedCourse));
-  coursesByUserId.forEach((courses) => courses.push(clone(normalizedCourse)));
-
-  return clone(normalizedCourse);
-}
-
-export function updateAdminCourse(courseId: string, course: BffCourse): BffCourse {
-  const templateIndex = courseTemplates.findIndex((currentCourse) => currentCourse.id === courseId);
-
-  if (templateIndex < 0) {
-    throw new HttpError(404, 'Course not found.', { details: [{ path: 'params.courseId', message: `No course ${courseId}.` }] });
-  }
-
-  const normalizedCourse = normalizeAdminCourse(course, courseId);
-  courseTemplates[templateIndex] = mergeCourseProgress(normalizedCourse, courseTemplates[templateIndex]);
-
-  coursesByUserId.forEach((courses) => {
-    const userCourseIndex = courses.findIndex((currentCourse) => currentCourse.id === courseId);
-
-    if (userCourseIndex >= 0) {
-      courses[userCourseIndex] = mergeCourseProgress(normalizedCourse, courses[userCourseIndex]);
-    } else {
-      courses.push(clone(normalizedCourse));
-    }
-  });
-
-  return clone(normalizedCourse);
-}
-
-export function deleteAdminCourse(courseId: string): void {
-  const templateIndex = courseTemplates.findIndex((course) => course.id === courseId);
-
-  if (templateIndex < 0) {
-    throw new HttpError(404, 'Course not found.', { details: [{ path: 'params.courseId', message: `No course ${courseId}.` }] });
-  }
-
-  courseTemplates.splice(templateIndex, 1);
-  coursesByUserId.forEach((courses) => {
-    const userCourseIndex = courses.findIndex((course) => course.id === courseId);
-    if (userCourseIndex >= 0) courses.splice(userCourseIndex, 1);
-  });
 }

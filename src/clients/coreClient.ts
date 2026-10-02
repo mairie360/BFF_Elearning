@@ -1,23 +1,11 @@
 import axios from 'axios';
 import { getCoreAPIMairie360 } from '@mairie360/core-api-openapi/endpoints/coreAPIMairie360';
 
-function getCoreApiBaseUrl(): string {
-  const configuredUrl = process.env.CORE_API_URL ?? 'localhost';
-  const baseUrl = /^https?:\/\//i.test(configuredUrl) ? configuredUrl : `http://${configuredUrl}`;
-  const url = new URL(baseUrl);
+// Core API is only called through the operations of its published contract
+// (@mairie360/core-api-openapi). The base URL and the caller's session are given per call
+// (`asCaller('CORE_API', authorization)` from ./upstream).
+const coreApiAxios = axios.create({ timeout: 5_000, headers: { Accept: 'application/json' } });
 
-  if (!url.port && process.env.CORE_API_PORT) {
-    url.port = process.env.CORE_API_PORT;
-  }
-
-  return url.toString().replace(/\/$/, '');
-}
-
-const coreApiAxios = axios.create({
-  baseURL: getCoreApiBaseUrl(),
-  timeout: 5_000,
-});
-
-const coreClient = getCoreAPIMairie360(coreApiAxios);
+export const coreClient = getCoreAPIMairie360(coreApiAxios);
 
 export default coreClient;

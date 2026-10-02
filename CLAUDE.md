@@ -33,7 +33,7 @@ npm run contracts:check      # fails if the committed contract or types are stal
 
 ## Environment variables
 
-`dotenv` loads `.env` from the repo root. `PORT` has **no default** — `src/index.ts` exits if it is unset. Local example: `PORT=4006`, `USER_BFF_URL=http://localhost:4000`, `CORE_API_URL` / `CORE_API_PORT`, `ELEARNING_API_URL` / `ELEARNING_API_PORT`. `USER_BFF_URL` defaults to `http://localhost:4000` in `auth.ts` if missing; the others have partial or no fallbacks.
+`dotenv` loads `.env` from the repo root. `PORT`, `USER_BFF_URL`, `CORE_API_URL` and `ELEARNING_API_URL` have **no default** — `src/index.ts` exits if one is unset. Local example: `PORT=4006`, `USER_BFF_URL=http://localhost:4000`, `CORE_API_URL` / `CORE_API_PORT`, `ELEARNING_API_URL` / `ELEARNING_API_PORT`. `src/clients/upstream.ts` builds every base URL (bare host + `*_PORT`, or full URL whose port wins), reads it on each request, and answers 502 when it is missing (there is no `localhost` fallback).
 
 ## Architecture
 
@@ -60,31 +60,33 @@ Every business route:
 1. Validates params/query/body with `schema.safeParse(...)` → on failure `throw validationError('<body|params|query>', error.issues)` (HTTP 400, code `BAD_REQUEST`, one `details` entry per issue with a `path` like `body.rating`).
 2. Calls `getAuthenticatedUser(req)` (`src/routes/Elearning/auth.ts`): requires `Authorization: Bearer <token>`, calls `GET {USER_BFF_URL}/me` with a 5s timeout, maps the response to `CurrentUser`. Missing bearer or BFF User 401/403 → `HttpError(401)`; any other BFF User status, a timeout or a network failure → `HttpError(502)` (the upstream body is never relayed). The user `id` is the JWT `sub` claim, **base64url-decoded but not signature-verified** (trust is delegated to BFF User); it falls back to the user's name if the token has no usable `sub`. Missing `role` defaults to `'Guest'`, missing name to `'Utilisateur'`.
 3. Admin routes (`admin_courses.ts`) then check `user.isAdmin` (derived from a case-insensitive `role === 'admin'` in the `/me` payload) → 403 `FORBIDDEN` otherwise.
-4. Delegates to a pure function in `elearning_helpers.ts`, returns its result as JSON.
+4. Calls the upstream services on behalf of the caller (`callerAuthorization(req)` forwards the bearer): `elearning_upstream.ts` for the E-learning API, `profile.ts` for Core API `patchMe`. `elearning_helpers.ts` holds the pure shaping functions.
 5. Errors are thrown (`HttpError` from `@mairie360/bffs-lib`; Express 5 forwards async rejections) and answered by `notFoundHandler` / `errorHandler()` at the end of `src/app.ts` in the envelope shared by every BFF, `{ error: { code, message, details } }` (schema `ErrorResponse`, registered once in `openapi-registry.ts` with `ErrorResponseSchema.clone()`). The status is kept; `code` derives from it (`NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `BAD_GATEWAY`...); anything unexpected becomes 500 `INTERNAL_ERROR` with a generic message (the real error is only logged). Every authenticated route documents 401/502 through `sessionErrorResponses` (`openapi-registry.ts`); a `/me` 2xx without a `user` object is a 502, never a Guest session.
 
-### Data is in-memory — there is no database
+### No state in the BFF — data comes from the upstream services
 
-`src/routes/Elearning/elearning_helpers.ts` holds everything:
-- `courseTemplates` — the seed catalogue (three hard-coded courses with nested chapters/contents).
-- `coursesByUserId: Map<string, BffCourse[]>` — each user gets a deep clone of the templates on first access; progress and rating mutations happen on that per-user copy.
-- `profileOverridesByUserId: Map<string, ...>` — profile edits are stored as overrides merged onto the `/me` user, not persisted upstream.
-- Admin create/update/delete mutate both `courseTemplates` and every existing per-user array.
+The in-memory mock (hard-coded catalogue, per-user Maps, admin CRUD on an array) was removed in MAIR-401. Mapping:
 
-Restarting the process resets all of it; multiple instances do not share state. `src/clients/elearningClient.ts` (`@mairie360/elearning-api-openapi`) and `src/clients/coreClient.ts` exist but are **not** wired into the business routes — persistence to the upstream E-learning API is future work, not current behavior. `/check_apis` is only a connectivity diagnostic (probes Core and E-learning `/health` independently from `*_API_URL` + `*_API_PORT` read per request, returns 502 with the per-API status if either fails, never the network error); `/health` just reports the BFF process is up.
+- E-learning API *formation* = BFF course, *module* = chapter, *attachment* = content. Upstream numeric ids are exposed as decimal strings and validated (`/^[1-9]\d{0,14}$/`, 400 otherwise).
+- `GET /elearning/catalog`: `getMyFormations` + `getMyFormationById` per formation + `getModule` per module (fan-out with `Promise.all`; only the caller's enrolments are listed). `start` is the same read for one course, it writes nothing.
+- `POST .../complete`: `getModule` (checks the content belongs to the chapter) then `completeModule`, then the course is read again. Progress is per module upstream, so one content completes its whole chapter; `completed: false` → 501.
+- E-learning errors: 401 → 401, 403 (not enrolled) / 404 → 404 on course routes, anything else → 502; text/plain bodies are never relayed.
+- `PATCH /elearning/profile`: `email`/`phone` → Core `patchMe` (400/401/409 kept, else 502), then `/me` is read again; `address`/`city` → 501 before any write.
+- **501 (no upstream operation):** ratings, admin course create/update/delete (after validation + admin check), un-completing a chapter, address/city. `bffs-lib` has no `NOT_IMPLEMENTED` code, so the body code is `INTERNAL_ERROR` with an explicit message.
+- `getMyFormations` is typed by the published package as `AdminFormation` (upstream schema-name clash), but the API also returns `status`; `toCourse` reads it when present.
 
-Values returned to the frontend are always `clone(...)`d before leaving a helper so callers cannot mutate the in-memory store.
+`/check_apis` is only a connectivity diagnostic (probes Core and E-learning `/health` independently through `configuredBaseUrl`, returns 502 with the per-API status if either fails or is not configured, never the network error); `/health` just reports the BFF process is up.
 
 ## Tests
 
-Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/elearning.test.ts` `jest.mock`s `../src/routes/Elearning/auth` to bypass the real `/me` call — follow that pattern for pure shaping tests. Assertions lean on exact payload shapes (e.g. `adminStats` totals), so changing the seed catalogue or the shaping logic in `elearning_helpers.ts` will require updating expected values.
+Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/clients.test.ts` covers the upstream URL configuration. Business behaviour is tested only through the contract-driven upstream mocks below.
 
 ### Tests with contract-driven upstream mocks
 
-`tests/elearning.upstream-mocks.test.ts` imports the **whole app** with the **real** `auth.ts`/axios and serves BFF User (`/me`), Core API and E-learning API (`/health`) from local HTTP servers (`tests/support/contract-mock-server.ts`). Their contracts are rebuilt at test time from the **installed** `@mairie360/bff-user-openapi` (devDependency, aligned with the `bff-user` image of the test stacks), `@mairie360/core-api-openapi` and `@mairie360/elearning-api-openapi` packages (`tests/support/orval-contract.ts` parses the orval `endpoints/*.ts` + `model/*.ts` with the TypeScript compiler API), so bumping a package is enough to test a new contract. The mock rejects paths, methods, params and bodies absent from the contract and validates mocked success responses; orval does not type errors, so mocked error replies need `outOfContract: true`. Every BFF response is checked against `contracts/openapi.json` (status documented + schema), so an undocumented status fails the test. `tests/upstream-contracts.test.ts` pins package versions and the consumed operations.
+`tests/elearning.upstream-mocks.test.ts` imports the **whole app** with the **real** `auth.ts`/axios and serves BFF User (`/me`), Core API (`patchMe`, `/health`) and E-learning API (enrolments, modules, attachments, `completeModule`, `/health`) from local HTTP servers (`tests/support/contract-mock-server.ts`). Their contracts are rebuilt at test time from the **installed** `@mairie360/bff-user-openapi` (devDependency, aligned with the `bff-user` image of the test stacks), `@mairie360/core-api-openapi` and `@mairie360/elearning-api-openapi` packages (`tests/support/orval-contract.ts` parses the orval `endpoints/*.ts` + `model/*.ts` with the TypeScript compiler API), so bumping a package is enough to test a new contract. The mock rejects paths, methods, params and bodies absent from the contract and validates mocked success responses; orval does not type errors, so mocked error replies need `outOfContract: true`. Every BFF response is checked against `contracts/openapi.json` (status documented + schema), so an undocumented status fails the test. `tests/upstream-contracts.test.ts` pins package versions and the consumed operations.
 
 - `USER_BFF_URL` and `CORE_API_*`/`ELEARNING_API_*` are read per request, so tests set them in `beforeEach` (no module reload).
-- State is in-memory per process: use a distinct JWT `sub` per test (`bearer()` in `tests/support/user-fixtures.ts`) and delete admin-created courses.
+- E-learning bodies are built with `formation()` / `learnerModule()` / `attachment()` from `tests/support/user-fixtures.ts` (typed by the package models).
 - `openapi-contract.ts`, `contract-mock-server.ts` and `orval-contract.ts` are shared verbatim with `BFF_user`, `BFF_Calendar` and `BFF_Dashboard`; keep the copies identical.
 
 ## CI / Docker
@@ -105,11 +107,11 @@ non-401/403 answer. The spec requires `bearerAuth` at the top level (`openapi.ts
 k6 mounts `coverage.js` and `contracts/openapi.json`: `load-test.js` has **one handler per
 operation**, and a new route without a handler makes k6 abort at init. Two scenarios: `crud` (2 VUs)
 runs every handler through `coverage.run()` and carries the gate; `reads` (ramp to 20 VUs) replays
-the GET handlers only, so GET handlers must not read `state`. Handlers run path by path in contract
-order and, per path, get → put → post → delete → patch: `POST /elearning/admin/courses` creates a kept
-and a disposable course (unique ids, the in-memory catalogue is shared by the process), DELETE removes
-the disposable one and `cleanup()` the kept one. Every operation gets a `p(95)` threshold from its
-family (`budgetOf`).
+the GET handlers only, so GET handlers must not read `state`. Routes answering 501 (ratings, admin
+courses, address/city) declare it as an expected status (`http.expectedStatuses(501)`), so they do not
+count in `http_req_failed`. The learner handlers use formation `4` / module `11` / attachment `27`, seeded
+by `init-test.sql` with users 1 and 2 enrolled. Every operation gets a `p(95)` threshold from its family
+(`budgetOf`).
 
 ## Pull request reviewers
 

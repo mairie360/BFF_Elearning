@@ -6,13 +6,19 @@
 
 Express 5.2.1 server written in TypeScript. Zod schemas and their OpenAPI registry describe exchanged objects; routers adapt upstream services to interface needs.
 
-`src/app.ts` mounts `/elearning` routes. `auth.ts` calls BFF User `/me` with a 5-second timeout. Helpers construct responses and modify the in-memory catalogue and progress. Administrator routes use the authenticated context’s role.
+`src/app.ts` mounts `/elearning` routes. `auth.ts` calls BFF User `/me` with a 5-second timeout. `elearning_upstream.ts` calls the E-learning API on behalf of the caller (their bearer is forwarded) and `elearning_helpers.ts` shapes its answers; `profile.ts` writes e-mail and phone through Core API. Administrator routes use the authenticated context’s role.
 
 ## Data and persistence
 
-The initial catalogue is defined in `elearning_helpers.ts`. Course edits, progress, ratings and profile overrides are held in memory, including user-keyed maps. BFF User supplies identity. The included Elearning API client and diagnostics do not make this storage persistent.
+The BFF stores nothing: every answer is built from the upstream services during the request, so restarts and replicas are transparent.
 
-Restarting resets in-memory data; multiple instances do not share that state. Contract validation or an HTTP success does not prove durable storage in Elearning API.
+- **Catalogue, course player, start**: E-learning API learner routes (`GET /api/v1/formations/`, `GET /api/v1/formations/{id}/`, `GET /api/v1/formations/{id}/{module}/`). A course is an E-learning *formation*, a chapter a *module*, a content an *attachment*; their numeric ids are exposed as strings (`"4"`). Only the courses the caller is enrolled in are listed (enrolment is done by an administrator in the E-learning API). Starting a course writes nothing: the API records the start when the first chapter is completed.
+- **Content completion**: `PATCH /api/v1/formations/{id}/{module}/`. Progress is tracked per chapter upstream, so completing one content completes its whole chapter; `completed: false` answers 501 (no upstream operation undoes a completion).
+- **Profile**: identity comes from BFF User `/me`; `email` and `phone` are saved by Core API `PATCH /api/v1/user/me/`, then `/me` is read again. `address` and `city` are stored by no service: a body carrying them answers 501 and nothing is written.
+- **Not available yet (501)**: course ratings and course administration (create, update, delete), which have no E-learning API operation. The routes still validate their input and the administrator role first.
+- Not provided by the E-learning API and therefore absent or neutral: categories, instructors, durations, deadlines, badges other than the status badge, `adminStats`, and the notification count (`0`).
+
+Errors of the E-learning API are never relayed: 401 stays 401, a course the caller is not enrolled in (403) or an unknown one (404) is a 404, anything else (5xx, timeout, unexpected body, missing configuration) is a 502.
 
 ## Installation and local startup
 
@@ -56,9 +62,11 @@ Values below are local examples or explicitly described behavior, not production
 | Variable or precedence | Example / stated fallback | Purpose |
 | --- | --- | --- |
 | `PORT` | 4006 | Port used by this local example. |
-| `USER_BFF_URL` | http://localhost:4000 | User identity through `/me`. |
-| `CORE_API_URL` / `CORE_API_PORT` | localhost / 3000 | Core configuration and diagnostics. |
-| `ELEARNING_API_URL` / `ELEARNING_API_PORT` | localhost / 3006 | API client and diagnostics; not the current catalogue store. |
+| `USER_BFF_URL` | http://localhost:4000 | User identity through `/me`. **Required.** |
+| `CORE_API_URL` / `CORE_API_PORT` | localhost / 3000 | Profile writes (`PATCH /api/v1/user/me/`) and diagnostics. **URL required.** |
+| `ELEARNING_API_URL` / `ELEARNING_API_PORT` | localhost / 3006 | Courses, progress and diagnostics. **URL required.** |
+
+Each `*_URL` accepts a bare host (`elearning-api`, completed by `*_PORT`) or a full URL (`http://elearning-api:3006`, where `*_PORT` is ignored). There is no `localhost` fallback: `src/index.ts` exits at startup when one of the three URLs is missing, and a request reaching an unconfigured service answers 502 (`/check_apis` reports it `Unreachable`).
 
 ## Routes and data contract
 
@@ -68,19 +76,19 @@ Inventory extracted from `contracts/openapi.json`. Replace brace parameters with
 | --- | --- | --- | --- |
 | GET | `/health` | — | 200 |
 | GET | `/check_apis` | — | 200, 502 |
-| POST | `/elearning/admin/courses` | application/json | 201, 400, 401, 403, 409, 500, 502 |
-| PATCH | `/elearning/admin/courses/{courseId}` | application/json | 200, 400, 401, 403, 404, 500, 502 |
-| DELETE | `/elearning/admin/courses/{courseId}` | — | 200, 401, 403, 404, 500, 502 |
+| POST | `/elearning/admin/courses` | application/json | 201, 400, 401, 403, 500, 501, 502 |
+| PATCH | `/elearning/admin/courses/{courseId}` | application/json | 200, 400, 401, 403, 500, 501, 502 |
+| DELETE | `/elearning/admin/courses/{courseId}` | — | 200, 401, 403, 500, 501, 502 |
 | GET | `/elearning/catalog` | — | 200, 400, 401, 500, 502 |
-| POST | `/elearning/courses/{courseId}/contents/{contentId}/complete` | application/json | 200, 400, 401, 404, 422, 500, 502 |
+| POST | `/elearning/courses/{courseId}/contents/{contentId}/complete` | application/json | 200, 400, 401, 404, 500, 501, 502 |
 | GET | `/elearning/profile` | — | 200, 401, 500, 502 |
-| PATCH | `/elearning/profile` | application/json | 200, 400, 401, 500, 502 |
-| POST | `/elearning/courses/{courseId}/rating` | application/json | 200, 400, 401, 404, 500, 502 |
-| POST | `/elearning/courses/{courseId}/start` | application/json | 200, 400, 401, 404, 422, 500, 502 |
+| PATCH | `/elearning/profile` | application/json | 200, 400, 401, 409, 500, 501, 502 |
+| POST | `/elearning/courses/{courseId}/rating` | application/json | 200, 400, 401, 500, 501, 502 |
+| POST | `/elearning/courses/{courseId}/start` | application/json | 200, 400, 401, 404, 500, 502 |
 
 ## Session, permissions and errors
 
-Business routes expect a Bearer token and resolve the session through BFF User. Session rejection produces 401; user-service unavailability, or a `/me` response without a `user` object, produces 502. An unexpected error produces 500 without exposing its message; `/check_apis` probes Core and E-learning independently and never returns network details. Course management is restricted to an administrator context by router checks.
+Business routes expect a Bearer token and resolve the session through BFF User; the same token is then forwarded to the E-learning API and Core API. Session rejection produces 401; unavailability of BFF User or of an upstream API, or a `/me` response without a `user` object, produces 502. Path identifiers (`courseId`, `contentId`) and `chapterId` must be positive integers (400 otherwise). Features with no upstream storage answer 501 (code `INTERNAL_ERROR`, explicit message) instead of faking a save. An unexpected error produces 500 without exposing its message; `/check_apis` probes Core and E-learning independently and never returns network details. Course management is restricted to an administrator context by router checks.
 
 Every error, 404 on an unknown route and 400 on an unparsable body included, is answered in the envelope shared by every BFF (`@mairie360/bffs-lib`): `{ "error": { "code": "NOT_FOUND", "message": "Course not found.", "details": [{ "path": "params.courseId", "message": "..." }] } }`. `code` derives from the status (`BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `INTERNAL_ERROR`, `BAD_GATEWAY`); `details` is always an array (one entry per invalid field on a 400). A BFF User status other than 401/403 answers 502.
 
@@ -94,7 +102,7 @@ npm run lint
 npm run build
 ```
 
-The tests in `tests/elearning.upstream-mocks.test.ts` run the whole app with the real axios client against local HTTP servers simulating BFF User, Core API and E-learning API. Their contracts are rebuilt from the installed `@mairie360/bff-user-openapi`, `@mairie360/core-api-openapi` and `@mairie360/elearning-api-openapi` packages (orval types, versions pinned in `package.json`): every outgoing request (path, parameters, JSON body) and every mocked success response is validated against those contracts, and every BFF response against `contracts/openapi.json`. Bumping a package version is enough to test against the new contract; error statuses are not typed by orval and are mocked explicitly.
+The tests in `tests/elearning.upstream-mocks.test.ts` run the whole app with the real axios clients against local HTTP servers simulating BFF User, Core API and E-learning API (enrolments, modules, attachments and module completion). Their contracts are rebuilt from the installed `@mairie360/bff-user-openapi`, `@mairie360/core-api-openapi` and `@mairie360/elearning-api-openapi` packages (orval types, versions pinned in `package.json`): every outgoing request (path, parameters, JSON body) and every mocked success response is validated against those contracts, and every BFF response against `contracts/openapi.json`. Bumping a package version is enough to test against the new contract; error statuses are not typed by orval and are mocked explicitly.
 
 `contracts:generate` exports the runtime registry to `contracts/openapi.json` and regenerates `contracts/bff.d.ts`. `contracts:check` fails when the contract or types are stale. Then run `npm run contracts:sync` in each associated web service and deliver contract changes together.
 
@@ -110,23 +118,25 @@ The Dockerfile currently uses `node:20-alpine` for build and runtime; the image 
 
 `security_test.sh` and `performance_test.sh` test the image named by `IMAGE_REF`: in CI, the image `release-dev` has just published, the same artifact that is then promoted to staging and prod. When `IMAGE_REF` is empty (local use), they first build `bff-elearning:local` from `development.Dockerfile`, which needs `NODE_AUTH_TOKEN` and `./.npmrc`.
 
-`security_test.sh` runs the OWASP ZAP stack of `docker-compose-security.yml`: ZAP replays every operation of `/openapi.json` with a static admin JWT (`sub=1`, HS256, `JWT_SECRET=b"secret"`) and fills bodies, queries and path parameters from the contract examples. `init-test.sql` seeds users 1 (Admin) and 2 (User); the examples name the in-memory courses (`accueil-agents` is read and updated, `relation-usager` is the example of the DELETE route, and course creation uses the unused id `scan-course`). Keep examples and data in sync when adding a route.
+`security_test.sh` runs the OWASP ZAP stack of `docker-compose-security.yml`: ZAP replays every operation of `/openapi.json` with a static admin JWT (`sub=1`, HS256, `JWT_SECRET=b"secret"`) and fills bodies, queries and path parameters from the contract examples. `init-test.sql` seeds users 1 (Admin) and 2 (User) and the E-learning formation of the contract examples (formation `4`, module `11`, attachment `27`), with both users enrolled. Keep examples and data in sync when adding a route.
 
 The ZAP stack carries the OpenAPI coverage gate of `mairie360/CICD` (`tests/zap/zap_hooks.py`), checked out as `cicd-repo/` by the CI job and cloned there by `security_test.sh` / `performance_test.sh` at the pinned `cicd_version` (`CICD_VERSION` overrides it). After the scan, the hook fails when an operation of the contract was never reached, or when an operation that requires `bearerAuth` only got 401/403. Public operations (`/health`, `/check_apis`) declare `security: []` in their `registerPath`; declare it on any new public route.
 
-The k6 stack carries the other half of the gate (`tests/k6/coverage.js`): `load-test.js` holds one handler per operation of `contracts/openapi.json`, so k6 aborts at init when one is missing and fails its `operations_uncovered` threshold when a handler does not send its request. **Adding a route means adding its handler in `load-test.js`.** Two scenarios share the handlers: `crud` (2 VUs) calls every handler once per iteration, writes included, creating and deleting its own courses with unique ids (the catalogue is in memory and shared by the whole process); `reads` (ramp to 20 VUs) replays only the GET handlers. Every operation has a `p(95)` threshold set by its family: 50 ms for `/health`, 300 ms for `/check_apis`, 400 ms for reads, 800 ms for writes; `http_req_failed` must stay below 1 %.
+The k6 stack carries the other half of the gate (`tests/k6/coverage.js`): `load-test.js` holds one handler per operation of `contracts/openapi.json`, so k6 aborts at init when one is missing and fails its `operations_uncovered` threshold when a handler does not send its request. **Adding a route means adding its handler in `load-test.js`.** Two scenarios share the handlers: `crud` (2 VUs) calls every handler once per iteration, writes included (the 501 answers of ratings, course administration and address edits are declared expected statuses); `reads` (ramp to 20 VUs) replays only the GET handlers. Every operation has a `p(95)` threshold set by its family: 50 ms for `/health`, 300 ms for `/check_apis`, 600 ms for reads (BFF User plus the E-learning API fan-out), 800 ms for writes; `http_req_failed` must stay below 1 %.
 
 Before running Docker, check service variables, build secrets and networks in the repository files. Green CI validates its jobs; it does not prove business-service availability in a remote environment.
 
 ## Troubleshooting
 
-If the catalogue rejects the session, check BFF User. Progress disappearing after a restart or between instances is a consequence of the current in-memory design. Distinguish catalogue fixtures from the persistent data expected in a future implementation.
+If the catalogue rejects the session, check BFF User. An empty catalogue means the caller is enrolled in no formation of the E-learning API (an administrator enrols users there). A 502 on every course route usually means `ELEARNING_API_URL` is wrong or the API is down: `/check_apis` tells which service is unreachable.
 
 ## Repository reference
 
 - [src/app.ts](../../src/app.ts)
 - [src/routes/Elearning/auth.ts](../../src/routes/Elearning/auth.ts)
 - [src/routes/Elearning/elearning_helpers.ts](../../src/routes/Elearning/elearning_helpers.ts)
+- [src/routes/Elearning/elearning_upstream.ts](../../src/routes/Elearning/elearning_upstream.ts)
+- [src/clients/upstream.ts](../../src/clients/upstream.ts)
 - [src/routes/Elearning/admin_courses.ts](../../src/routes/Elearning/admin_courses.ts)
 - [src/routes/Elearning/catalog.ts](../../src/routes/Elearning/catalog.ts)
 - [src/clients/elearningClient.ts](../../src/clients/elearningClient.ts)

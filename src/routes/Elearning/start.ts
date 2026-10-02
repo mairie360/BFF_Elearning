@@ -7,8 +7,9 @@ import {
   sessionErrorResponses,
   StartCourseBody,
 } from '../../openapi-registry';
-import { startCourse, validationError } from './elearning_helpers';
-import { getAuthenticatedUser } from './auth';
+import { nextContentId, validationError } from './elearning_helpers';
+import { loadCourse } from './elearning_upstream';
+import { callerAuthorization, getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -16,8 +17,9 @@ registry.registerPath({
   method: 'post',
   path: '/elearning/courses/{courseId}/start',
   tags: ['E-learning'],
-  summary: 'Demarre ou reprend une formation',
-  description: 'Retourne la formation actualisee, le prochain contenu et une URL de reprise optionnelle.',
+  summary: 'Starts or resumes a course',
+  description:
+    'Returns the course with its progress, the next content to open and the course URL. Nothing is written: the E-learning API records the start of a course when its first chapter is completed.',
   request: {
     params: CourseIdParams,
     body: {
@@ -31,7 +33,7 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: 'Formation demarree ou reprise',
+      description: 'Course to start or resume',
       content: {
         'application/json': {
           schema: CourseActionResponse,
@@ -47,15 +49,7 @@ registry.registerPath({
       },
     },
     404: {
-      description: 'Course not found',
-      content: {
-        'application/json': {
-          schema: ErrorResponse,
-        },
-      },
-    },
-    422: {
-      description: 'Course details unavailable',
+      description: 'Unknown course, or the caller is not enrolled in it',
       content: {
         'application/json': {
           schema: ErrorResponse,
@@ -86,8 +80,15 @@ router.post('/:courseId/start', async (req: Request, res: Response) => {
     throw validationError('body', bodyResult.error.issues);
   }
 
-  const user = await getAuthenticatedUser(req);
-  return res.status(200).json(startCourse(user.id, paramsResult.data.courseId));
+  await getAuthenticatedUser(req);
+  const course = await loadCourse(callerAuthorization(req), paramsResult.data.courseId);
+  const next = nextContentId(course);
+
+  return res.status(200).json({
+    course,
+    ...(next ? { nextContentId: next } : {}),
+    redirectUrl: `/courses/${course.id}`,
+  });
 });
 
 export default router;
