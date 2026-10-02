@@ -4,11 +4,13 @@ import {
   CompleteContentBody,
   ContentCompleteResponse,
   CourseContentParams,
+  notImplementedResponse,
   registry,
   sessionErrorResponses,
 } from '../../openapi-registry';
-import { completeCourseContent, validationError } from './elearning_helpers';
-import { getAuthenticatedUser } from './auth';
+import { notImplemented, validationError } from './elearning_helpers';
+import { completeContent } from './elearning_upstream';
+import { callerAuthorization, getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -16,9 +18,9 @@ registry.registerPath({
   method: 'post',
   path: '/elearning/courses/{courseId}/contents/{contentId}/complete',
   tags: ['E-learning'],
-  summary: 'Marque un contenu comme termine ou non termine',
+  summary: 'Marks a content as completed',
   description:
-    'Met a jour la progression de la formation et retourne les chapitres, le chapitre et le contenu actualises.',
+    'Records the completion in the E-learning API, which tracks progress per chapter: completing a content completes its whole chapter. Returns the updated progress, chapters, chapter and content. `completed: false` answers 501 (the E-learning API cannot undo a completion).',
   request: {
     params: CourseContentParams,
     body: {
@@ -32,7 +34,7 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: 'Progression mise a jour',
+      description: 'Progress updated',
       content: {
         'application/json': {
           schema: ContentCompleteResponse,
@@ -48,15 +50,7 @@ registry.registerPath({
       },
     },
     404: {
-      description: 'Course, chapter or content not found',
-      content: {
-        'application/json': {
-          schema: ErrorResponse,
-        },
-      },
-    },
-    422: {
-      description: 'Course details unavailable',
+      description: 'Course, chapter or content not found, or the caller is not enrolled in the course',
       content: {
         'application/json': {
           schema: ErrorResponse,
@@ -72,6 +66,7 @@ registry.registerPath({
         },
       },
     },
+    ...notImplementedResponse,
   },
 });
 
@@ -87,10 +82,14 @@ router.post('/:courseId/contents/:contentId/complete', async (req: Request, res:
     throw validationError('body', bodyResult.error.issues);
   }
 
-  const user = await getAuthenticatedUser(req);
-  return res
-    .status(200)
-    .json(completeCourseContent(user.id, paramsResult.data.courseId, paramsResult.data.contentId, bodyResult.data));
+  await getAuthenticatedUser(req);
+
+  if (!bodyResult.data.completed) {
+    throw notImplemented('The e-learning service cannot mark a chapter as not completed.');
+  }
+
+  const { courseId, contentId } = paramsResult.data;
+  return res.status(200).json(await completeContent(callerAuthorization(req), courseId, bodyResult.data.chapterId, contentId));
 });
 
 export default router;

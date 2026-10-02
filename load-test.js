@@ -17,28 +17,26 @@ import { createCoverage } from '/coverage.js';
 // - `crud` (2 VUs): `coverage.run()` calls every handler once per iteration, reads and writes, so
 //   it carries the coverage gate. Handlers run path by path in contract order and, for one path,
 //   in the order get, put, post, delete, options, head, patch, trace (so DELETE runs before PATCH).
-//   POST /elearning/admin/courses creates two courses with unique ids: DELETE removes the
-//   disposable one, PATCH updates the kept one, which `cleanup()` removes at the end of the
-//   iteration (the catalogue is in memory, shared by every user of the BFF process).
-// - `reads` (up to 20 VUs): replays only the GET handlers, which never depend on `state`.
+//   Ratings, course administration and address edits have no upstream storage yet: they answer 501,
+//   declared as the expected status of their request (`NOT_IMPLEMENTED`).
+// - `reads` (up to 20 VUs): replays only the GET handlers.
 // Every operation gets a p(95) threshold, whose budget depends on its family (`budgetOf`).
 //
 // The BFF resolves the session through BFF User /me: user 1 (Admin) and user 2 (User) are seeded
-// by init-test.sql. Progress, ratings and profile edits are kept per JWT `sub`, on the built-in
-// course `accueil-agents` (content `accueil-1-video` of chapter `accueil-1`).
+// by init-test.sql, both enrolled in the E-learning formation 4 (module 11, attachment 27), which
+// the learner handlers read and complete through the E-learning API.
 // ---------------------------------------------------------------------------
 
 // Must match the JWT_SECRET of the core-api / bff-user services of the test stack.
 const JWT_SECRET = __ENV.JWT_SECRET || 'b"secret"';
 const USER_ID = __ENV.PERF_USER_ID || '2';
 const ADMIN_ID = __ENV.PERF_ADMIN_ID || '1';
-// Built-in course of the in-memory catalogue (elearning_helpers.ts).
-const FIXTURE_COURSE_ID = 'accueil-agents';
-const FIXTURE_CHAPTER_ID = 'accueil-1';
-const FIXTURE_CONTENT_ID = 'accueil-1-video';
-
-// State of the current iteration (module scope is per VU in k6).
-let state = {};
+// E-learning formation seeded by init-test.sql.
+const FIXTURE_COURSE_ID = '4';
+const FIXTURE_CHAPTER_ID = '11';
+const FIXTURE_CONTENT_ID = '27';
+// Routes with no upstream storage yet answer 501: expected, so not counted in http_req_failed.
+const NOT_IMPLEMENTED = { responseCallback: http.expectedStatuses(501) };
 
 function b64url(value) {
   return encoding.b64encode(value, 'rawurl');
@@ -58,18 +56,7 @@ function bearer(token) {
   return { Authorization: `Bearer ${token}` };
 }
 
-function unique(prefix) {
-  return `${prefix}-${__VU}-${__ITER}-${Date.now()}`;
-}
-
-function need(value, what) {
-  if (value === undefined || value === null) {
-    throw new Error(`${what} is missing, an earlier handler of this iteration failed`);
-  }
-  return value;
-}
-
-// PATCH /elearning/admin/courses/{courseId} takes the whole course (id, title, description).
+// The admin course routes take the whole course (id, title, description).
 function courseBody(id, title) {
   return { id, title, description: 'Course created by the k6 load test', category: 'Integration', duration: '1 h' };
 }
@@ -81,25 +68,20 @@ const handlers = {
   'GET /check_apis': ({ request }) =>
     check(request(), { 'check_apis 200': (r) => r.status === 200 }),
 
-  // --- Admin: courses ---
-  // Two courses: one kept for PATCH, one for DELETE (which runs before PATCH).
-  'POST /elearning/admin/courses': ({ request, data }) => {
-    [state.courseId, state.disposableCourseId] = [unique('perf-course'), unique('perf-course-deleted')].map((id) => {
-      const res = request({ body: courseBody(id, 'k6 course'), headers: data.admin });
-      check(res, { 'create course 201': (r) => r.status === 201 });
-      return res.status === 201 ? id : undefined;
-    });
-  },
-  'DELETE /elearning/admin/courses/{courseId}': ({ request, data }) =>
-    check(request({ path: { courseId: need(state.disposableCourseId, 'disposable course') }, headers: data.admin }), {
-      'delete course 200': (r) => r.status === 200,
+  // --- Admin: courses (501 until the E-learning API can edit formations) ---
+  'POST /elearning/admin/courses': ({ request, data }) =>
+    check(request({ body: courseBody('perf-course', 'k6 course'), headers: data.admin, params: NOT_IMPLEMENTED }), {
+      'create course 501': (r) => r.status === 501,
     }),
-  'PATCH /elearning/admin/courses/{courseId}': ({ request, data }) => {
-    const courseId = need(state.courseId, 'created course');
-    check(request({ path: { courseId }, body: courseBody(courseId, 'k6 course, patched'), headers: data.admin }), {
-      'patch course 200': (r) => r.status === 200,
-    });
-  },
+  'DELETE /elearning/admin/courses/{courseId}': ({ request, data }) =>
+    check(request({ path: { courseId: FIXTURE_COURSE_ID }, headers: data.admin, params: NOT_IMPLEMENTED }), {
+      'delete course 501': (r) => r.status === 501,
+    }),
+  'PATCH /elearning/admin/courses/{courseId}': ({ request, data }) =>
+    check(
+      request({ path: { courseId: FIXTURE_COURSE_ID }, body: courseBody(FIXTURE_COURSE_ID, 'k6 course, patched'), headers: data.admin, params: NOT_IMPLEMENTED }),
+      { 'patch course 501': (r) => r.status === 501 },
+    ),
 
   // --- Learner ---
   'GET /elearning/catalog': ({ request }) =>
@@ -117,12 +99,12 @@ const handlers = {
   'GET /elearning/profile': ({ request }) =>
     check(request(), { 'profile 200': (r) => r.status === 200 }),
   'PATCH /elearning/profile': ({ request }) =>
-    check(request({ body: { phone: '0612345678', address: '1 place de la Mairie', city: 'Paris' } }), {
+    check(request({ body: { phone: '0612345678' } }), {
       'patch profile 200': (r) => r.status === 200,
     }),
   'POST /elearning/courses/{courseId}/rating': ({ request }) =>
-    check(request({ path: { courseId: FIXTURE_COURSE_ID }, body: { rating: 5 } }), {
-      'rating 200': (r) => r.status === 200,
+    check(request({ path: { courseId: FIXTURE_COURSE_ID }, body: { rating: 5 }, params: NOT_IMPLEMENTED }), {
+      'rating 501': (r) => r.status === 501,
     }),
   'POST /elearning/courses/{courseId}/start': ({ request }) =>
     check(request({ path: { courseId: FIXTURE_COURSE_ID }, body: { source: 'catalog' } }), {
@@ -133,18 +115,11 @@ const handlers = {
 const coverage = createCoverage(handlers);
 const readOperations = coverage.operations.filter((o) => o.method === 'GET');
 
-// Deletes the course kept by the handlers, so that the in-memory catalogue does not grow.
-function cleanup(data) {
-  if (!state.courseId) return;
-  const op = 'DELETE /elearning/admin/courses/{courseId}';
-  http.del(coverage.url(op, { courseId: state.courseId }), null, { headers: data.admin, tags: { op } });
-}
-
 // p(95) budget of an operation, per family.
 function budgetOf({ op, method }) {
   if (op === 'GET /health') return 50; // process probe
   if (op === 'GET /check_apis') return 300; // -> Core + E-learning /health
-  if (method === 'GET') return 400; // BFF User /me + in-memory shaping
+  if (method === 'GET') return 600; // BFF User /me + E-learning API fan-out (formations, modules)
   return 800; // writes
 }
 
@@ -197,9 +172,7 @@ export function reads(data) {
 }
 
 export function crud(data) {
-  state = {};
   // User token by default; the /elearning/admin/* handlers pass the admin one.
   coverage.run({ headers: data.user, data });
-  cleanup(data);
   sleep(1);
 }

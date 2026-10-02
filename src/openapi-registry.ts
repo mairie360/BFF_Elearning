@@ -202,7 +202,7 @@ export const CourseChapter = z
     id: z.string().openapi({ example: 'accueil-1' }),
     title: z.string().openapi({ example: 'Municipal organisation' }),
     description: z.string().optional(),
-    duration: z.string().openapi({ example: '25 min' }),
+    duration: z.string().optional().openapi({ example: '25 min' }),
     completed: z.boolean().optional(),
     active: z.boolean().optional(),
     contents: z.array(CourseContent).optional(),
@@ -259,9 +259,8 @@ registry.register('CourseChapter', CourseChapter);
 registry.register('ElearningCourseDetails', ElearningCourseDetails);
 registry.register('ElearningCourse', ElearningCourse);
 
-// Creation body: the course with an example id that no seeded course uses, so a generated request
-// (ZAP, Swagger UI) creates a course instead of hitting the 409 of an existing id. Built from the
-// shape (not .extend()) so it is published as a plain object, not an allOf.
+// Creation body of POST /elearning/admin/courses (answers 501 until the E-learning API can create a
+// formation). Built from the shape (not .extend()) so it is published as a plain object, not an allOf.
 export const AdminCourseCreateBody = z
   .object({ ...ElearningCourse.shape, id: z.string().openapi({ example: 'scan-course' }) })
   .openapi('AdminCourseCreateBody', { description: 'Formation à créer' });
@@ -380,40 +379,30 @@ registry.register('ProfileUpdateResponse', ProfileUpdateResponse);
 // ACTIONS
 // =====================
 
-export const CourseIdParams = z.object({
-  courseId: z.string().openapi({
-    description: 'Identifiant de la formation',
-    example: 'accueil-agents',
-  }),
-});
+// E-learning API identifiers are positive integers: the BFF exposes them as decimal strings.
+const NumericId = (description: string, example: string) =>
+  z.string().regex(/^[1-9]\d{0,14}$/, 'Expected a positive integer identifier').openapi({ description, example });
 
-// DELETE gets another seeded course: a scan replaying the examples must not delete the course that
-// the other routes read or update.
-export const DeletedCourseIdParams = z.object({
-  courseId: z.string().openapi({
-    description: 'Identifiant de la formation',
-    example: 'relation-usager',
-  }),
+export const CourseIdParams = z.object({
+  courseId: NumericId('Course (E-learning API formation) identifier', '4'),
 });
 
 export const CourseContentParams = z.object({
-  courseId: z.string().openapi({
-    description: 'Identifiant de la formation',
-    example: 'accueil-agents',
-  }),
-  contentId: z.string().openapi({
-    description: 'Identifiant du contenu',
-    example: 'accueil-1-video',
-  }),
+  courseId: NumericId('Course (E-learning API formation) identifier', '4'),
+  contentId: NumericId('Content (E-learning API attachment) identifier', '27'),
 });
 
 export const CompleteContentBody = z
   .object({
-    chapterId: z.string().openapi({ example: 'accueil-1' }),
-    completed: z.boolean().openapi({ example: true }),
+    chapterId: NumericId('Chapter (E-learning API module) identifier', '11'),
+    completed: z.boolean().openapi({
+      description: 'Only `true` is supported: the E-learning API cannot mark a module as not completed (501).',
+      example: true,
+    }),
   })
   .openapi({
-    description: 'Payload de complétion d’un contenu',
+    description:
+      'Content completion. Progress is tracked per chapter by the E-learning API: completing a content completes its whole chapter.',
   });
 
 export const ContentCompleteResponse = z
@@ -494,7 +483,15 @@ export const sessionErrorResponses = {
     content: { 'application/json': { schema: ErrorResponse } },
   },
   502: {
-    description: 'BFF User is unreachable, failed or answered an unusable body',
+    description: 'BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body',
+    content: { 'application/json': { schema: ErrorResponse } },
+  },
+};
+
+// Features with no upstream equivalent yet: the BFF answers 501 instead of faking persistence.
+export const notImplementedResponse = {
+  501: {
+    description: 'Not available: no upstream service stores this data yet',
     content: { 'application/json': { schema: ErrorResponse } },
   },
 };

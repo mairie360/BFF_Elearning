@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { JsonSchema, OpenApiContract } from './support/openapi-contract';
 import { loadOrvalContract, resolveOrvalPackage } from './support/orval-contract';
-import { coreApiUrls, elearningApiUrls, group, sessionResponse, userBffUrls } from './support/user-fixtures';
+import { attachment, coreApiUrls, elearningApiUrls, formation, group, learnerModule, sessionResponse, userBffUrls } from './support/user-fixtures';
 
-// Les contrats des services amont sont reconstruits depuis les paquets @mairie360/*-openapi installés :
-// monter la version dans package.json suffit à tester le BFF contre le nouveau contrat.
+// The upstream contracts are rebuilt from the installed @mairie360/*-openapi packages: bumping a version in
+// package.json is enough to test the BFF against the new contract.
 
 const PACKAGES = [
   { name: '@mairie360/bff-user-openapi', title: /^bff_user$/, dependencies: 'devDependencies' },
@@ -17,11 +17,16 @@ const userBff = loadOrvalContract('@mairie360/bff-user-openapi');
 const coreApi = loadOrvalContract('@mairie360/core-api-openapi');
 const elearningApi = loadOrvalContract('@mairie360/elearning-api-openapi');
 
-// Opérations amont réellement appelées par le BFF (src/routes/Elearning/auth.ts, src/routes/check_apis.ts),
-// adressées par les helpers d'URL des clients générés.
+// Upstream operations the BFF actually calls (src/routes/Elearning/auth.ts, elearning_upstream.ts, profile.ts,
+// src/routes/check_apis.ts), addressed through the URL helpers of the generated clients.
 const CONSUMED = [
   { contract: userBff, operationId: 'getMe', method: 'get', url: userBffUrls.getGetMeUrl() },
+  { contract: coreApi, operationId: 'patchMe', method: 'patch', url: coreApiUrls.getPatchMeUrl() },
   { contract: coreApi, operationId: 'health', method: 'get', url: coreApiUrls.getHealthUrl() },
+  { contract: elearningApi, operationId: 'getMyFormations', method: 'get', url: elearningApiUrls.getGetMyFormationsUrl() },
+  { contract: elearningApi, operationId: 'getMyFormationById', method: 'get', url: elearningApiUrls.getGetMyFormationByIdUrl(4) },
+  { contract: elearningApi, operationId: 'getModule', method: 'get', url: elearningApiUrls.getGetModuleUrl(4, 11) },
+  { contract: elearningApi, operationId: 'completeModule', method: 'patch', url: elearningApiUrls.getCompleteModuleUrl(4, 11) },
   { contract: elearningApi, operationId: 'health', method: 'get', url: elearningApiUrls.getHealthUrl() },
 ] as const;
 
@@ -63,6 +68,22 @@ describe('upstream fixtures conform to the upstream contracts', () => {
     ['a user without role', sessionResponse({ role: undefined }, [group(9)])],
   ])('BFF User GET /me 200 for %s', (_name, body) => {
     expect(userBff.validate(responseSchema(userBff, 'get', userBffUrls.getGetMeUrl(), 200), JSON.parse(JSON.stringify(body)))).toEqual([]);
+  });
+});
+
+describe('E-learning API fixtures conform to its contract', () => {
+  test.each([
+    ['GET /api/v1/formations/', elearningApiUrls.getGetMyFormationsUrl(), { formations: [formation(4, 'RGPD', 'InProgress')] }],
+    ['GET /api/v1/formations/{id}/', elearningApiUrls.getGetMyFormationByIdUrl(4), { modules: [learnerModule(11, 'Principes', true)] }],
+    ['GET /api/v1/formations/{id}/{module}/', elearningApiUrls.getGetModuleUrl(4, 11), { files: [attachment(27, 'a.pdf'), attachment(28, 'b.mp4', 'Video')] }],
+  ])('%s 200', (_name, url, body) => {
+    expect(elearningApi.validate(responseSchema(elearningApi, 'get', url, 200), JSON.parse(JSON.stringify(body)))).toEqual([]);
+  });
+
+  test('the published model of GET /api/v1/formations/ omits the `status` the API returns (upstream schema name clash)', () => {
+    // Both the learner and the admin list are named GetFormationsResultView upstream, so orval kept the admin one.
+    // The BFF reads `status` when present and derives it from the module progress otherwise.
+    expect(elearningApi.schema('AdminFormation')).not.toHaveProperty('properties.status');
   });
 });
 

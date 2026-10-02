@@ -78,12 +78,19 @@ function mapCurrentUser(body: UserResponse, authorization: string): BffCurrentUs
   };
 }
 
-export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser> {
+/** The caller's `Authorization: Bearer <token>` header, forwarded as is to the upstream services; 401 without one. */
+export function callerAuthorization(req: Request): string {
   const authorization = req.header('authorization')?.trim();
 
   if (!authorization || !/^Bearer\s+\S+$/i.test(authorization)) {
     throw new HttpError(401, 'Missing or invalid session.');
   }
+
+  return authorization;
+}
+
+export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser> {
+  const authorization = callerAuthorization(req);
 
   let body: unknown;
   try {

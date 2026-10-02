@@ -12,15 +12,16 @@ Business domain: E-learning.
 
 ## Available capabilities
 
-- Catalogue with filters, course details and per-user progress.
-- Start or resume a course, complete content and submit ratings.
-- Read and edit the learning profile; administrator course creation, editing and deletion.
+- Catalogue of the courses the user is enrolled in, with filters, course details and progress read from the E-learning API.
+- Start or resume a course and complete its content (progress is saved per chapter by the E-learning API).
+- Read the learning profile and edit e-mail and phone (saved by Core API).
+- Not available yet (answer 501): course ratings, address and city edits, administrator course creation, editing and deletion. No upstream service stores them, and the BFF does not fake their persistence.
 
 ## Typical workflow
 
 1. Validate the session with BFF User and load the catalogue.
 2. Start a course, view its content and record progress.
-3. Retrieve progress and ratings while the BFF process retains its state.
+3. Find the same progress from any instance and after any restart: it is stored by the E-learning API.
 
 ## Role within Mairie360
 
@@ -30,11 +31,11 @@ This repository contains the BFF server and its contract. Associated web service
 
 ## Data and current state
 
-The initial catalogue is defined in `elearning_helpers.ts`. Course edits, progress, ratings and profile overrides are held in memory, including user-keyed maps. BFF User supplies identity. The included Elearning API client and diagnostics do not make this storage persistent.
+The BFF keeps no state. Courses (formations), chapters (modules), contents (attachments), enrolments and progress come from the E-learning API; identity from BFF User; profile writes go to Core API.
 
 ## Scope and limitations
 
-Restarting resets in-memory data; multiple instances do not share that state. Contract validation or an HTTP success does not prove durable storage in Elearning API.
+Only enrolled courses are listed, and enrolment is done by an administrator in the E-learning API. Progress is tracked per chapter, not per content. Ratings, address/city and course administration answer 501 until an upstream service supports them.
 
 ## Developing or operating this module
 

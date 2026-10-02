@@ -1,6 +1,14 @@
 import { Router, Request, Response } from 'express';
-import { ErrorResponse, CourseIdParams, RatingSubmitResponse, registry, sessionErrorResponses, SubmitRatingBody } from '../../openapi-registry';
-import { submitCourseRating, validationError } from './elearning_helpers';
+import {
+  ErrorResponse,
+  CourseIdParams,
+  notImplementedResponse,
+  RatingSubmitResponse,
+  registry,
+  sessionErrorResponses,
+  SubmitRatingBody,
+} from '../../openapi-registry';
+import { notImplemented, validationError } from './elearning_helpers';
 import { getAuthenticatedUser } from './auth';
 
 const router = Router();
@@ -9,8 +17,9 @@ registry.registerPath({
   method: 'post',
   path: '/elearning/courses/{courseId}/rating',
   tags: ['E-learning'],
-  summary: 'Note une formation',
-  description: 'Enregistre une note utilisateur entre 1 et 5 et retourne la repartition mise a jour.',
+  summary: 'Rates a course',
+  description:
+    'Not available yet: the E-learning API does not store ratings, so a valid request from an authenticated caller answers 501. The 200 answer is the contract the route will keep once ratings are persisted upstream.',
   request: {
     params: CourseIdParams,
     body: {
@@ -24,7 +33,7 @@ registry.registerPath({
   },
   responses: {
     200: {
-      description: 'Note enregistree',
+      description: 'Rating recorded',
       content: {
         'application/json': {
           schema: RatingSubmitResponse,
@@ -33,14 +42,6 @@ registry.registerPath({
     },
     400: {
       description: 'Invalid request payload',
-      content: {
-        'application/json': {
-          schema: ErrorResponse,
-        },
-      },
-    },
-    404: {
-      description: 'Course not found',
       content: {
         'application/json': {
           schema: ErrorResponse,
@@ -56,10 +57,11 @@ registry.registerPath({
         },
       },
     },
+    ...notImplementedResponse,
   },
 });
 
-router.post('/:courseId/rating', async (req: Request, res: Response) => {
+router.post('/:courseId/rating', async (req: Request, _res: Response) => {
   const paramsResult = CourseIdParams.safeParse(req.params);
   const bodyResult = SubmitRatingBody.safeParse(req.body);
 
@@ -71,8 +73,8 @@ router.post('/:courseId/rating', async (req: Request, res: Response) => {
     throw validationError('body', bodyResult.error.issues);
   }
 
-  const user = await getAuthenticatedUser(req);
-  return res.status(200).json(submitCourseRating(user.id, paramsResult.data.courseId, bodyResult.data));
+  await getAuthenticatedUser(req);
+  throw notImplemented('Course ratings are not stored by the e-learning service yet.');
 });
 
 export default router;

@@ -488,8 +488,7 @@
         },
         "required": [
           "id",
-          "title",
-          "duration"
+          "title"
         ],
         "description": "Chapitre d’une formation"
       },
@@ -684,8 +683,7 @@
               },
               "required": [
                 "id",
-                "title",
-                "duration"
+                "title"
               ],
               "description": "Chapitre d’une formation"
             }
@@ -1083,8 +1081,7 @@
                   },
                   "required": [
                     "id",
-                    "title",
-                    "duration"
+                    "title"
                   ],
                   "description": "Chapitre d’une formation"
                 }
@@ -1490,8 +1487,7 @@
                   },
                   "required": [
                     "id",
-                    "title",
-                    "duration"
+                    "title"
                   ],
                   "description": "Chapitre d’une formation"
                 }
@@ -2073,8 +2069,7 @@
                         },
                         "required": [
                           "id",
-                          "title",
-                          "duration"
+                          "title"
                         ],
                         "description": "Chapitre d’une formation"
                       }
@@ -2715,8 +2710,7 @@
                             },
                             "required": [
                               "id",
-                              "title",
-                              "duration"
+                              "title"
                             ],
                             "description": "Chapitre d’une formation"
                           }
@@ -3184,8 +3178,7 @@
                       },
                       "required": [
                         "id",
-                        "title",
-                        "duration"
+                        "title"
                       ],
                       "description": "Chapitre d’une formation"
                     }
@@ -3446,8 +3439,9 @@
         "properties": {
           "courseId": {
             "type": "string",
-            "description": "Identifiant de la formation",
-            "example": "accueil-agents"
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Course (E-learning API formation) identifier",
+            "example": "4"
           }
         },
         "required": [
@@ -3459,13 +3453,15 @@
         "properties": {
           "courseId": {
             "type": "string",
-            "description": "Identifiant de la formation",
-            "example": "accueil-agents"
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Course (E-learning API formation) identifier",
+            "example": "4"
           },
           "contentId": {
             "type": "string",
-            "description": "Identifiant du contenu",
-            "example": "accueil-1-video"
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Content (E-learning API attachment) identifier",
+            "example": "27"
           }
         },
         "required": [
@@ -3478,10 +3474,13 @@
         "properties": {
           "chapterId": {
             "type": "string",
-            "example": "accueil-1"
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Chapter (E-learning API module) identifier",
+            "example": "11"
           },
           "completed": {
             "type": "boolean",
+            "description": "Only `true` is supported: the E-learning API cannot mark a module as not completed (501).",
             "example": true
           }
         },
@@ -3489,7 +3488,7 @@
           "chapterId",
           "completed"
         ],
-        "description": "Payload de complétion d’un contenu"
+        "description": "Content completion. Progress is tracked per chapter by the E-learning API: completing a content completes its whole chapter."
       },
       "ContentCompleteResponse": {
         "type": "object",
@@ -3604,8 +3603,7 @@
               },
               "required": [
                 "id",
-                "title",
-                "duration"
+                "title"
               ],
               "description": "Chapitre d’une formation"
             }
@@ -3694,8 +3692,7 @@
             },
             "required": [
               "id",
-              "title",
-              "duration"
+              "title"
             ],
             "description": "Chapitre d’une formation"
           },
@@ -4237,8 +4234,7 @@
                       },
                       "required": [
                         "id",
-                        "title",
-                        "duration"
+                        "title"
                       ],
                       "description": "Chapitre d’une formation"
                     }
@@ -4372,10 +4368,10 @@
         "tags": [
           "Connectivity"
         ],
-        "summary": "Vérifie la connexion avec l'API Core et E-learning (Rust)",
+        "summary": "Checks that Core API and E-learning API answer their /health probe",
         "responses": {
           "200": {
-            "description": "Connexion réussie",
+            "description": "Both APIs are reachable",
             "content": {
               "application/json": {
                 "schema": {
@@ -4385,7 +4381,7 @@
             }
           },
           "502": {
-            "description": "API Core injoignable ou API E-learning injoignable",
+            "description": "Core API or E-learning API is unreachable or not configured",
             "content": {
               "application/json": {
                 "schema": {
@@ -4402,7 +4398,7 @@
         "tags": [
           "E-learning administration"
         ],
-        "summary": "Crée une formation complète",
+        "summary": "Creates a course (not available yet: 501)",
         "requestBody": {
           "required": true,
           "content": {
@@ -4415,7 +4411,7 @@
         },
         "responses": {
           "201": {
-            "description": "Formation créée",
+            "description": "Course created",
             "content": {
               "application/json": {
                 "schema": {
@@ -4806,8 +4802,7 @@
                                 },
                                 "required": [
                                   "id",
-                                  "title",
-                                  "duration"
+                                  "title"
                                 ],
                                 "description": "Chapitre d’une formation"
                               }
@@ -4867,16 +4862,6 @@
               }
             }
           },
-          "409": {
-            "description": "A course already has this id",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "500": {
             "description": "Unexpected server error",
             "content": {
@@ -4887,8 +4872,18 @@
               }
             }
           },
+          "501": {
+            "description": "Not available: no upstream service stores this data yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "502": {
-            "description": "BFF User is unreachable, failed or answered an unusable body",
+            "description": "BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -4905,16 +4900,17 @@
         "tags": [
           "E-learning administration"
         ],
-        "summary": "Modifie une formation complète",
+        "summary": "Updates a course (not available yet: 501)",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Identifiant de la formation",
-              "example": "accueil-agents"
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Course (E-learning API formation) identifier",
+              "example": "4"
             },
             "required": true,
-            "description": "Identifiant de la formation",
+            "description": "Course (E-learning API formation) identifier",
             "name": "courseId",
             "in": "path"
           }
@@ -5308,8 +5304,7 @@
                           },
                           "required": [
                             "id",
-                            "title",
-                            "duration"
+                            "title"
                           ],
                           "description": "Chapitre d’une formation"
                         }
@@ -5335,7 +5330,7 @@
         },
         "responses": {
           "200": {
-            "description": "Formation mise à jour",
+            "description": "Course updated",
             "content": {
               "application/json": {
                 "schema": {
@@ -5726,8 +5721,7 @@
                                 },
                                 "required": [
                                   "id",
-                                  "title",
-                                  "duration"
+                                  "title"
                                 ],
                                 "description": "Chapitre d’une formation"
                               }
@@ -5787,16 +5781,6 @@
               }
             }
           },
-          "404": {
-            "description": "Course not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "500": {
             "description": "Unexpected server error",
             "content": {
@@ -5807,8 +5791,18 @@
               }
             }
           },
+          "501": {
+            "description": "Not available: no upstream service stores this data yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "502": {
-            "description": "BFF User is unreachable, failed or answered an unusable body",
+            "description": "BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -5823,23 +5817,24 @@
         "tags": [
           "E-learning administration"
         ],
-        "summary": "Supprime une formation",
+        "summary": "Deletes a course (not available yet: 501)",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Identifiant de la formation",
-              "example": "relation-usager"
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Course (E-learning API formation) identifier",
+              "example": "4"
             },
             "required": true,
-            "description": "Identifiant de la formation",
+            "description": "Course (E-learning API formation) identifier",
             "name": "courseId",
             "in": "path"
           }
         ],
         "responses": {
           "200": {
-            "description": "Formation supprimée",
+            "description": "Course deleted",
             "content": {
               "application/json": {
                 "schema": {
@@ -5881,16 +5876,6 @@
               }
             }
           },
-          "404": {
-            "description": "Course not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "500": {
             "description": "Unexpected server error",
             "content": {
@@ -5901,8 +5886,18 @@
               }
             }
           },
+          "501": {
+            "description": "Not available: no upstream service stores this data yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "502": {
-            "description": "BFF User is unreachable, failed or answered an unusable body",
+            "description": "BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -5919,8 +5914,8 @@
         "tags": [
           "E-learning"
         ],
-        "summary": "Charge le catalogue E-learning",
-        "description": "Retourne les donnees pretes a afficher pour le catalogue : utilisateur, notifications, filtres, statistiques, formations et footer.",
+        "summary": "Loads the E-learning catalogue",
+        "description": "Ready-to-render catalogue: user, filters, statistics, footer and the courses the caller is enrolled in, with their chapters, contents and progress, read from the E-learning API.",
         "parameters": [
           {
             "schema": {
@@ -5981,7 +5976,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Catalogue charge avec succes",
+            "description": "Catalogue loaded",
             "content": {
               "application/json": {
                 "schema": {
@@ -6593,8 +6588,7 @@
                                       },
                                       "required": [
                                         "id",
-                                        "title",
-                                        "duration"
+                                        "title"
                                       ],
                                       "description": "Chapitre d’une formation"
                                     }
@@ -6708,7 +6702,7 @@
             }
           },
           "502": {
-            "description": "BFF User is unreachable, failed or answered an unusable body",
+            "description": "BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -6725,28 +6719,30 @@
         "tags": [
           "E-learning"
         ],
-        "summary": "Marque un contenu comme termine ou non termine",
-        "description": "Met a jour la progression de la formation et retourne les chapitres, le chapitre et le contenu actualises.",
+        "summary": "Marks a content as completed",
+        "description": "Records the completion in the E-learning API, which tracks progress per chapter: completing a content completes its whole chapter. Returns the updated progress, chapters, chapter and content. `completed: false` answers 501 (the E-learning API cannot undo a completion).",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Identifiant de la formation",
-              "example": "accueil-agents"
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Course (E-learning API formation) identifier",
+              "example": "4"
             },
             "required": true,
-            "description": "Identifiant de la formation",
+            "description": "Course (E-learning API formation) identifier",
             "name": "courseId",
             "in": "path"
           },
           {
             "schema": {
               "type": "string",
-              "description": "Identifiant du contenu",
-              "example": "accueil-1-video"
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Content (E-learning API attachment) identifier",
+              "example": "27"
             },
             "required": true,
-            "description": "Identifiant du contenu",
+            "description": "Content (E-learning API attachment) identifier",
             "name": "contentId",
             "in": "path"
           }
@@ -6760,10 +6756,13 @@
                 "properties": {
                   "chapterId": {
                     "type": "string",
-                    "example": "accueil-1"
+                    "pattern": "^[1-9]\\d{0,14}$",
+                    "description": "Chapter (E-learning API module) identifier",
+                    "example": "11"
                   },
                   "completed": {
                     "type": "boolean",
+                    "description": "Only `true` is supported: the E-learning API cannot mark a module as not completed (501).",
                     "example": true
                   }
                 },
@@ -6771,14 +6770,14 @@
                   "chapterId",
                   "completed"
                 ],
-                "description": "Payload de complétion d’un contenu"
+                "description": "Content completion. Progress is tracked per chapter by the E-learning API: completing a content completes its whole chapter."
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Progression mise a jour",
+            "description": "Progress updated",
             "content": {
               "application/json": {
                 "schema": {
@@ -6894,8 +6893,7 @@
                         },
                         "required": [
                           "id",
-                          "title",
-                          "duration"
+                          "title"
                         ],
                         "description": "Chapitre d’une formation"
                       }
@@ -6984,8 +6982,7 @@
                       },
                       "required": [
                         "id",
-                        "title",
-                        "duration"
+                        "title"
                       ],
                       "description": "Chapitre d’une formation"
                     },
@@ -7081,17 +7078,7 @@
             }
           },
           "404": {
-            "description": "Course, chapter or content not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Course details unavailable",
+            "description": "Course, chapter or content not found, or the caller is not enrolled in the course",
             "content": {
               "application/json": {
                 "schema": {
@@ -7110,8 +7097,18 @@
               }
             }
           },
+          "501": {
+            "description": "Not available: no upstream service stores this data yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "502": {
-            "description": "BFF User is unreachable, failed or answered an unusable body",
+            "description": "BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -7128,11 +7125,11 @@
         "tags": [
           "E-learning"
         ],
-        "summary": "Charge le profil E-learning",
-        "description": "Retourne les informations necessaires au rendu direct de la page profil.",
+        "summary": "Loads the E-learning profile",
+        "description": "The caller as resolved by BFF User `/me`, ready to render on the profile page.",
         "responses": {
           "200": {
-            "description": "Profil charge avec succes",
+            "description": "Profile loaded",
             "content": {
               "application/json": {
                 "schema": {
@@ -7274,7 +7271,7 @@
             }
           },
           "502": {
-            "description": "BFF User is unreachable, failed or answered an unusable body",
+            "description": "BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -7289,8 +7286,8 @@
         "tags": [
           "E-learning"
         ],
-        "summary": "Met a jour les champs editables du profil",
-        "description": "Ignore les champs non editables comme role, isAdmin, service, position et lastConnection.",
+        "summary": "Updates the editable profile fields",
+        "description": "`email` and `phone` are saved by Core API (`PATCH /api/v1/user/me/`), then the profile is read again from BFF User. `address` and `city` are stored by no upstream service: a body carrying them answers 501 and nothing is written. Non-editable fields (role, isAdmin, service, position, lastConnection) are ignored.",
         "requestBody": {
           "required": true,
           "content": {
@@ -7323,7 +7320,7 @@
         },
         "responses": {
           "200": {
-            "description": "Profil mis a jour",
+            "description": "Profile saved, then read again",
             "content": {
               "application/json": {
                 "schema": {
@@ -7405,7 +7402,7 @@
             }
           },
           "400": {
-            "description": "Invalid request payload",
+            "description": "Invalid request payload, or a value Core API refuses (e.g. a phone number that is not 10 to 15 digits)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7424,6 +7421,16 @@
               }
             }
           },
+          "409": {
+            "description": "The e-mail address is already used by another account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected server error",
             "content": {
@@ -7434,8 +7441,18 @@
               }
             }
           },
+          "501": {
+            "description": "Not available: no upstream service stores this data yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "502": {
-            "description": "BFF User is unreachable, failed or answered an unusable body",
+            "description": "BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -7452,17 +7469,18 @@
         "tags": [
           "E-learning"
         ],
-        "summary": "Note une formation",
-        "description": "Enregistre une note utilisateur entre 1 et 5 et retourne la repartition mise a jour.",
+        "summary": "Rates a course",
+        "description": "Not available yet: the E-learning API does not store ratings, so a valid request from an authenticated caller answers 501. The 200 answer is the contract the route will keep once ratings are persisted upstream.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Identifiant de la formation",
-              "example": "accueil-agents"
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Course (E-learning API formation) identifier",
+              "example": "4"
             },
             "required": true,
-            "description": "Identifiant de la formation",
+            "description": "Course (E-learning API formation) identifier",
             "name": "courseId",
             "in": "path"
           }
@@ -7491,7 +7509,7 @@
         },
         "responses": {
           "200": {
-            "description": "Note enregistree",
+            "description": "Rating recorded",
             "content": {
               "application/json": {
                 "schema": {
@@ -7574,16 +7592,6 @@
               }
             }
           },
-          "404": {
-            "description": "Course not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "500": {
             "description": "Unexpected server error",
             "content": {
@@ -7594,8 +7602,18 @@
               }
             }
           },
+          "501": {
+            "description": "Not available: no upstream service stores this data yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "502": {
-            "description": "BFF User is unreachable, failed or answered an unusable body",
+            "description": "BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -7612,17 +7630,18 @@
         "tags": [
           "E-learning"
         ],
-        "summary": "Demarre ou reprend une formation",
-        "description": "Retourne la formation actualisee, le prochain contenu et une URL de reprise optionnelle.",
+        "summary": "Starts or resumes a course",
+        "description": "Returns the course with its progress, the next content to open and the course URL. Nothing is written: the E-learning API records the start of a course when its first chapter is completed.",
         "parameters": [
           {
             "schema": {
               "type": "string",
-              "description": "Identifiant de la formation",
-              "example": "accueil-agents"
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Course (E-learning API formation) identifier",
+              "example": "4"
             },
             "required": true,
-            "description": "Identifiant de la formation",
+            "description": "Course (E-learning API formation) identifier",
             "name": "courseId",
             "in": "path"
           }
@@ -7646,7 +7665,7 @@
         },
         "responses": {
           "200": {
-            "description": "Formation demarree ou reprise",
+            "description": "Course to start or resume",
             "content": {
               "application/json": {
                 "schema": {
@@ -8037,8 +8056,7 @@
                                 },
                                 "required": [
                                   "id",
-                                  "title",
-                                  "duration"
+                                  "title"
                                 ],
                                 "description": "Chapitre d’une formation"
                               }
@@ -8095,17 +8113,7 @@
             }
           },
           "404": {
-            "description": "Course not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Course details unavailable",
+            "description": "Unknown course, or the caller is not enrolled in it",
             "content": {
               "application/json": {
                 "schema": {
@@ -8125,7 +8133,7 @@
             }
           },
           "502": {
-            "description": "BFF User is unreachable, failed or answered an unusable body",
+            "description": "BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {

@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { ErrorResponse, ElearningCatalogQuery, ElearningCatalogResponse, registry, sessionErrorResponses } from '../../openapi-registry';
 import { buildCatalogResponse, validationError } from './elearning_helpers';
-import { getAuthenticatedUser } from './auth';
+import { loadCourses } from './elearning_upstream';
+import { callerAuthorization, getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -9,15 +10,15 @@ registry.registerPath({
   method: 'get',
   path: '/elearning/catalog',
   tags: ['E-learning'],
-  summary: 'Charge le catalogue E-learning',
+  summary: 'Loads the E-learning catalogue',
   description:
-    'Retourne les donnees pretes a afficher pour le catalogue : utilisateur, notifications, filtres, statistiques, formations et footer.',
+    'Ready-to-render catalogue: user, filters, statistics, footer and the courses the caller is enrolled in, with their chapters, contents and progress, read from the E-learning API.',
   request: {
     query: ElearningCatalogQuery,
   },
   responses: {
     200: {
-      description: 'Catalogue charge avec succes',
+      description: 'Catalogue loaded',
       content: {
         'application/json': {
           schema: ElearningCatalogResponse,
@@ -52,7 +53,8 @@ router.get('/', async (req: Request, res: Response) => {
   }
 
   const user = await getAuthenticatedUser(req);
-  return res.status(200).json(buildCatalogResponse(queryResult.data, user));
+  const courses = await loadCourses(callerAuthorization(req));
+  return res.status(200).json(buildCatalogResponse(queryResult.data, user, courses));
 });
 
 export default router;

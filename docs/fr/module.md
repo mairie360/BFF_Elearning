@@ -12,15 +12,16 @@ Domaine fonctionnel: Formation en ligne.
 
 ## Fonctions disponibles
 
-- Catalogue avec filtres, informations de formation et progression par utilisateur.
-- Démarrage ou reprise d’une formation, validation de contenu et notation.
-- Consultation et modification du profil d’apprentissage; création, modification et suppression de formations administrateur.
+- Catalogue des formations auxquelles l’utilisateur est inscrit, avec filtres, informations de formation et progression lues dans l’API E-learning.
+- Démarrage ou reprise d’une formation et validation de ses contenus (progression enregistrée par chapitre par l’API E-learning).
+- Consultation du profil d’apprentissage et modification de l’e-mail et du téléphone (enregistrés par Core API).
+- Pas encore disponible (réponse 501) : notation des formations, modification de l’adresse et de la ville, création, modification et suppression de formations par un administrateur. Aucun service amont ne les stocke et le BFF ne simule pas leur enregistrement.
 
 ## Parcours type
 
 1. Valider la session auprès de BFF User et charger le catalogue.
 2. Démarrer une formation, consulter son contenu et enregistrer la progression.
-3. Retrouver la progression et les notes tant que le processus BFF conserve son état.
+3. Retrouver la même progression depuis n’importe quelle instance et après redémarrage : elle est stockée par l’API E-learning.
 
 ## Place dans Mairie360
 
@@ -30,11 +31,11 @@ Ce dépôt contient le serveur BFF et son contrat. Les web services associés po
 
 ## Données et état actuel
 
-Le catalogue initial est défini dans `elearning_helpers.ts`. Les formations modifiées, progressions, notes et surcharges de profil sont gérées en mémoire, notamment dans des Map indexées par utilisateur. BFF User fournit l’identité. Le client Elearning API et les diagnostics présents ne rendent pas ce stockage persistant.
+Le BFF ne conserve aucun état. Formations, chapitres (modules), contenus (pièces jointes), inscriptions et progression viennent de l’API E-learning ; l’identité de BFF User ; les modifications de profil sont écrites dans Core API.
 
 ## Périmètre et limites
 
-Un redémarrage réinitialise les données en mémoire; plusieurs instances ne partagent pas cet état. La validation du contrat ou un succès HTTP ne prouve pas un enregistrement durable dans Elearning API.
+Seules les formations auxquelles l’utilisateur est inscrit sont listées, et l’inscription est faite par un administrateur dans l’API E-learning. La progression est suivie par chapitre, pas par contenu. Notation, adresse/ville et administration des formations répondent 501 tant qu’aucun service amont ne les prend en charge.
 
 ## Pour développer ou exploiter ce module
 
