@@ -1,3 +1,4 @@
+import { authorization } from '@mairie360/bffs-lib';
 import { Router, Request, Response } from 'express';
 import {
   ErrorResponse,
@@ -10,7 +11,7 @@ import {
 } from '../../openapi-registry';
 import { notImplemented, validationError } from './elearning_helpers';
 import { completeContent } from './elearning_upstream';
-import { callerAuthorization, getAuthenticatedUser } from './auth';
+import { getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -89,7 +90,7 @@ router.post('/:courseId/contents/:contentId/complete', async (req: Request, res:
   }
 
   const { courseId, contentId } = paramsResult.data;
-  return res.status(200).json(await completeContent(callerAuthorization(req), courseId, bodyResult.data.chapterId, contentId));
+  return res.status(200).json(await completeContent(authorization(req), courseId, bodyResult.data.chapterId, contentId));
 });
 
 export default router;

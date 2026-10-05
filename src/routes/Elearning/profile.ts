@@ -1,4 +1,4 @@
-import { HttpError, upstreamStatus } from '@mairie360/bffs-lib';
+import { authorization, HttpError, upstreamStatus } from '@mairie360/bffs-lib';
 import axios from 'axios';
 import { Router, Request, Response } from 'express';
 import { coreClient } from '../../clients/coreClient';
@@ -13,7 +13,7 @@ import {
   UpdateProfileBody,
 } from '../../openapi-registry';
 import { footer, notImplemented, validationError } from './elearning_helpers';
-import { callerAuthorization, getAuthenticatedUser } from './auth';
+import { getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -132,7 +132,7 @@ router.patch('/', async (req: Request, res: Response) => {
   }
 
   try {
-    await coreClient.patchMe({ email, phone }, asCaller('CORE_API', callerAuthorization(req)));
+    await coreClient.patchMe({ email, phone }, asCaller('CORE_API', authorization(req)));
   } catch (error) {
     throw coreError(error);
   }
