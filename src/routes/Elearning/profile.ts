@@ -1,4 +1,4 @@
-import { asCaller, callUpstream, parseRequest } from '@mairie360/bffs-lib';
+import { HttpError, asCaller, callUpstream, parseRequest } from '@mairie360/bffs-lib';
 import { Router, Request, Response } from 'express';
 import { coreClient } from '../../clients/coreClient';
 import { UPSTREAM_TIMEOUT_MS } from '../../clients/upstream';
@@ -103,6 +103,11 @@ router.get('/', async (req: Request, res: Response) => {
   return res.status(200).json({ user, footer: footer() });
 });
 
+const PROFILE_MESSAGES: Record<number, string> = {
+  400: 'The core service refused the profile values.',
+  409: 'This e-mail address is already used by another account.',
+};
+
 router.patch('/', async (req: Request, res: Response) => {
   const { email, phone, address, city } = parseRequest(UpdateProfileBody, req.body, 'body');
 
@@ -117,10 +122,16 @@ router.patch('/', async (req: Request, res: Response) => {
   }
 
   // Core API answers text/plain errors: only the 400, 401 and 409 the route declares are relayed (without their
-  // body), anything else is a 502. PATCH: not retried.
-  await callUpstream('CORE_API', () => coreClient.patchMe({ email, phone }, asCaller('CORE_API', req, UPSTREAM_TIMEOUT_MS)), {
-    declared: [400, 401, 409],
-  });
+  // body), anything else is a 502. The front shows the message, so the 400 and 409 keep a specific one. PATCH: not retried.
+  try {
+    await callUpstream('CORE_API', () => coreClient.patchMe({ email, phone }, asCaller('CORE_API', req, UPSTREAM_TIMEOUT_MS)), {
+      declared: [400, 401, 409],
+    });
+  } catch (error) {
+    const message = error instanceof HttpError ? PROFILE_MESSAGES[error.status] : undefined;
+    if (error instanceof HttpError && message) throw new HttpError(error.status, message, { cause: error });
+    throw error;
+  }
 
   return res.status(200).json({ user: await getAuthenticatedUser(req) });
 });

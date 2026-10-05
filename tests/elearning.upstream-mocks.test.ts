@@ -641,9 +641,9 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test.each([
-      [400, 400, 'BAD_REQUEST', 'Invalid request'],
+      [400, 400, 'BAD_REQUEST', 'The core service refused the profile values.'],
       [401, 401, 'UNAUTHORIZED', 'Authentication required'],
-      [409, 409, 'CONFLICT', 'Conflict with the current state of the resource'],
+      [409, 409, 'CONFLICT', 'This e-mail address is already used by another account.'],
       [500, 502, 'BAD_GATEWAY', 'Upstream service error'],
       [422, 502, 'BAD_GATEWAY', 'Upstream service error'],
     ])('PATCH /elearning/profile maps a Core %i to %i without its body', async (coreStatus, status, code, message) => {
