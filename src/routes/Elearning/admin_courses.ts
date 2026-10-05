@@ -89,6 +89,7 @@ registry.registerPath({
     403: commonResponses[403],
     500: commonResponses[500],
     502: commonResponses[502],
+    503: commonResponses[503],
     501: commonResponses[501],
   },
 });

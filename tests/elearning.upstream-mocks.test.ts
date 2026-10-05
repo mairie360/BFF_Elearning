@@ -185,15 +185,24 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(response.body).toEqual({ error: { code: 'BAD_GATEWAY', message: 'The user service is unavailable.', details: [] } });
     });
 
-    test('answers 502 when USER_BFF_URL is not configured, instead of calling localhost', async () => {
+    test('answers 503 when USER_BFF_URL is not configured, instead of calling localhost', async () => {
       delete process.env.USER_BFF_URL;
       jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
       const response = await withSession(request(app).get('/elearning/profile'), 'agent-unconfigured');
 
-      expect(response.status).toBe(502);
+      expect(response.status).toBe(503);
       expectBffContract('get', '/elearning/profile', response);
-      expect(response.body).toEqual({ error: { code: 'BAD_GATEWAY', message: 'The user service is unavailable.', details: [] } });
+      expect(response.body).toEqual({ error: { code: 'SERVICE_UNAVAILABLE', message: 'The USER_BFF service is not configured.', details: [] } });
+      expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+    });
+
+    test('answers 401 rather than 503 to a caller without session, even when nothing is configured', async () => {
+      delete process.env.USER_BFF_URL;
+
+      const response = await request(app).get('/elearning/profile');
+
+      expect(response.status).toBe(401);
     });
 
     test('answers 502 when BFF User is unreachable', async () => {
@@ -439,15 +448,15 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(response.body).toEqual({ error: { code: 'BAD_GATEWAY', message: 'The e-learning service is unavailable.', details: [] } });
     });
 
-    test('answers 502 when ELEARNING_API_URL is not configured, instead of calling localhost', async () => {
+    test('answers 503 when ELEARNING_API_URL is not configured, instead of calling localhost', async () => {
       delete process.env.ELEARNING_API_URL;
       jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
       const response = await withSession(request(app).get('/elearning/catalog'), 'config-agent');
 
-      expect(response.status).toBe(502);
+      expect(response.status).toBe(503);
       expectBffContract('get', '/elearning/catalog', response);
-      expect(response.body.error.message).toBe('The e-learning service is unavailable.');
+      expect(response.body.error).toEqual({ code: 'SERVICE_UNAVAILABLE', message: 'The ELEARNING_API service is not configured.', details: [] });
       expect(elearningApi.requests).toHaveLength(0);
     });
 
@@ -610,6 +619,19 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(response.status).toBe(status);
       expectBffContract('patch', '/elearning/profile', response);
       expect(response.body).toEqual({ error: { code, message, details: [] } });
+    });
+
+    test('PATCH /elearning/profile answers 503 when CORE_API_URL is not configured, and writes nothing', async () => {
+      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      userBff.on('get', USER_BFF.me, { body: sessionResponse() });
+      delete process.env.CORE_API_URL;
+
+      const response = await withSession(request(app).patch('/elearning/profile'), 'profile-agent').send({ email: 'new@mairie.test' });
+
+      expect(response.status).toBe(503);
+      expectBffContract('patch', '/elearning/profile', response);
+      expect(response.body.error).toEqual({ code: 'SERVICE_UNAVAILABLE', message: 'The CORE_API service is not configured.', details: [] });
+      expect(coreApi.requests).toHaveLength(0);
     });
 
     test('hides unexpected errors behind a generic 500', async () => {

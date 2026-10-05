@@ -483,7 +483,11 @@ export const sessionErrorResponses = {
     content: { 'application/json': { schema: ErrorResponse } },
   },
   502: {
-    description: 'BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body',
+    description: 'BFF User or an upstream API is unreachable, failed or answered an unusable body',
+    content: { 'application/json': { schema: ErrorResponse } },
+  },
+  503: {
+    description: 'BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)',
     content: { 'application/json': { schema: ErrorResponse } },
   },
 };

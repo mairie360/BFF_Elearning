@@ -18,13 +18,13 @@ Le BFF ne stocke rien : chaque réponse est construite à partir des services am
 - **Pas encore disponible (501)** : la notation des formations et l’administration des formations (création, modification, suppression), sans opération dans l’API E-learning. Les routes valident tout de même leur entrée et le rôle administrateur d’abord.
 - Non fournis par l’API E-learning, donc absents ou neutres : catégories, formateurs, durées, échéances, badges autres que celui du statut, `adminStats` et le nombre de notifications (`0`).
 
-Les erreurs de l’API E-learning ne sont jamais relayées : 401 reste 401, une formation à laquelle l’appelant n’est pas inscrit (403) ou inconnue (404) donne 404, tout le reste (5xx, délai dépassé, corps inattendu, configuration absente) donne 502.
+Les erreurs de l’API E-learning ne sont jamais relayées : 401 reste 401, une formation à laquelle l’appelant n’est pas inscrit (403) ou inconnue (404) donne 404, tout le reste (5xx, délai dépassé, corps inattendu) donne 502. Un `ELEARNING_API_URL` absent ou invalide donne 503.
 
 Un redémarrage réinitialise les données en mémoire; plusieurs instances ne partagent pas cet état. La validation du contrat ou un succès HTTP ne prouve pas un enregistrement durable dans Elearning API.
 
 ## Installation et lancement local
 
-Utiliser Node.js 22 pour reproduire le job de contrats et npm avec le fichier de verrouillage versionné. Les versions des autres jobs et de Docker sont précisées plus bas.
+Utiliser Node.js 24 pour reproduire les jobs de CI et npm avec le fichier de verrouillage versionné. Les versions des autres jobs et de Docker sont précisées plus bas.
 
 Les dépendances privées `@mairie360/*` nécessitent un accès GitHub Packages. Configurer `NODE_AUTH_TOKEN` dans l’environnement avec un jeton autorisé à lire ces packages, conformément à `.npmrc`. Ne pas enregistrer la valeur dans Git.
 
@@ -64,11 +64,12 @@ Les valeurs ci-dessous sont des exemples locaux ou des comportements expliciteme
 | Variable ou priorité | Exemple / repli indiqué | Rôle |
 | --- | --- | --- |
 | `PORT` | 4006 | Port de cet exemple local. |
+| `TRUST_PROXY` | absent (`false`) | `trust proxy` d’Express : `true`, un nombre de sauts ou une liste d’adresses/sous-réseaux. |
 | `USER_BFF_URL` | http://localhost:4000 | Identité de l’utilisateur via `/me`. **Obligatoire.** |
 | `CORE_API_URL` / `CORE_API_PORT` | localhost / 3000 | Écriture du profil (`PATCH /api/v1/user/me/`) et diagnostic. **URL obligatoire.** |
 | `ELEARNING_API_URL` / `ELEARNING_API_PORT` | localhost / 3006 | Formations, progression et diagnostic. **URL obligatoire.** |
 
-Chaque `*_URL` accepte un hôte seul (`elearning-api`, complété par `*_PORT`) ou une URL complète (`http://elearning-api:3006`, `*_PORT` est alors ignoré). Il n’y a aucun repli sur `localhost` : `src/index.ts` s’arrête au démarrage si l’une des trois URL manque, et une requête vers un service non configuré répond 502 (`/check_apis` le signale `Unreachable`).
+Chaque `*_URL` accepte un hôte seul (`elearning-api`, complété par `*_PORT`) ou une URL complète (`http://elearning-api:3006`, `*_PORT` est alors ignoré). Chaque URL est lue à chaque appel via `baseUrl` de `@mairie360/bffs-lib`. Il n’y a aucun repli sur `localhost` : `src/index.ts` charge `.env` en premier (`import 'dotenv/config'`), puis refuse de démarrer (`assertConfigured`) si l’une des trois URL manque ou est invalide, en les nommant toutes ; une requête vers un service non configuré répond 503 `SERVICE_UNAVAILABLE` (`/check_apis` le signale `Unreachable`).
 
 ## Routes et contrat de données
 
@@ -78,19 +79,19 @@ Inventaire extrait de `contracts/openapi.json`. Les paramètres entre accolades 
 | --- | --- | --- | --- |
 | GET | `/health` | — | 200 |
 | GET | `/check_apis` | — | 200, 502 |
-| POST | `/elearning/admin/courses` | application/json | 201, 400, 401, 403, 500, 501, 502 |
-| PATCH | `/elearning/admin/courses/{courseId}` | application/json | 200, 400, 401, 403, 500, 501, 502 |
-| DELETE | `/elearning/admin/courses/{courseId}` | — | 200, 401, 403, 500, 501, 502 |
-| GET | `/elearning/catalog` | — | 200, 400, 401, 500, 502 |
-| POST | `/elearning/courses/{courseId}/contents/{contentId}/complete` | application/json | 200, 400, 401, 404, 500, 501, 502 |
-| GET | `/elearning/profile` | — | 200, 401, 500, 502 |
-| PATCH | `/elearning/profile` | application/json | 200, 400, 401, 409, 500, 501, 502 |
-| POST | `/elearning/courses/{courseId}/rating` | application/json | 200, 400, 401, 500, 501, 502 |
-| POST | `/elearning/courses/{courseId}/start` | application/json | 200, 400, 401, 404, 500, 502 |
+| POST | `/elearning/admin/courses` | application/json | 201, 400, 401, 403, 500, 501, 502, 503 |
+| PATCH | `/elearning/admin/courses/{courseId}` | application/json | 200, 400, 401, 403, 500, 501, 502, 503 |
+| DELETE | `/elearning/admin/courses/{courseId}` | — | 200, 401, 403, 500, 501, 502, 503 |
+| GET | `/elearning/catalog` | — | 200, 400, 401, 500, 502, 503 |
+| POST | `/elearning/courses/{courseId}/contents/{contentId}/complete` | application/json | 200, 400, 401, 404, 500, 501, 502, 503 |
+| GET | `/elearning/profile` | — | 200, 401, 500, 502, 503 |
+| PATCH | `/elearning/profile` | application/json | 200, 400, 401, 409, 500, 501, 502, 503 |
+| POST | `/elearning/courses/{courseId}/rating` | application/json | 200, 400, 401, 500, 501, 502, 503 |
+| POST | `/elearning/courses/{courseId}/start` | application/json | 200, 400, 401, 404, 500, 502, 503 |
 
 ## Session, permissions et erreurs
 
-Les routes métier n’acceptent qu’un seul identifiant, l’en-tête `Authorization: Bearer <token>` (le proxy du web service y transforme le cookie `accessToken` ; les cookies et `x-session-token` sont ignorés). Sans lui, elles répondent 401 avant tout appel amont (`requireBearer` de `@mairie360/bffs-lib`) ; sinon elles résolvent la session via BFF User, et le même jeton, normalisé en `Bearer <token>`, est transmis à l’API E-learning et à Core API. L’`id` utilisateur des réponses est celui que renvoie BFF User (le nom de l’utilisateur s’il n’en renvoie pas), jamais une claim lue dans le jeton non vérifié. Les réponses liées à une session portent `Cache-Control: no-store`, et `TRUST_PROXY` règle le `trust proxy` d’Express (absent : aucun proxy de confiance). Les refus de session produisent 401 ; une indisponibilité de BFF User ou d’une API amont, ou une réponse `/me` sans objet `user`, produit 502. Les identifiants de chemin (`courseId`, `contentId`) et `chapterId` doivent être des entiers positifs (400 sinon). Les fonctions sans stockage amont répondent 501 (code `INTERNAL_ERROR`, message explicite) au lieu de simuler un enregistrement. Une erreur imprévue produit 500 sans exposer son message; `/check_apis` sonde Core et E-learning indépendamment et ne renvoie jamais de détail réseau. La gestion des formations est réservée au contexte administrateur selon les contrôles des routeurs.
+Les routes métier n’acceptent qu’un seul identifiant, l’en-tête `Authorization: Bearer <token>` (le proxy du web service y transforme le cookie `accessToken` ; les cookies et `x-session-token` sont ignorés). Sans lui, elles répondent 401 avant tout appel amont (`requireBearer` de `@mairie360/bffs-lib`) ; sinon elles résolvent la session via BFF User, et le même jeton, normalisé en `Bearer <token>`, est transmis à l’API E-learning et à Core API. L’`id` utilisateur des réponses est celui que renvoie BFF User (le nom de l’utilisateur s’il n’en renvoie pas), jamais une claim lue dans le jeton non vérifié. Les réponses liées à une session portent `Cache-Control: no-store`, et `TRUST_PROXY` règle le `trust proxy` d’Express (absent : aucun proxy de confiance). Les refus de session produisent 401 ; une indisponibilité de BFF User ou d’une API amont, ou une réponse `/me` sans objet `user`, produit 502 ; un service amont dont l’URL n’est pas configurée produit 503. Les identifiants de chemin (`courseId`, `contentId`) et `chapterId` doivent être des entiers positifs (400 sinon). Les fonctions sans stockage amont répondent 501 (code `INTERNAL_ERROR`, message explicite) au lieu de simuler un enregistrement. Une erreur imprévue produit 500 sans exposer son message; `/check_apis` sonde Core et E-learning indépendamment et ne renvoie jamais de détail réseau. La gestion des formations est réservée au contexte administrateur selon les contrôles des routeurs.
 
 Toutes les erreurs, y compris le 404 d'une route inconnue et le 400 d'un corps illisible, sont renvoyées dans l'enveloppe commune à tous les BFFs (`@mairie360/bffs-lib`) : `{ "error": { "code": "NOT_FOUND", "message": "Course not found.", "details": [{ "path": "params.courseId", "message": "..." }] } }`. `code` découle du statut (`BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `INTERNAL_ERROR`, `BAD_GATEWAY`) ; `details` est toujours un tableau (une entrée par champ invalide sur un 400). Un statut de BFF User autre que 401/403 donne 502.
 
@@ -112,11 +113,11 @@ Le générateur de types est fixé à `openapi-typescript@7.10.1` dans `scripts/
 
 ## CI/CD et exécution Docker
 
-Le job `contracts.yml` utilise Node.js 22, `actions/checkout@v7` et `actions/setup-node@v7`. Il s’exécute sur push, pull request et lancement manuel; il installe avec `npm ci`, contrôle les contrats et lance les tests dédiés.
+Le job `contracts.yml` utilise Node.js 24, `actions/checkout@v7` et `actions/setup-node@v7`. Il s’exécute sur push, pull request et lancement manuel; il installe avec `npm ci`, contrôle les contrats et lance les tests dédiés.
 
-`cicd.yml` appelle `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v3.0.0`, avec `cicd_version: v3.0.0` et `node_version: "22"`. Les étapes réutilisables et les environnements GitHub déterminent les contrôles, publications et déploiements effectifs.
+`cicd.yml` appelle `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v3.2.0`, avec `cicd_version: v3.2.0` et `node_version: "24"`. Les étapes réutilisables et les environnements GitHub déterminent les contrôles, publications et déploiements effectifs.
 
-Le Dockerfile utilise encore `node:20-alpine` pour la construction et l’exécution; la commande de l’image est `["node", "dist/index.js"]`. Cette version est distincte du job de contrats Node.js 22.
+`Dockerfile` et `development.Dockerfile` utilisent `node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1` (épinglée par digest, le même Node.js 24 que les jobs de CI) ; la commande de l’image est `["node", "dist/index.js"]`.
 
 `security_test.sh` et `performance_test.sh` testent l’image désignée par `IMAGE_REF`: en CI, l’image que `release-dev` vient de publier, soit l’artefact ensuite promu en staging puis en prod. Quand `IMAGE_REF` est vide (usage local), ils construisent d’abord `bff-elearning:local` depuis `development.Dockerfile`, ce qui demande `NODE_AUTH_TOKEN` et `./.npmrc`.
 
@@ -130,7 +131,7 @@ Avant un lancement Docker, vérifier les variables de service, les secrets de bu
 
 ## Diagnostic
 
-Si le catalogue refuse la session, vérifier BFF User. Un catalogue vide signifie que l’appelant n’est inscrit à aucune formation de l’API E-learning (un administrateur y inscrit les utilisateurs). Un 502 sur toutes les routes de formation signale le plus souvent un `ELEARNING_API_URL` erroné ou une API arrêtée : `/check_apis` indique quel service est injoignable.
+Si le catalogue refuse la session, vérifier BFF User. Un catalogue vide signifie que l’appelant n’est inscrit à aucune formation de l’API E-learning (un administrateur y inscrit les utilisateurs). Un 503 sur toutes les routes de formation signale un `ELEARNING_API_URL` absent ; un 502 signale le plus souvent une URL erronée ou une API arrêtée : `/check_apis` indique quel service est injoignable.
 
 ## Repères dans le dépôt
 
