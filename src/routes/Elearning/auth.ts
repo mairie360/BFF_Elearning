@@ -1,4 +1,4 @@
-import { HttpError } from '@mairie360/bffs-lib';
+import { authorization, HttpError } from '@mairie360/bffs-lib';
 import axios from 'axios';
 import type { Request } from 'express';
 import { userBffClient, userBffOptions } from '../../clients/userBffClient';
@@ -10,6 +10,7 @@ type BffCurrentUser = z.infer<typeof CurrentUser>;
 
 type UserResponse = {
   user?: {
+    id?: unknown;
     first_name?: unknown;
     last_name?: unknown;
     name?: unknown;
@@ -20,25 +21,6 @@ type UserResponse = {
   };
   groups?: Array<string | { name?: unknown }>;
 };
-
-type JwtPayload = {
-  sub?: unknown;
-};
-
-function decodeJwtSubject(authorization: string): string | null {
-  const token = authorization.replace(/^Bearer\s+/i, '').trim();
-  const payload = token.split('.')[1];
-
-  if (!payload) return null;
-
-  try {
-    const decoded = Buffer.from(payload, 'base64url').toString('utf8');
-    const subject = (JSON.parse(decoded) as JwtPayload).sub;
-    return typeof subject === 'string' || typeof subject === 'number' ? String(subject) : null;
-  } catch {
-    return null;
-  }
-}
 
 function getGroupName(group: string | { name?: unknown }): string | null {
   if (typeof group === 'string') return group.trim() || null;
@@ -54,7 +36,13 @@ function getInitials(firstName: string, lastName: string, name: string): string 
     .join('') || 'U';
 }
 
-function mapCurrentUser(body: UserResponse, authorization: string): BffCurrentUser {
+/** The user id as resolved by BFF User (never read from the unverified token), or `undefined` when absent. */
+function userId(id: unknown): string | undefined {
+  if (typeof id === 'number' && Number.isSafeInteger(id)) return String(id);
+  return typeof id === 'string' && id.trim() ? id.trim() : undefined;
+}
+
+function mapCurrentUser(body: UserResponse): BffCurrentUser {
   const rawUser = body.user ?? {};
   const firstName = typeof rawUser.first_name === 'string' ? rawUser.first_name.trim() : '';
   const lastName = typeof rawUser.last_name === 'string' ? rawUser.last_name.trim() : '';
@@ -67,7 +55,7 @@ function mapCurrentUser(body: UserResponse, authorization: string): BffCurrentUs
     : [];
 
   return {
-    id: decodeJwtSubject(authorization) ?? name,
+    id: userId(rawUser.id) ?? name,
     name,
     initials: getInitials(firstName, lastName, name),
     ...(typeof rawUser.email === 'string' && rawUser.email.trim() ? { email: rawUser.email.trim() } : {}),
@@ -78,23 +66,16 @@ function mapCurrentUser(body: UserResponse, authorization: string): BffCurrentUs
   };
 }
 
-/** The caller's `Authorization: Bearer <token>` header, forwarded as is to the upstream services; 401 without one. */
-export function callerAuthorization(req: Request): string {
-  const authorization = req.header('authorization')?.trim();
-
-  if (!authorization || !/^Bearer\s+\S+$/i.test(authorization)) {
-    throw new HttpError(401, 'Missing or invalid session.');
-  }
-
-  return authorization;
-}
-
+/**
+ * The caller as resolved by BFF User `/me`, with their `Authorization: Bearer <token>` header forwarded
+ * (401 before any call without one).
+ */
 export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser> {
-  const authorization = callerAuthorization(req);
+  const options = userBffOptions(authorization(req));
 
   let body: unknown;
   try {
-    const response = await userBffClient.getMe(userBffOptions(authorization));
+    const response = await userBffClient.getMe(options);
     body = response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -115,7 +96,7 @@ export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser
     throw new HttpError(502, 'The user service is unavailable.');
   }
 
-  return mapCurrentUser(body as UserResponse, authorization);
+  return mapCurrentUser(body as UserResponse);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

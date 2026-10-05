@@ -74,7 +74,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(response.status).toBe(200);
       expectBffContract('get', '/elearning/profile', response);
       expect(response.body.user).toEqual({
-        id: 'agent-42',
+        id: '2',
         name: 'Alice Martin',
         initials: 'AM',
         email: 'alice.martin@mairie.test',
@@ -101,7 +101,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(response.status).toBe(200);
       expectBffContract('get', '/elearning/profile', response);
       expect(response.body.user).toEqual({
-        id: 'agent-guest', name: 'Alice Martin', initials: 'AM', email: 'alice.martin@mairie.test', role: 'Guest', isAdmin: false,
+        id: '2', name: 'Alice Martin', initials: 'AM', email: 'alice.martin@mairie.test', role: 'Guest', isAdmin: false,
       });
     });
 
@@ -115,8 +115,29 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(401);
       expectBffContract('get', '/elearning/catalog', response);
-      expect(response.body).toEqual({ error: { code: 'UNAUTHORIZED', message: 'Missing or invalid session.', details: [] } });
+      expect(response.body).toEqual({ error: { code: 'UNAUTHORIZED', message: 'Invalid session.', details: [] } });
       expect(userBff.requests).toHaveLength(0);
+    });
+
+    test('takes the user id from BFF User, never from the unverified token', async () => {
+      userBff.on('get', USER_BFF.me, { body: sessionResponse({ id: 57 }) });
+
+      const response = await withSession(request(app).get('/elearning/profile'), 1);
+
+      expect(response.status).toBe(200);
+      expect(response.body.user.id).toBe('57');
+    });
+
+    test('falls back to the user name when BFF User returns no id', async () => {
+      const body = sessionResponse();
+      delete body.user.id;
+      userBff.on('get', USER_BFF.me, { body });
+
+      const response = await withSession(request(app).get('/elearning/profile'), 99);
+
+      expect(response.status).toBe(200);
+      expectBffContract('get', '/elearning/profile', response);
+      expect(response.body.user.id).toBe('Alice Martin');
     });
 
     test.each([401, 403])('turns a BFF User %i into a 401', async (status) => {
@@ -186,6 +207,69 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
   });
 
+  describe('session-bound routes', () => {
+    // Every operation that needs a session, with a valid request so that only the session decides the answer.
+    const SESSION_ROUTES = [
+      ['get', '/elearning/catalog', '/elearning/catalog', undefined],
+      ['get', '/elearning/profile', '/elearning/profile', undefined],
+      ['patch', '/elearning/profile', '/elearning/profile', { email: 'new@mairie.test' }],
+      ['post', '/elearning/courses/4/start', '/elearning/courses/{courseId}/start', {}],
+      ['post', '/elearning/courses/4/contents/27/complete', '/elearning/courses/{courseId}/contents/{contentId}/complete', { chapterId: '11', completed: true }],
+      ['post', '/elearning/courses/4/rating', '/elearning/courses/{courseId}/rating', { rating: 5 }],
+      ['post', '/elearning/admin/courses', '/elearning/admin/courses', { id: 'new-course', title: 'Accessibilité', description: 'Cours', duration: '45 min' }],
+      ['patch', '/elearning/admin/courses/4', '/elearning/admin/courses/{courseId}', { id: '4', title: 'Accessibilité', description: 'Cours', duration: '45 min' }],
+      ['delete', '/elearning/admin/courses/4', '/elearning/admin/courses/{courseId}', undefined],
+    ] as const;
+
+    function send(method: string, url: string, body: object | undefined, headers: Record<string, string>) {
+      let call = (request(app) as unknown as Record<string, (path: string) => request.Test>)[method](url);
+      for (const [name, value] of Object.entries(headers)) call = call.set(name, value);
+      return body === undefined ? call : call.send(body);
+    }
+
+    test.each(SESSION_ROUTES)('%s %s answers 401 before any upstream call without a Bearer token', async (method, url, template, body) => {
+      const response = await send(method, url, body, {});
+
+      expect(response.status).toBe(401);
+      expectBffContract(method, template, response);
+      expect(response.body).toEqual({ error: { code: 'UNAUTHORIZED', message: 'Invalid session.', details: [] } });
+      expect(response.headers['cache-control']).toBe('no-store');
+      expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+    });
+
+    test.each([
+      ['an accessToken cookie', { Cookie: `accessToken=${bearer(2).slice('Bearer '.length)}` }],
+      ['a session cookie', { Cookie: `session=${bearer(2).slice('Bearer '.length)}` }],
+      ['an x-session-token header', { 'x-session-token': bearer(2).slice('Bearer '.length) }],
+      ['a raw token without the Bearer scheme', { Authorization: bearer(2).slice('Bearer '.length) }],
+    ])('ignores %s: only the Authorization Bearer header is a session', async (_label, headers) => {
+      const response = await send('get', '/elearning/catalog', undefined, headers);
+
+      expect(response.status).toBe(401);
+      expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+    });
+
+    test('forwards the token normalised to `Bearer <token>`', async () => {
+      userBff.on('get', USER_BFF.me, { body: sessionResponse() });
+      const token = bearer(2).slice('Bearer '.length);
+
+      const response = await send('get', '/elearning/profile', undefined, { Authorization: `bearer   ${token}` });
+
+      expect(response.status).toBe(200);
+      expect(userBff.calls(USER_BFF.me, 'get')[0].headers.authorization).toBe(`Bearer ${token}`);
+    });
+
+    test('marks session-bound answers as not cacheable, and leaves public ones alone', async () => {
+      userBff.on('get', USER_BFF.me, { body: sessionResponse() });
+
+      const profile = await withSession(request(app).get('/elearning/profile'), 2);
+      const health = await request(app).get('/health');
+
+      expect(profile.headers['cache-control']).toBe('no-store');
+      expect(health.headers['cache-control']).toBeUndefined();
+    });
+  });
+
   describe('learner routes, served by the E-learning API', () => {
     // Enrolments of the caller as the E-learning API returns them: formation 4 is half done (module 11 completed),
     // formation 9 is not started. PATCH .../{moduleId}/ marks a module completed, as the API does.
@@ -230,7 +314,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(200);
       expectBffContract('get', '/elearning/catalog', response);
-      expect(response.body.user).toMatchObject({ id: 'catalog-agent', isAdmin: false });
+      expect(response.body.user).toMatchObject({ id: '2', isAdmin: false });
       expect(response.body.notifications).toEqual({ unreadCount: 0 });
       expect(response.body.catalog).toMatchObject({
         certificationCount: 0,
@@ -464,7 +548,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(200);
       expectBffContract('get', '/elearning/profile', response);
-      expect(response.body.user).toMatchObject({ id: 'profile-agent', email: 'alice.martin@mairie.test', phone: '+33123456789' });
+      expect(response.body.user).toMatchObject({ id: '2', email: 'alice.martin@mairie.test', phone: '+33123456789' });
       expect(coreApi.requests).toHaveLength(0);
     });
 
@@ -478,7 +562,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(200);
       expectBffContract('patch', '/elearning/profile', response);
-      expect(response.body.user).toMatchObject({ id: 'profile-agent', email: 'new@mairie.test', phone: '0262000000', role: 'User', isAdmin: false });
+      expect(response.body.user).toMatchObject({ id: '2', email: 'new@mairie.test', phone: '0262000000', role: 'User', isAdmin: false });
       const [patch] = coreApi.calls(CORE.me, 'patch');
       expect(patch.url.pathname).toBe(coreApiUrls.getPatchMeUrl());
       expect(patch.headers.authorization).toBe(bearer('profile-agent'));
