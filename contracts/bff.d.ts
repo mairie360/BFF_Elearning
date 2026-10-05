@@ -311,8 +311,17 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
                 502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -399,8 +408,17 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
                 502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -782,8 +800,17 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
                 502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1102,8 +1129,17 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
                 502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1311,8 +1347,17 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
                 502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1424,8 +1469,17 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
                 502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1559,8 +1613,17 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
                 502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1670,8 +1733,17 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
                 502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1917,8 +1989,17 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body */
+                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
                 502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };

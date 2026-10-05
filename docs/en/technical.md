@@ -18,11 +18,11 @@ The BFF stores nothing: every answer is built from the upstream services during 
 - **Not available yet (501)**: course ratings and course administration (create, update, delete), which have no E-learning API operation. The routes still validate their input and the administrator role first.
 - Not provided by the E-learning API and therefore absent or neutral: categories, instructors, durations, deadlines, badges other than the status badge, `adminStats`, and the notification count (`0`).
 
-Errors of the E-learning API are never relayed: 401 stays 401, a course the caller is not enrolled in (403) or an unknown one (404) is a 404, anything else (5xx, timeout, unexpected body, missing configuration) is a 502.
+Errors of the E-learning API are never relayed: 401 stays 401, a course the caller is not enrolled in (403) or an unknown one (404) is a 404, anything else (5xx, timeout, unexpected body) is a 502. A missing or invalid `ELEARNING_API_URL` is a 503.
 
 ## Installation and local startup
 
-Use Node.js 22 to reproduce the contract job and npm with the committed lockfile. Other job and Docker versions are detailed below.
+Use Node.js 24 to reproduce the CI jobs and npm with the committed lockfile. Other job and Docker versions are detailed below.
 
 Private `@mairie360/*` dependencies require GitHub Packages access. Set `NODE_AUTH_TOKEN` in the environment to a token allowed to read these packages, as configured in `.npmrc`. Do not commit its value.
 
@@ -62,11 +62,12 @@ Values below are local examples or explicitly described behavior, not production
 | Variable or precedence | Example / stated fallback | Purpose |
 | --- | --- | --- |
 | `PORT` | 4006 | Port used by this local example. |
+| `TRUST_PROXY` | unset (`false`) | Express `trust proxy`: `true`, a number of hops or a list of addresses/subnets. |
 | `USER_BFF_URL` | http://localhost:4000 | User identity through `/me`. **Required.** |
 | `CORE_API_URL` / `CORE_API_PORT` | localhost / 3000 | Profile writes (`PATCH /api/v1/user/me/`) and diagnostics. **URL required.** |
 | `ELEARNING_API_URL` / `ELEARNING_API_PORT` | localhost / 3006 | Courses, progress and diagnostics. **URL required.** |
 
-Each `*_URL` accepts a bare host (`elearning-api`, completed by `*_PORT`) or a full URL (`http://elearning-api:3006`, where `*_PORT` is ignored). There is no `localhost` fallback: `src/index.ts` exits at startup when one of the three URLs is missing, and a request reaching an unconfigured service answers 502 (`/check_apis` reports it `Unreachable`).
+Each `*_URL` accepts a bare host (`elearning-api`, completed by `*_PORT`) or a full URL (`http://elearning-api:3006`, where `*_PORT` is ignored). Every URL is read on each call through `baseUrl` of `@mairie360/bffs-lib`. There is no `localhost` fallback: `src/index.ts` loads `.env` first (`import 'dotenv/config'`), then refuses to start (`assertConfigured`) when one of the three URLs is missing or invalid, naming each of them; a request reaching an unconfigured service answers 503 `SERVICE_UNAVAILABLE` (`/check_apis` reports it `Unreachable`).
 
 ## Routes and data contract
 
@@ -76,19 +77,19 @@ Inventory extracted from `contracts/openapi.json`. Replace brace parameters with
 | --- | --- | --- | --- |
 | GET | `/health` | — | 200 |
 | GET | `/check_apis` | — | 200, 502 |
-| POST | `/elearning/admin/courses` | application/json | 201, 400, 401, 403, 500, 501, 502 |
-| PATCH | `/elearning/admin/courses/{courseId}` | application/json | 200, 400, 401, 403, 500, 501, 502 |
-| DELETE | `/elearning/admin/courses/{courseId}` | — | 200, 401, 403, 500, 501, 502 |
-| GET | `/elearning/catalog` | — | 200, 400, 401, 500, 502 |
-| POST | `/elearning/courses/{courseId}/contents/{contentId}/complete` | application/json | 200, 400, 401, 404, 500, 501, 502 |
-| GET | `/elearning/profile` | — | 200, 401, 500, 502 |
-| PATCH | `/elearning/profile` | application/json | 200, 400, 401, 409, 500, 501, 502 |
-| POST | `/elearning/courses/{courseId}/rating` | application/json | 200, 400, 401, 500, 501, 502 |
-| POST | `/elearning/courses/{courseId}/start` | application/json | 200, 400, 401, 404, 500, 502 |
+| POST | `/elearning/admin/courses` | application/json | 201, 400, 401, 403, 500, 501, 502, 503 |
+| PATCH | `/elearning/admin/courses/{courseId}` | application/json | 200, 400, 401, 403, 500, 501, 502, 503 |
+| DELETE | `/elearning/admin/courses/{courseId}` | — | 200, 401, 403, 500, 501, 502, 503 |
+| GET | `/elearning/catalog` | — | 200, 400, 401, 500, 502, 503 |
+| POST | `/elearning/courses/{courseId}/contents/{contentId}/complete` | application/json | 200, 400, 401, 404, 500, 501, 502, 503 |
+| GET | `/elearning/profile` | — | 200, 401, 500, 502, 503 |
+| PATCH | `/elearning/profile` | application/json | 200, 400, 401, 409, 500, 501, 502, 503 |
+| POST | `/elearning/courses/{courseId}/rating` | application/json | 200, 400, 401, 500, 501, 502, 503 |
+| POST | `/elearning/courses/{courseId}/start` | application/json | 200, 400, 401, 404, 500, 502, 503 |
 
 ## Session, permissions and errors
 
-Business routes accept one credential only, the `Authorization: Bearer <token>` header (the web service proxy turns the `accessToken` cookie into it; cookies and `x-session-token` are ignored). Without it they answer 401 before any upstream call (`requireBearer` from `@mairie360/bffs-lib`); otherwise they resolve the session through BFF User, and the same token, normalised to `Bearer <token>`, is forwarded to the E-learning API and Core API. The user `id` of the answers is the one BFF User returns (the user's name when it returns none), never a claim read from the unverified token. Session-bound answers carry `Cache-Control: no-store`, and `TRUST_PROXY` sets Express' `trust proxy` (unset: no proxy trusted). Session rejection produces 401; unavailability of BFF User or of an upstream API, or a `/me` response without a `user` object, produces 502. Path identifiers (`courseId`, `contentId`) and `chapterId` must be positive integers (400 otherwise). Features with no upstream storage answer 501 (code `INTERNAL_ERROR`, explicit message) instead of faking a save. An unexpected error produces 500 without exposing its message; `/check_apis` probes Core and E-learning independently and never returns network details. Course management is restricted to an administrator context by router checks.
+Business routes accept one credential only, the `Authorization: Bearer <token>` header (the web service proxy turns the `accessToken` cookie into it; cookies and `x-session-token` are ignored). Without it they answer 401 before any upstream call (`requireBearer` from `@mairie360/bffs-lib`); otherwise they resolve the session through BFF User, and the same token, normalised to `Bearer <token>`, is forwarded to the E-learning API and Core API. The user `id` of the answers is the one BFF User returns (the user's name when it returns none), never a claim read from the unverified token. Session-bound answers carry `Cache-Control: no-store`, and `TRUST_PROXY` sets Express' `trust proxy` (unset: no proxy trusted). Session rejection produces 401; unavailability of BFF User or of an upstream API, or a `/me` response without a `user` object, produces 502; an upstream whose URL is not configured produces 503. Path identifiers (`courseId`, `contentId`) and `chapterId` must be positive integers (400 otherwise). Features with no upstream storage answer 501 (code `INTERNAL_ERROR`, explicit message) instead of faking a save. An unexpected error produces 500 without exposing its message; `/check_apis` probes Core and E-learning independently and never returns network details. Course management is restricted to an administrator context by router checks.
 
 Every error, 404 on an unknown route and 400 on an unparsable body included, is answered in the envelope shared by every BFF (`@mairie360/bffs-lib`): `{ "error": { "code": "NOT_FOUND", "message": "Course not found.", "details": [{ "path": "params.courseId", "message": "..." }] } }`. `code` derives from the status (`BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `INTERNAL_ERROR`, `BAD_GATEWAY`); `details` is always an array (one entry per invalid field on a 400). A BFF User status other than 401/403 answers 502.
 
@@ -110,11 +111,11 @@ The type generator is pinned to `openapi-typescript@7.10.1` in `scripts/contract
 
 ## CI/CD and Docker execution
 
-The `contracts.yml` job uses Node.js 22, `actions/checkout@v7` and `actions/setup-node@v7`. It runs on pushes, pull requests and manual dispatch; it installs with `npm ci`, checks contracts and runs the associated tests.
+The `contracts.yml` job uses Node.js 24, `actions/checkout@v7` and `actions/setup-node@v7`. It runs on pushes, pull requests and manual dispatch; it installs with `npm ci`, checks contracts and runs the associated tests.
 
-`cicd.yml` calls `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v3.0.0`, with `cicd_version: v3.0.0` and `node_version: "22"`. Reusable steps and GitHub environments determine actual checks, publications and deployments.
+`cicd.yml` calls `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v3.2.0`, with `cicd_version: v3.2.0` and `node_version: "24"`. Reusable steps and GitHub environments determine actual checks, publications and deployments.
 
-The Dockerfile currently uses `node:20-alpine` for build and runtime; the image command is `["node", "dist/index.js"]`. That version is separate from the Node.js 22 contract job.
+`Dockerfile` and `development.Dockerfile` use `node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1` (pinned by digest, the same Node.js 24 as the CI jobs); the image command is `["node", "dist/index.js"]`.
 
 `security_test.sh` and `performance_test.sh` test the image named by `IMAGE_REF`: in CI, the image `release-dev` has just published, the same artifact that is then promoted to staging and prod. When `IMAGE_REF` is empty (local use), they first build `bff-elearning:local` from `development.Dockerfile`, which needs `NODE_AUTH_TOKEN` and `./.npmrc`.
 
@@ -128,7 +129,7 @@ Before running Docker, check service variables, build secrets and networks in th
 
 ## Troubleshooting
 
-If the catalogue rejects the session, check BFF User. An empty catalogue means the caller is enrolled in no formation of the E-learning API (an administrator enrols users there). A 502 on every course route usually means `ELEARNING_API_URL` is wrong or the API is down: `/check_apis` tells which service is unreachable.
+If the catalogue rejects the session, check BFF User. An empty catalogue means the caller is enrolled in no formation of the E-learning API (an administrator enrols users there). A 503 on every course route means `ELEARNING_API_URL` is missing; a 502 usually means it is wrong or the API is down: `/check_apis` tells which service is unreachable.
 
 ## Repository reference
 

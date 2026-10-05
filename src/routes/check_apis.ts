@@ -2,7 +2,7 @@ import { Router } from 'express';
 import axios from 'axios';
 import { CheckApiResponse, CheckApiResponseSchema } from '../views/check_api_view';
 import { registry } from '../openapi-registry';
-import { configuredBaseUrl } from '../clients/upstream';
+import { baseUrl as upstreamBaseUrl } from '@mairie360/bffs-lib';
 
 const router = Router();
 
@@ -35,10 +35,8 @@ registry.registerPath({
 async function isReachable(service: 'CORE_API' | 'ELEARNING_API'): Promise<boolean> {
   // Read on every call: the configuration can change without reloading the module. The URL may carry
   // its scheme (`http://core-api:3000`) or not (`core-api` + `CORE_API_PORT`).
-  const baseUrl = configuredBaseUrl(service);
-  if (!baseUrl) return false;
-
   try {
+    const baseUrl = upstreamBaseUrl(service);
     const response = await axios.get(`${baseUrl}/health`, { timeout: 5000 });
     return response.status === 200;
   } catch {

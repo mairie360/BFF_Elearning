@@ -1,9 +1,9 @@
+import 'dotenv/config';
 import { openApiDocument as swaggerSpec } from './openapi';
 import { errorHandler, noStore, notFoundHandler, parseTrustProxy, requireBearer } from '@mairie360/bffs-lib';
 import express from 'express';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
-import dotenv from 'dotenv';
 import healthRouter from './routes/health';
 import checkApisRouter from './routes/check_apis';
 import catalogRouter from './routes/Elearning/catalog';
@@ -12,8 +12,6 @@ import contentCompleteRouter from './routes/Elearning/content_complete';
 import ratingRouter from './routes/Elearning/rating';
 import startRouter from './routes/Elearning/start';
 import adminCoursesRouter from './routes/Elearning/admin_courses';
-
-dotenv.config();
 
 const app = express();
 // Client IP (req.ip) as seen behind the ingress: unset or `false` trusts no proxy.

@@ -33,7 +33,7 @@ npm run contracts:check      # fails if the committed contract or types are stal
 
 ## Environment variables
 
-`dotenv` loads `.env` from the repo root. `PORT`, `USER_BFF_URL`, `CORE_API_URL` and `ELEARNING_API_URL` have **no default** — `src/index.ts` exits if one is unset. Local example: `PORT=4006`, `USER_BFF_URL=http://localhost:4000`, `CORE_API_URL` / `CORE_API_PORT`, `ELEARNING_API_URL` / `ELEARNING_API_PORT`. `src/clients/upstream.ts` builds every base URL (bare host + `*_PORT`, or full URL whose port wins), reads it on each request, and answers 502 when it is missing (there is no `localhost` fallback).
+`import 'dotenv/config'` (first line of `src/index.ts` and `src/app.ts`) loads `.env` from the repo root. `PORT`, `USER_BFF_URL`, `CORE_API_URL` and `ELEARNING_API_URL` have **no default** — `src/index.ts` (only when run directly, `require.main === module`) exits if `PORT` is unset and `assertConfigured(UPSTREAM_SERVICES)` names every missing/invalid URL. Local example: `PORT=4006`, `USER_BFF_URL=http://localhost:4000`, `CORE_API_URL` / `CORE_API_PORT`, `ELEARNING_API_URL` / `ELEARNING_API_PORT`. Every base URL goes through lib `baseUrl('<SERVICE>')` (bare host + `*_PORT`, or full URL whose port wins), read on each request; a missing or invalid one answers 503 `SERVICE_UNAVAILABLE` (there is no `localhost` fallback). `TRUST_PROXY` (optional) sets Express `trust proxy`.
 
 ## Architecture
 
@@ -62,7 +62,7 @@ Every business route:
 2. Calls `getAuthenticatedUser(req)` (`src/routes/Elearning/auth.ts`): forwards `authorization(req)` (lib, normalised `Bearer <token>`), calls `GET {USER_BFF_URL}/me` with a 5s timeout, maps the response to `CurrentUser`. Missing bearer or BFF User 401/403 → `HttpError(401)`; any other BFF User status, a timeout or a network failure → `HttpError(502)` (the upstream body is never relayed). The user `id` is `user.id` from the `/me` answer (never read from the unverified token); it falls back to the user's name when BFF User returns none. Missing `role` defaults to `'Guest'`, missing name to `'Utilisateur'`.
 3. Admin routes (`admin_courses.ts`) then check `user.isAdmin` (derived from a case-insensitive `role === 'admin'` in the `/me` payload) → 403 `FORBIDDEN` otherwise.
 4. Calls the upstream services on behalf of the caller (`authorization(req)` from the lib forwards the bearer): `elearning_upstream.ts` for the E-learning API, `profile.ts` for Core API `patchMe`. `elearning_helpers.ts` holds the pure shaping functions.
-5. Errors are thrown (`HttpError` from `@mairie360/bffs-lib`; Express 5 forwards async rejections) and answered by `notFoundHandler` / `errorHandler()` at the end of `src/app.ts` in the envelope shared by every BFF, `{ error: { code, message, details } }` (schema `ErrorResponse`, registered once in `openapi-registry.ts` with `ErrorResponseSchema.clone()`). The status is kept; `code` derives from it (`NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `BAD_GATEWAY`...); anything unexpected becomes 500 `INTERNAL_ERROR` with a generic message (the real error is only logged). Every authenticated route documents 401/502 through `sessionErrorResponses` (`openapi-registry.ts`); a `/me` 2xx without a `user` object is a 502, never a Guest session.
+5. Errors are thrown (`HttpError` from `@mairie360/bffs-lib`; Express 5 forwards async rejections) and answered by `notFoundHandler` / `errorHandler()` at the end of `src/app.ts` in the envelope shared by every BFF, `{ error: { code, message, details } }` (schema `ErrorResponse`, registered once in `openapi-registry.ts` with `ErrorResponseSchema.clone()`). The status is kept; `code` derives from it (`NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `BAD_GATEWAY`...); anything unexpected becomes 500 `INTERNAL_ERROR` with a generic message (the real error is only logged). Every authenticated route documents 401/502/503 through `sessionErrorResponses` (`openapi-registry.ts`); a `/me` 2xx without a `user` object is a 502, never a Guest session.
 
 ### No state in the BFF — data comes from the upstream services
 
@@ -76,7 +76,7 @@ The in-memory mock (hard-coded catalogue, per-user Maps, admin CRUD on an array)
 - **501 (no upstream operation):** ratings, admin course create/update/delete (after validation + admin check), un-completing a chapter, address/city. `bffs-lib` has no `NOT_IMPLEMENTED` code, so the body code is `INTERNAL_ERROR` with an explicit message.
 - `getMyFormations` is typed by the published package as `AdminFormation` (upstream schema-name clash), but the API also returns `status`; `toCourse` reads it when present.
 
-`/check_apis` is only a connectivity diagnostic (probes Core and E-learning `/health` independently through `configuredBaseUrl`, returns 502 with the per-API status if either fails or is not configured, never the network error); `/health` just reports the BFF process is up.
+`/check_apis` is only a connectivity diagnostic (probes Core and E-learning `/health` independently through lib `baseUrl`, returns 502 with the per-API status if either fails or is not configured, never the network error); `/health` just reports the BFF process is up.
 
 ## Tests
 
@@ -92,9 +92,9 @@ Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/clients
 
 ## CI / Docker
 
-- `contracts.yml`: Node 22, `npm ci`, `npm run contracts:check`, `npm test -- --runInBand`.
-- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v3.0.0` (Node 22).
-- Contract tooling targets **Node 22**; the production `Dockerfile` still builds/runs on `node:20-alpine` with `CMD ["node", "dist/index.js"]` and a 180 MB heap cap.
+- `contracts.yml`: Node 24, `npm ci`, `npm run contracts:check`, `npm test -- --runInBand`.
+- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v3.2.0` (`node_version: "24"`).
+- Everything targets **Node 24**; `Dockerfile` and `development.Dockerfile` pin `node:24-alpine@sha256:ebfe2f90…` by digest; the production image runs `CMD ["node", "dist/index.js"]` with a 180 MB heap cap.
 - `docker-compose.yml` is the local dev stack (redis + `elearning-api` + this BFF via `development.Dockerfile`, with `develop.watch` sync on `./src`). GitHub Packages secrets are passed as build secrets (`npmrc`, `node_auth_token`).
 
 ### ZAP OpenAPI coverage gate
