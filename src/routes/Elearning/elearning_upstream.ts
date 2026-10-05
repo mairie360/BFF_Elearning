@@ -1,13 +1,14 @@
-import { HttpError, upstreamStatus } from '@mairie360/bffs-lib';
-import axios from 'axios';
+import { asCaller, HttpError, upstreamError, upstreamStatus, withRetry } from '@mairie360/bffs-lib';
+import type { Request } from 'express';
 import { elearningClient } from '../../clients/elearningClient';
-import { asCaller } from '../../clients/upstream';
+import { UPSTREAM_TIMEOUT_MS } from '../../clients/upstream';
 import {
   type BffChapter,
   type BffContent,
   type BffCourse,
   courseProgress,
   type CourseProgress,
+  isRecord,
   toCourse,
   type UpstreamChapter,
   type UpstreamFormation,
@@ -17,42 +18,47 @@ import {
 // forwarded: the API resolves the user from the JWT and only shows their own enrolments and
 // progress). The upstream text/plain error bodies are never relayed.
 
+type Caller = Pick<Request, 'headers'>;
 type ErrorDetail = { path: string; message: string };
 
-const unavailable = () => new HttpError(502, 'The e-learning service is unavailable.');
+const SERVICE = 'ELEARNING_API';
+
+/** 502 for an E-learning answer without the documented shape (same message as the lib's `ZodError` mapping). */
+const invalidAnswer = () => new HttpError(502, `The ${SERVICE} answer is invalid.`);
 
 function courseNotFound(courseId: string): HttpError {
   return new HttpError(404, 'Course not found.', { details: [{ path: 'params.courseId', message: `No course ${courseId}.` }] });
 }
 
-/**
- * Maps a failed E-learning API call. 401 is a session problem; the 403 "not enrolled" and the 404
- * of the formation routes become the `notFound` error of the route (the caller cannot tell a
- * course they are not enrolled in from a missing one); anything else is a 502.
- */
-function elearningError(error: unknown, notFound?: HttpError): HttpError {
-  if (error instanceof HttpError) return error;
-  const status = axios.isAxiosError(error) ? upstreamStatus(error) : undefined;
-  if (status === 401) return new HttpError(401, 'Expired or invalid session.');
-  if (notFound && (status === 403 || status === 404)) return notFound;
-  return unavailable();
+interface CallOptions {
+  /**
+   * The route's own 404 for an E-learning 403 (not enrolled) or 404: the caller cannot tell a course they
+   * are not enrolled in from a missing one. Without it, both are undeclared and become a 502.
+   */
+  notFound?: (status: 403 | 404) => HttpError;
+  /** Idempotent GET only: retried once on a transient failure. */
+  retry?: boolean;
 }
 
-async function call<T>(request: () => Promise<{ data: T }>, notFound?: HttpError): Promise<T> {
+/**
+ * One E-learning API call, failures mapped by `upstreamError` from the lib (401 relayed, no answer or any
+ * other status: 502), plus the 403/404 -> route-specific 404 mapping the course routes declare.
+ */
+async function call<T>(request: () => Promise<{ data: T }>, options: CallOptions = {}): Promise<T> {
   try {
-    return (await request()).data;
+    return (await (options.retry ? withRetry(request) : request())).data;
   } catch (error) {
-    throw elearningError(error, notFound);
+    const status = error instanceof HttpError ? undefined : upstreamStatus(error);
+    if (options.notFound && (status === 403 || status === 404)) throw options.notFound(status);
+    throw upstreamError(SERVICE, error, [401]);
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+const options = (req: Caller) => asCaller(SERVICE, req, UPSTREAM_TIMEOUT_MS);
 
 /** The array `key` of an upstream body, or a 502 when the answer does not have the documented shape. */
 function arrayOf<T>(body: unknown, key: string): T[] {
-  if (!isRecord(body) || !Array.isArray(body[key])) throw unavailable();
+  if (!isRecord(body) || !Array.isArray(body[key])) throw invalidAnswer();
   return body[key] as T[];
 }
 
@@ -60,36 +66,35 @@ function toNumber(id: string): number {
   return Number.parseInt(id, 10);
 }
 
-async function listFormations(authorization: string): Promise<UpstreamFormation[]> {
-  const body = await call(() => elearningClient.getMyFormations(asCaller('ELEARNING_API', authorization)));
+async function listFormations(req: Caller): Promise<UpstreamFormation[]> {
+  const body = await call(() => elearningClient.getMyFormations(options(req)), { retry: true });
   return arrayOf<UpstreamFormation>(body, 'formations');
 }
 
-async function loadChapters(authorization: string, formationId: number, notFound?: HttpError): Promise<UpstreamChapter[]> {
-  const options = asCaller('ELEARNING_API', authorization);
-  const body = await call(() => elearningClient.getMyFormationById(formationId, options), notFound);
+async function loadChapters(req: Caller, formationId: number, notFound?: () => HttpError): Promise<UpstreamChapter[]> {
+  const read = { retry: true, notFound };
+  const body = await call(() => elearningClient.getMyFormationById(formationId, options(req)), read);
   const modules = arrayOf<UpstreamChapter['module']>(body, 'modules');
 
   return Promise.all(
     modules.map(async (module) => {
-      const moduleBody = await call(() => elearningClient.getModule(formationId, module.id, options), notFound);
+      const moduleBody = await call(() => elearningClient.getModule(formationId, module.id, options(req)), read);
       return { module, files: arrayOf<UpstreamChapter['files'][number]>(moduleBody, 'files') };
     }),
   );
 }
 
 /** Courses the caller is enrolled in, with their chapters, contents and progress. */
-export async function loadCourses(authorization: string): Promise<BffCourse[]> {
-  const formations = await listFormations(authorization);
-  return Promise.all(formations.map(async (formation) => toCourse(formation, await loadChapters(authorization, formation.id))));
+export async function loadCourses(req: Caller): Promise<BffCourse[]> {
+  const formations = await listFormations(req);
+  return Promise.all(formations.map(async (formation) => toCourse(formation, await loadChapters(req, formation.id))));
 }
 
 /** One course of the caller; 404 when it does not exist or the caller is not enrolled in it. */
-export async function loadCourse(authorization: string, courseId: string): Promise<BffCourse> {
-  const notFound = courseNotFound(courseId);
-  const formation = (await listFormations(authorization)).find((entry) => String(entry.id) === courseId);
-  if (!formation) throw notFound;
-  return toCourse(formation, await loadChapters(authorization, formation.id, notFound));
+export async function loadCourse(req: Caller, courseId: string): Promise<BffCourse> {
+  const formation = (await listFormations(req)).find((entry) => String(entry.id) === courseId);
+  if (!formation) throw courseNotFound(courseId);
+  return toCourse(formation, await loadChapters(req, formation.id, () => courseNotFound(courseId)));
 }
 
 export type ContentCompletion = CourseProgress & { chapters: BffChapter[]; chapter: BffChapter; content: BffContent };
@@ -98,41 +103,32 @@ export type ContentCompletion = CourseProgress & { chapters: BffChapter[]; chapt
  * Marks the chapter (E-learning API module) holding `contentId` as completed for the caller, then
  * reads the course again. The content must belong to the chapter, which must belong to the course.
  */
-export async function completeContent(
-  authorization: string,
-  courseId: string,
-  chapterId: string,
-  contentId: string,
-): Promise<ContentCompletion> {
-  const options = asCaller('ELEARNING_API', authorization);
+export async function completeContent(req: Caller, courseId: string, chapterId: string, contentId: string): Promise<ContentCompletion> {
   const formationId = toNumber(courseId);
   const moduleId = toNumber(chapterId);
   const notFound = (path: string, message: string, detail: string) =>
     new HttpError(404, message, { details: [{ path, message: detail } satisfies ErrorDetail] });
 
   // 403: not enrolled in the course; 404: the chapter is not a module of this course.
-  let moduleBody: unknown;
-  try {
-    moduleBody = (await elearningClient.getModule(formationId, moduleId, options)).data;
-  } catch (error) {
-    const status = axios.isAxiosError(error) ? upstreamStatus(error) : undefined;
-    if (status === 403) throw courseNotFound(courseId);
-    if (status === 404) throw notFound('body.chapterId', 'Chapter not found.', `No chapter ${chapterId} in course ${courseId}.`);
-    throw elearningError(error);
-  }
+  const moduleBody = await call(() => elearningClient.getModule(formationId, moduleId, options(req)), {
+    retry: true,
+    notFound: (status) =>
+      status === 403 ? courseNotFound(courseId) : notFound('body.chapterId', 'Chapter not found.', `No chapter ${chapterId} in course ${courseId}.`),
+  });
   const files = arrayOf<UpstreamChapter['files'][number]>(moduleBody, 'files');
   if (!files.some((file) => String(file.id) === contentId)) {
     throw notFound('params.contentId', 'Content not found.', `No content ${contentId} in chapter ${chapterId}.`);
   }
 
-  await call(() => elearningClient.completeModule(formationId, moduleId, options), courseNotFound(courseId));
+  // PATCH: not retried.
+  await call(() => elearningClient.completeModule(formationId, moduleId, options(req)), { notFound: () => courseNotFound(courseId) });
 
-  const course = await loadCourse(authorization, courseId);
+  const course = await loadCourse(req, courseId);
   const chapters = course.details?.chapters ?? [];
   const chapter = chapters.find((entry) => entry.id === chapterId);
   const content = chapter?.contents?.find((entry) => entry.id === contentId);
   // The module was found a moment ago: missing now means the course changed under the request.
-  if (!chapter || !content) throw unavailable();
+  if (!chapter || !content) throw invalidAnswer();
 
   return { ...courseProgress(chapters), chapters, chapter, content };
 }

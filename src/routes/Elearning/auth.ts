@@ -1,7 +1,8 @@
-import { HttpError } from '@mairie360/bffs-lib';
-import axios from 'axios';
+import { asCaller, HttpError, INVALID_SESSION_MESSAGE, upstreamError, upstreamStatus, withRetry } from '@mairie360/bffs-lib';
 import type { Request } from 'express';
-import { userBffClient, userBffOptions } from '../../clients/userBffClient';
+import { userBffClient } from '../../clients/userBffClient';
+import { UPSTREAM_TIMEOUT_MS } from '../../clients/upstream';
+import { isRecord } from './elearning_helpers';
 import { z } from 'zod';
 import { CurrentUser } from '../../openapi-registry';
 
@@ -10,6 +11,7 @@ type BffCurrentUser = z.infer<typeof CurrentUser>;
 
 type UserResponse = {
   user?: {
+    id?: unknown;
     first_name?: unknown;
     last_name?: unknown;
     name?: unknown;
@@ -20,25 +22,6 @@ type UserResponse = {
   };
   groups?: Array<string | { name?: unknown }>;
 };
-
-type JwtPayload = {
-  sub?: unknown;
-};
-
-function decodeJwtSubject(authorization: string): string | null {
-  const token = authorization.replace(/^Bearer\s+/i, '').trim();
-  const payload = token.split('.')[1];
-
-  if (!payload) return null;
-
-  try {
-    const decoded = Buffer.from(payload, 'base64url').toString('utf8');
-    const subject = (JSON.parse(decoded) as JwtPayload).sub;
-    return typeof subject === 'string' || typeof subject === 'number' ? String(subject) : null;
-  } catch {
-    return null;
-  }
-}
 
 function getGroupName(group: string | { name?: unknown }): string | null {
   if (typeof group === 'string') return group.trim() || null;
@@ -54,7 +37,13 @@ function getInitials(firstName: string, lastName: string, name: string): string 
     .join('') || 'U';
 }
 
-function mapCurrentUser(body: UserResponse, authorization: string): BffCurrentUser {
+/** The user id as resolved by BFF User (never read from the unverified token), or `undefined` when absent. */
+function userId(id: unknown): string | undefined {
+  if (typeof id === 'number' && Number.isSafeInteger(id)) return String(id);
+  return typeof id === 'string' && id.trim() ? id.trim() : undefined;
+}
+
+function mapCurrentUser(body: UserResponse): BffCurrentUser {
   const rawUser = body.user ?? {};
   const firstName = typeof rawUser.first_name === 'string' ? rawUser.first_name.trim() : '';
   const lastName = typeof rawUser.last_name === 'string' ? rawUser.last_name.trim() : '';
@@ -67,7 +56,7 @@ function mapCurrentUser(body: UserResponse, authorization: string): BffCurrentUs
     : [];
 
   return {
-    id: decodeJwtSubject(authorization) ?? name,
+    id: userId(rawUser.id) ?? name,
     name,
     initials: getInitials(firstName, lastName, name),
     ...(typeof rawUser.email === 'string' && rawUser.email.trim() ? { email: rawUser.email.trim() } : {}),
@@ -78,46 +67,28 @@ function mapCurrentUser(body: UserResponse, authorization: string): BffCurrentUs
   };
 }
 
-/** The caller's `Authorization: Bearer <token>` header, forwarded as is to the upstream services; 401 without one. */
-export function callerAuthorization(req: Request): string {
-  const authorization = req.header('authorization')?.trim();
-
-  if (!authorization || !/^Bearer\s+\S+$/i.test(authorization)) {
-    throw new HttpError(401, 'Missing or invalid session.');
-  }
-
-  return authorization;
-}
-
+/**
+ * The caller as resolved by BFF User `/me`, with their `Authorization: Bearer <token>` header forwarded
+ * (401 before any call without one, 503 when `USER_BFF_URL` is not configured). A BFF User 401/403 means
+ * the session is refused: 401. Anything else, no answer or an unusable body: 502 (the upstream body is
+ * never relayed).
+ */
 export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser> {
-  const authorization = callerAuthorization(req);
-
   let body: unknown;
   try {
-    const response = await userBffClient.getMe(userBffOptions(authorization));
-    body = response.data;
+    // GET /me is idempotent: retried once on a transient failure.
+    body = (await withRetry(() => userBffClient.getMe(asCaller('USER_BFF', req, UPSTREAM_TIMEOUT_MS)))).data;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new HttpError(401, 'Expired or invalid session.');
-      }
-
-      // Any other status, a timeout or a network failure: the upstream answer is never relayed.
-      throw new HttpError(502, 'The user service is unavailable.');
-    }
-
-    throw error;
+    const status = error instanceof HttpError ? undefined : upstreamStatus(error);
+    if (status === 401 || status === 403) throw new HttpError(401, INVALID_SESSION_MESSAGE, { cause: error });
+    throw upstreamError('USER_BFF', error);
   }
 
   // A 2xx without a `user` object (empty body, text, unexpected JSON) does not prove the session: it must
   // not produce an authenticated "Guest" user.
   if (!isRecord(body) || !isRecord(body.user)) {
-    throw new HttpError(502, 'The user service is unavailable.');
+    throw new HttpError(502, 'The USER_BFF answer is invalid.');
   }
 
-  return mapCurrentUser(body as UserResponse, authorization);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return mapCurrentUser(body as UserResponse);
 }

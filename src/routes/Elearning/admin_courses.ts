@@ -1,4 +1,4 @@
-import { HttpError } from '@mairie360/bffs-lib';
+import { HttpError, parseRequest } from '@mairie360/bffs-lib';
 import { Request, Response, Router } from 'express';
 import {
   AdminCourseCreateBody,
@@ -12,7 +12,7 @@ import {
   sessionErrorResponses,
 } from '../../openapi-registry';
 import { getAuthenticatedUser } from './auth';
-import { notImplemented, validationError } from './elearning_helpers';
+import { notImplemented } from './elearning_helpers';
 
 const router = Router();
 
@@ -89,6 +89,7 @@ registry.registerPath({
     403: commonResponses[403],
     500: commonResponses[500],
     502: commonResponses[502],
+    503: commonResponses[503],
     501: commonResponses[501],
   },
 });
@@ -98,8 +99,7 @@ function ensureAdmin(isAdmin: boolean): void {
 }
 
 router.post('/', async (req: Request, _res: Response) => {
-  const bodyResult = AdminCourseCreateBody.safeParse(req.body);
-  if (!bodyResult.success) throw validationError('body', bodyResult.error.issues);
+  parseRequest(AdminCourseCreateBody, req.body, 'body');
 
   const user = await getAuthenticatedUser(req);
   ensureAdmin(user.isAdmin);
@@ -108,10 +108,8 @@ router.post('/', async (req: Request, _res: Response) => {
 });
 
 router.patch('/:courseId', async (req: Request, _res: Response) => {
-  const paramsResult = CourseIdParams.safeParse(req.params);
-  const bodyResult = ElearningCourse.safeParse(req.body);
-  if (!paramsResult.success) throw validationError('params', paramsResult.error.issues);
-  if (!bodyResult.success) throw validationError('body', bodyResult.error.issues);
+  parseRequest(CourseIdParams, req.params, 'params');
+  parseRequest(ElearningCourse, req.body, 'body');
 
   const user = await getAuthenticatedUser(req);
   ensureAdmin(user.isAdmin);
@@ -120,8 +118,7 @@ router.patch('/:courseId', async (req: Request, _res: Response) => {
 });
 
 router.delete('/:courseId', async (req: Request, _res: Response) => {
-  const paramsResult = CourseIdParams.safeParse(req.params);
-  if (!paramsResult.success) throw validationError('params', paramsResult.error.issues);
+  parseRequest(CourseIdParams, req.params, 'params');
 
   const user = await getAuthenticatedUser(req);
   ensureAdmin(user.isAdmin);

@@ -1,3 +1,4 @@
+import { parseRequest } from '@mairie360/bffs-lib';
 import { Router, Request, Response } from 'express';
 import {
   ErrorResponse,
@@ -7,9 +8,9 @@ import {
   sessionErrorResponses,
   StartCourseBody,
 } from '../../openapi-registry';
-import { nextContentId, validationError } from './elearning_helpers';
+import { nextContentId } from './elearning_helpers';
 import { loadCourse } from './elearning_upstream';
-import { callerAuthorization, getAuthenticatedUser } from './auth';
+import { getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -69,19 +70,11 @@ registry.registerPath({
 });
 
 router.post('/:courseId/start', async (req: Request, res: Response) => {
-  const paramsResult = CourseIdParams.safeParse(req.params);
-  const bodyResult = StartCourseBody.safeParse(req.body ?? {});
-
-  if (!paramsResult.success) {
-    throw validationError('params', paramsResult.error.issues);
-  }
-
-  if (!bodyResult.success) {
-    throw validationError('body', bodyResult.error.issues);
-  }
+  const { courseId } = parseRequest(CourseIdParams, req.params, 'params');
+  parseRequest(StartCourseBody, req.body ?? {}, 'body');
 
   await getAuthenticatedUser(req);
-  const course = await loadCourse(callerAuthorization(req), paramsResult.data.courseId);
+  const course = await loadCourse(req, courseId);
   const next = nextContentId(course);
 
   return res.status(200).json({

@@ -1,8 +1,9 @@
+import { parseRequest } from '@mairie360/bffs-lib';
 import { Router, Request, Response } from 'express';
 import { ErrorResponse, ElearningCatalogQuery, ElearningCatalogResponse, registry, sessionErrorResponses } from '../../openapi-registry';
-import { buildCatalogResponse, validationError } from './elearning_helpers';
+import { buildCatalogResponse } from './elearning_helpers';
 import { loadCourses } from './elearning_upstream';
-import { callerAuthorization, getAuthenticatedUser } from './auth';
+import { getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -46,15 +47,11 @@ registry.registerPath({
 });
 
 router.get('/', async (req: Request, res: Response) => {
-  const queryResult = ElearningCatalogQuery.safeParse(req.query);
-
-  if (!queryResult.success) {
-    throw validationError('query', queryResult.error.issues);
-  }
+  const query = parseRequest(ElearningCatalogQuery, req.query, 'query');
 
   const user = await getAuthenticatedUser(req);
-  const courses = await loadCourses(callerAuthorization(req));
-  return res.status(200).json(buildCatalogResponse(queryResult.data, user, courses));
+  const courses = await loadCourses(req);
+  return res.status(200).json(buildCatalogResponse(query, user, courses));
 });
 
 export default router;

@@ -1,8 +1,9 @@
-import { HttpError } from '@mairie360/bffs-lib';
+import { asCaller, assertConfigured, HttpError, withoutSession } from '@mairie360/bffs-lib';
 import coreClient from '../src/clients/coreClient';
 import elearningClient from '../src/clients/elearningClient';
-import { asCaller, baseUrl, configuredBaseUrl } from '../src/clients/upstream';
-import { userBffOptions } from '../src/clients/userBffClient';
+import { UPSTREAM_SERVICES, UPSTREAM_TIMEOUT_MS } from '../src/clients/upstream';
+
+const caller = { headers: { authorization: 'Bearer abc' } };
 
 describe('upstream configuration', () => {
   const saved = { ...process.env };
@@ -18,23 +19,50 @@ describe('upstream configuration', () => {
     if (port === undefined) delete process.env.ELEARNING_API_PORT;
     else process.env.ELEARNING_API_PORT = port;
 
-    expect(configuredBaseUrl('ELEARNING_API')).toBe(expected);
+    expect(asCaller('ELEARNING_API', caller).baseURL).toBe(expected);
   });
 
-  test.each([undefined, '', '   ', 'http://'])('has no localhost fallback for %p', (url) => {
+  test.each([undefined, '', '   '])('has no localhost fallback for %p: 503 not configured', (url) => {
     if (url === undefined) delete process.env.CORE_API_URL;
     else process.env.CORE_API_URL = url;
-    jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    expect(configuredBaseUrl('CORE_API')).toBeUndefined();
-    expect(() => baseUrl('CORE_API')).toThrow(new HttpError(502, 'The core service is unavailable.'));
+    expect(() => asCaller('CORE_API', caller)).toThrow(new HttpError(503, 'The CORE_API service is not configured.'));
   });
 
-  test('forwards the caller session to the configured service', () => {
+  test('answers 503 for a URL that cannot be parsed', () => {
+    process.env.CORE_API_URL = 'http://';
+
+    expect(() => asCaller('CORE_API', caller)).toThrow(new HttpError(503, 'The CORE_API service is misconfigured.'));
+  });
+
+  test('reads the URL on every call, never at import time', () => {
+    process.env.USER_BFF_URL = 'http://bff-user:4000';
+    expect(withoutSession('USER_BFF').baseURL).toBe('http://bff-user:4000');
+
+    process.env.USER_BFF_URL = 'http://bff-user-2:4000';
+    expect(withoutSession('USER_BFF').baseURL).toBe('http://bff-user-2:4000');
+  });
+
+  test('forwards the caller session to the configured service, with the BFF timeout', () => {
     process.env.USER_BFF_URL = 'http://bff-user:4000';
 
-    expect(userBffOptions('Bearer abc')).toEqual({ baseURL: 'http://bff-user:4000', headers: { Authorization: 'Bearer abc' } });
-    expect(asCaller('USER_BFF', 'Bearer abc')).toEqual(userBffOptions('Bearer abc'));
+    expect(asCaller('USER_BFF', caller, UPSTREAM_TIMEOUT_MS)).toEqual({
+      baseURL: 'http://bff-user:4000', timeout: 5_000, headers: { Authorization: 'Bearer abc' },
+    });
+  });
+
+  test('the startup check covers every upstream the BFF calls', () => {
+    for (const service of UPSTREAM_SERVICES) delete process.env[`${service}_URL`];
+
+    expect(UPSTREAM_SERVICES).toEqual(['USER_BFF', 'CORE_API', 'ELEARNING_API']);
+    expect(() => assertConfigured(UPSTREAM_SERVICES)).toThrow(
+      'Missing or invalid upstream configuration: USER_BFF_URL, CORE_API_URL, ELEARNING_API_URL',
+    );
+  });
+
+  test('generated clients carry no base URL frozen at import time', () => {
+    expect(elearningClient.getGetMyFormationsUrl()).not.toMatch(/localhost|^http/);
+    expect(coreClient.getPatchMeUrl()).not.toMatch(/localhost|^http/);
   });
 });
 

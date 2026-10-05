@@ -1,3 +1,4 @@
+import { parseRequest } from '@mairie360/bffs-lib';
 import { Router, Request, Response } from 'express';
 import {
   ErrorResponse,
@@ -8,9 +9,9 @@ import {
   registry,
   sessionErrorResponses,
 } from '../../openapi-registry';
-import { notImplemented, validationError } from './elearning_helpers';
+import { notImplemented } from './elearning_helpers';
 import { completeContent } from './elearning_upstream';
-import { callerAuthorization, getAuthenticatedUser } from './auth';
+import { getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -71,25 +72,16 @@ registry.registerPath({
 });
 
 router.post('/:courseId/contents/:contentId/complete', async (req: Request, res: Response) => {
-  const paramsResult = CourseContentParams.safeParse(req.params);
-  const bodyResult = CompleteContentBody.safeParse(req.body);
-
-  if (!paramsResult.success) {
-    throw validationError('params', paramsResult.error.issues);
-  }
-
-  if (!bodyResult.success) {
-    throw validationError('body', bodyResult.error.issues);
-  }
+  const { courseId, contentId } = parseRequest(CourseContentParams, req.params, 'params');
+  const body = parseRequest(CompleteContentBody, req.body, 'body');
 
   await getAuthenticatedUser(req);
 
-  if (!bodyResult.data.completed) {
+  if (!body.completed) {
     throw notImplemented('The e-learning service cannot mark a chapter as not completed.');
   }
 
-  const { courseId, contentId } = paramsResult.data;
-  return res.status(200).json(await completeContent(callerAuthorization(req), courseId, bodyResult.data.chapterId, contentId));
+  return res.status(200).json(await completeContent(req, courseId, body.chapterId, contentId));
 });
 
 export default router;

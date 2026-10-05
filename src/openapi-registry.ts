@@ -2,7 +2,7 @@ import { ErrorResponseSchema } from '@mairie360/bffs-lib';
 import { OpenAPIRegistry, extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-// On ajoute les méthodes .openapi() à Zod
+// Adds the .openapi() methods to Zod
 extendZodWithOpenApi(z);
 
 export const registry = new OpenAPIRegistry();
@@ -483,7 +483,11 @@ export const sessionErrorResponses = {
     content: { 'application/json': { schema: ErrorResponse } },
   },
   502: {
-    description: 'BFF User or an upstream API is unreachable, not configured, failed or answered an unusable body',
+    description: 'BFF User or an upstream API is unreachable, failed or answered an unusable body',
+    content: { 'application/json': { schema: ErrorResponse } },
+  },
+  503: {
+    description: 'BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)',
     content: { 'application/json': { schema: ErrorResponse } },
   },
 };
