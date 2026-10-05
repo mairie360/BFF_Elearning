@@ -21,6 +21,7 @@ const elearningApi = loadOrvalContract('@mairie360/elearning-api-openapi');
 // src/routes/check_apis.ts), addressed through the URL helpers of the generated clients.
 const CONSUMED = [
   { contract: userBff, operationId: 'getMe', method: 'get', url: userBffUrls.getGetMeUrl() },
+  { contract: userBff, operationId: 'getHealth', method: 'get', url: userBffUrls.getGetHealthUrl() },
   { contract: coreApi, operationId: 'patchMe', method: 'patch', url: coreApiUrls.getPatchMeUrl() },
   { contract: coreApi, operationId: 'health', method: 'get', url: coreApiUrls.getHealthUrl() },
   { contract: elearningApi, operationId: 'getMyFormations', method: 'get', url: elearningApiUrls.getGetMyFormationsUrl() },

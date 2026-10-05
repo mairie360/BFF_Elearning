@@ -4322,26 +4322,43 @@
           "error"
         ]
       },
-      "CheckApiResponse": {
+      "CheckApisResponse": {
         "type": "object",
         "properties": {
           "status": {
             "type": "string",
-            "example": "OK"
+            "enum": [
+              "OK",
+              "Error"
+            ]
           },
           "core_api": {
             "type": "string",
-            "example": "Connected"
+            "enum": [
+              "Connected",
+              "Unreachable"
+            ]
           },
           "elearning_api": {
             "type": "string",
-            "example": "Connected"
+            "enum": [
+              "Connected",
+              "Unreachable"
+            ]
+          },
+          "user_bff": {
+            "type": "string",
+            "enum": [
+              "Connected",
+              "Unreachable"
+            ]
           }
         },
         "required": [
           "status",
           "core_api",
-          "elearning_api"
+          "elearning_api",
+          "user_bff"
         ]
       }
     },
@@ -4368,24 +4385,24 @@
         "tags": [
           "Connectivity"
         ],
-        "summary": "Checks that Core API and E-learning API answer their /health probe",
+        "summary": "Checks that Core API, E-learning API and BFF User answer their /health probe",
         "responses": {
           "200": {
-            "description": "Both APIs are reachable",
+            "description": "Every upstream is reachable",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CheckApiResponse"
+                  "$ref": "#/components/schemas/CheckApisResponse"
                 }
               }
             }
           },
           "502": {
-            "description": "Core API or E-learning API is unreachable or not configured",
+            "description": "At least one upstream is unreachable or not configured",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CheckApiResponse"
+                  "$ref": "#/components/schemas/CheckApisResponse"
                 }
               }
             }

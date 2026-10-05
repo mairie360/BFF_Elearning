@@ -33,14 +33,9 @@ export type UpstreamFormation = { id: number; name: string; description?: string
 /** A module with the attachments of `GET /api/v1/formations/{formation_id}/{module_id}/`. */
 export type UpstreamChapter = { module: UpstreamModule; files: UpstreamFile[] };
 
-/** 400 for a request that fails its zod schema, one detail per issue (`path` like `body.title`). */
-export function validationError(location: 'body' | 'params' | 'query', issues: readonly z.core.$ZodIssue[]): HttpError {
-  return new HttpError(400, 'Invalid request payload.', {
-    details: issues.map((issue) => ({
-      path: [location, ...issue.path.map(String)].join('.'),
-      message: issue.message,
-    })),
-  });
+/** True for a plain JSON object (not null, not an array). */
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /** 501 for a feature no upstream service supports yet: the BFF never fakes its persistence. */

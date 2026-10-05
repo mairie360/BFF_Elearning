@@ -2,7 +2,7 @@ import { ErrorResponseSchema } from '@mairie360/bffs-lib';
 import { OpenAPIRegistry, extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import { z } from 'zod';
 
-// On ajoute les méthodes .openapi() à Zod
+// Adds the .openapi() methods to Zod
 extendZodWithOpenApi(z);
 
 export const registry = new OpenAPIRegistry();

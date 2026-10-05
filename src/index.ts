@@ -3,14 +3,10 @@ import { assertConfigured } from '@mairie360/bffs-lib';
 import app from './app';
 import { UPSTREAM_SERVICES } from './clients/upstream';
 
+/** Documented port of BFF E-learning (`PORT` overrides it). */
+const DEFAULT_PORT = 4006;
+
 if (require.main === module) {
-  const PORT = process.env.PORT;
-
-  if (!PORT) {
-    console.error('Error: PORT environment variable is not set.');
-    process.exit(1);
-  }
-
   // No upstream defaults to localhost: a missing or invalid URL is a deployment error, reported at startup.
   try {
     assertConfigured(UPSTREAM_SERVICES);
@@ -19,7 +15,8 @@ if (require.main === module) {
     process.exit(1);
   }
 
-  app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+  const port = Number(process.env.PORT || DEFAULT_PORT);
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
   });
 }

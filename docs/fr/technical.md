@@ -47,7 +47,7 @@ ELEARNING_API_PORT=3006
 npm run start
 ```
 
-`PORT` est obligatoire pour ce BFF; cet exemple utilise `4006`.
+`PORT` est facultatif et vaut `4006` par défaut.
 
 Vérifier le processus puis consulter la documentation interactive:
 
@@ -63,9 +63,9 @@ Les valeurs ci-dessous sont des exemples locaux ou des comportements expliciteme
 
 | Variable ou priorité | Exemple / repli indiqué | Rôle |
 | --- | --- | --- |
-| `PORT` | 4006 | Port de cet exemple local. |
+| `PORT` | 4006 (défaut) | Port d’écoute. |
 | `TRUST_PROXY` | absent (`false`) | `trust proxy` d’Express : `true`, un nombre de sauts ou une liste d’adresses/sous-réseaux. |
-| `USER_BFF_URL` | http://localhost:4000 | Identité de l’utilisateur via `/me`. **Obligatoire.** |
+| `USER_BFF_URL` | http://localhost:4000 | Identité de l’utilisateur via `/me` et diagnostic. **Obligatoire.** |
 | `CORE_API_URL` / `CORE_API_PORT` | localhost / 3000 | Écriture du profil (`PATCH /api/v1/user/me/`) et diagnostic. **URL obligatoire.** |
 | `ELEARNING_API_URL` / `ELEARNING_API_PORT` | localhost / 3006 | Formations, progression et diagnostic. **URL obligatoire.** |
 
@@ -91,9 +91,9 @@ Inventaire extrait de `contracts/openapi.json`. Les paramètres entre accolades 
 
 ## Session, permissions et erreurs
 
-Les routes métier n’acceptent qu’un seul identifiant, l’en-tête `Authorization: Bearer <token>` (le proxy du web service y transforme le cookie `accessToken` ; les cookies et `x-session-token` sont ignorés). Sans lui, elles répondent 401 avant tout appel amont (`requireBearer` de `@mairie360/bffs-lib`) ; sinon elles résolvent la session via BFF User, et le même jeton, normalisé en `Bearer <token>`, est transmis à l’API E-learning et à Core API. L’`id` utilisateur des réponses est celui que renvoie BFF User (le nom de l’utilisateur s’il n’en renvoie pas), jamais une claim lue dans le jeton non vérifié. Les réponses liées à une session portent `Cache-Control: no-store`, et `TRUST_PROXY` règle le `trust proxy` d’Express (absent : aucun proxy de confiance). Les refus de session produisent 401 ; une indisponibilité de BFF User ou d’une API amont, ou une réponse `/me` sans objet `user`, produit 502 ; un service amont dont l’URL n’est pas configurée produit 503. Les identifiants de chemin (`courseId`, `contentId`) et `chapterId` doivent être des entiers positifs (400 sinon). Les fonctions sans stockage amont répondent 501 (code `INTERNAL_ERROR`, message explicite) au lieu de simuler un enregistrement. Une erreur imprévue produit 500 sans exposer son message; `/check_apis` sonde Core et E-learning indépendamment et ne renvoie jamais de détail réseau. La gestion des formations est réservée au contexte administrateur selon les contrôles des routeurs.
+Les routes métier n’acceptent qu’un seul identifiant, l’en-tête `Authorization: Bearer <token>` (le proxy du web service y transforme le cookie `accessToken` ; les cookies et `x-session-token` sont ignorés). Sans lui, elles répondent 401 avant tout appel amont (`requireBearer` de `@mairie360/bffs-lib`) ; sinon elles résolvent la session via BFF User, et le même jeton, normalisé en `Bearer <token>`, est transmis à l’API E-learning et à Core API. L’`id` utilisateur des réponses est celui que renvoie BFF User (le nom de l’utilisateur s’il n’en renvoie pas), jamais une claim lue dans le jeton non vérifié. Les réponses liées à une session portent `Cache-Control: no-store`, et `TRUST_PROXY` règle le `trust proxy` d’Express (absent : aucun proxy de confiance). Les refus de session produisent 401 ; une indisponibilité de BFF User ou d’une API amont, ou une réponse `/me` sans objet `user`, produit 502 ; un service amont dont l’URL n’est pas configurée produit 503. Les identifiants de chemin (`courseId`, `contentId`) et `chapterId` doivent être des entiers positifs (400 sinon). Les fonctions sans stockage amont répondent 501 (code `INTERNAL_ERROR`, message explicite) au lieu de simuler un enregistrement. Une erreur imprévue produit 500 sans exposer son message; `/check_apis` (`checkApis` de `@mairie360/bffs-lib`) sonde indépendamment l’opération `/health` de Core API, de l’API E-learning et de BFF User (clés `core_api`, `elearning_api`, `user_bff`, schéma `CheckApisResponse`) et ne renvoie jamais de détail réseau. La gestion des formations est réservée au contexte administrateur selon les contrôles des routeurs.
 
-Toutes les erreurs, y compris le 404 d'une route inconnue et le 400 d'un corps illisible, sont renvoyées dans l'enveloppe commune à tous les BFFs (`@mairie360/bffs-lib`) : `{ "error": { "code": "NOT_FOUND", "message": "Course not found.", "details": [{ "path": "params.courseId", "message": "..." }] } }`. `code` découle du statut (`BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `INTERNAL_ERROR`, `BAD_GATEWAY`) ; `details` est toujours un tableau (une entrée par champ invalide sur un 400). Un statut de BFF User autre que 401/403 donne 502.
+Toutes les erreurs, y compris le 404 d'une route inconnue et le 400 d'un corps illisible, sont renvoyées dans l'enveloppe commune à tous les BFFs (`@mairie360/bffs-lib`) : `{ "error": { "code": "NOT_FOUND", "message": "Course not found.", "details": [{ "path": "params.courseId", "message": "..." }] } }`. `code` découle du statut (`BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `INTERNAL_ERROR`, `BAD_GATEWAY`) ; `details` est toujours un tableau (une entrée par champ invalide sur un 400). Un statut de BFF User autre que 401/403 donne 502. Les échecs amont sont convertis une seule fois par `callUpstream`/`upstreamError` de la bibliothèque : seuls les 4xx déclarés par la route sont relayés (avec un message générique, jamais le corps amont), le reste donne 502. Les lectures amont idempotentes (BFF User `/me`, GET de l’API E-learning) sont rejouées une fois en l’absence de réponse ou sur 502, 503 ou 504 ; les écritures ne le sont jamais. Une requête invalide répond 400 `Validation failed` (`parseRequest`). Les en-têtes de sécurité viennent de la bibliothèque (`securityHeaders`, plus `apiOnlyHeaders()` partout sauf sous `/docs`).
 
 ## Synchronisation et vérifications
 
