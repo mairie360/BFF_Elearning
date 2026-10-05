@@ -1,8 +1,7 @@
-import { authorization, HttpError, upstreamStatus } from '@mairie360/bffs-lib';
-import axios from 'axios';
+import { asCaller, callUpstream, parseRequest } from '@mairie360/bffs-lib';
 import { Router, Request, Response } from 'express';
 import { coreClient } from '../../clients/coreClient';
-import { asCaller } from '../../clients/upstream';
+import { UPSTREAM_TIMEOUT_MS } from '../../clients/upstream';
 import {
   ErrorResponse,
   ElearningProfileResponse,
@@ -12,7 +11,7 @@ import {
   sessionErrorResponses,
   UpdateProfileBody,
 } from '../../openapi-registry';
-import { footer, notImplemented, validationError } from './elearning_helpers';
+import { footer, notImplemented } from './elearning_helpers';
 import { getAuthenticatedUser } from './auth';
 
 const router = Router();
@@ -104,24 +103,10 @@ router.get('/', async (req: Request, res: Response) => {
   return res.status(200).json({ user, footer: footer() });
 });
 
-/** Core API answers text/plain errors: only its 400, 401 and 409 are kept, without their body. */
-function coreError(error: unknown): HttpError {
-  const status = axios.isAxiosError(error) ? upstreamStatus(error) : undefined;
-  if (status === 400) return new HttpError(400, 'The core service refused the profile values.');
-  if (status === 401) return new HttpError(401, 'Expired or invalid session.');
-  if (status === 409) return new HttpError(409, 'This e-mail address is already used by another account.');
-  return error instanceof HttpError ? error : new HttpError(502, 'The core service is unavailable.');
-}
-
 router.patch('/', async (req: Request, res: Response) => {
-  const bodyResult = UpdateProfileBody.safeParse(req.body);
-
-  if (!bodyResult.success) {
-    throw validationError('body', bodyResult.error.issues);
-  }
+  const { email, phone, address, city } = parseRequest(UpdateProfileBody, req.body, 'body');
 
   const user = await getAuthenticatedUser(req);
-  const { email, phone, address, city } = bodyResult.data;
 
   if (address !== undefined || city !== undefined) {
     throw notImplemented('Address and city are not stored by any service yet: nothing was saved.');
@@ -131,11 +116,11 @@ router.patch('/', async (req: Request, res: Response) => {
     return res.status(200).json({ user });
   }
 
-  try {
-    await coreClient.patchMe({ email, phone }, asCaller('CORE_API', authorization(req)));
-  } catch (error) {
-    throw coreError(error);
-  }
+  // Core API answers text/plain errors: only the 400, 401 and 409 the route declares are relayed (without their
+  // body), anything else is a 502. PATCH: not retried.
+  await callUpstream('CORE_API', () => coreClient.patchMe({ email, phone }, asCaller('CORE_API', req, UPSTREAM_TIMEOUT_MS)), {
+    declared: [400, 401, 409],
+  });
 
   return res.status(200).json({ user: await getAuthenticatedUser(req) });
 });

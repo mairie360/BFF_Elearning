@@ -1,3 +1,4 @@
+import { parseRequest } from '@mairie360/bffs-lib';
 import { Router, Request, Response } from 'express';
 import {
   ErrorResponse,
@@ -8,7 +9,7 @@ import {
   sessionErrorResponses,
   SubmitRatingBody,
 } from '../../openapi-registry';
-import { notImplemented, validationError } from './elearning_helpers';
+import { notImplemented } from './elearning_helpers';
 import { getAuthenticatedUser } from './auth';
 
 const router = Router();
@@ -62,16 +63,8 @@ registry.registerPath({
 });
 
 router.post('/:courseId/rating', async (req: Request, _res: Response) => {
-  const paramsResult = CourseIdParams.safeParse(req.params);
-  const bodyResult = SubmitRatingBody.safeParse(req.body);
-
-  if (!paramsResult.success) {
-    throw validationError('params', paramsResult.error.issues);
-  }
-
-  if (!bodyResult.success) {
-    throw validationError('body', bodyResult.error.issues);
-  }
+  parseRequest(CourseIdParams, req.params, 'params');
+  parseRequest(SubmitRatingBody, req.body, 'body');
 
   await getAuthenticatedUser(req);
   throw notImplemented('Course ratings are not stored by the e-learning service yet.');

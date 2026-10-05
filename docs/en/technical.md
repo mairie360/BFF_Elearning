@@ -45,7 +45,7 @@ ELEARNING_API_PORT=3006
 npm run start
 ```
 
-`PORT` is required by this BFF; this example uses `4006`.
+`PORT` is optional and defaults to `4006`.
 
 Check the process, then open the interactive documentation:
 
@@ -61,9 +61,9 @@ Values below are local examples or explicitly described behavior, not production
 
 | Variable or precedence | Example / stated fallback | Purpose |
 | --- | --- | --- |
-| `PORT` | 4006 | Port used by this local example. |
+| `PORT` | 4006 (default) | Listening port. |
 | `TRUST_PROXY` | unset (`false`) | Express `trust proxy`: `true`, a number of hops or a list of addresses/subnets. |
-| `USER_BFF_URL` | http://localhost:4000 | User identity through `/me`. **Required.** |
+| `USER_BFF_URL` | http://localhost:4000 | User identity through `/me` and diagnostics. **Required.** |
 | `CORE_API_URL` / `CORE_API_PORT` | localhost / 3000 | Profile writes (`PATCH /api/v1/user/me/`) and diagnostics. **URL required.** |
 | `ELEARNING_API_URL` / `ELEARNING_API_PORT` | localhost / 3006 | Courses, progress and diagnostics. **URL required.** |
 
@@ -89,9 +89,9 @@ Inventory extracted from `contracts/openapi.json`. Replace brace parameters with
 
 ## Session, permissions and errors
 
-Business routes accept one credential only, the `Authorization: Bearer <token>` header (the web service proxy turns the `accessToken` cookie into it; cookies and `x-session-token` are ignored). Without it they answer 401 before any upstream call (`requireBearer` from `@mairie360/bffs-lib`); otherwise they resolve the session through BFF User, and the same token, normalised to `Bearer <token>`, is forwarded to the E-learning API and Core API. The user `id` of the answers is the one BFF User returns (the user's name when it returns none), never a claim read from the unverified token. Session-bound answers carry `Cache-Control: no-store`, and `TRUST_PROXY` sets Express' `trust proxy` (unset: no proxy trusted). Session rejection produces 401; unavailability of BFF User or of an upstream API, or a `/me` response without a `user` object, produces 502; an upstream whose URL is not configured produces 503. Path identifiers (`courseId`, `contentId`) and `chapterId` must be positive integers (400 otherwise). Features with no upstream storage answer 501 (code `INTERNAL_ERROR`, explicit message) instead of faking a save. An unexpected error produces 500 without exposing its message; `/check_apis` probes Core and E-learning independently and never returns network details. Course management is restricted to an administrator context by router checks.
+Business routes accept one credential only, the `Authorization: Bearer <token>` header (the web service proxy turns the `accessToken` cookie into it; cookies and `x-session-token` are ignored). Without it they answer 401 before any upstream call (`requireBearer` from `@mairie360/bffs-lib`); otherwise they resolve the session through BFF User, and the same token, normalised to `Bearer <token>`, is forwarded to the E-learning API and Core API. The user `id` of the answers is the one BFF User returns (the user's name when it returns none), never a claim read from the unverified token. Session-bound answers carry `Cache-Control: no-store`, and `TRUST_PROXY` sets Express' `trust proxy` (unset: no proxy trusted). Session rejection produces 401; unavailability of BFF User or of an upstream API, or a `/me` response without a `user` object, produces 502; an upstream whose URL is not configured produces 503. Path identifiers (`courseId`, `contentId`) and `chapterId` must be positive integers (400 otherwise). Features with no upstream storage answer 501 (code `INTERNAL_ERROR`, explicit message) instead of faking a save. An unexpected error produces 500 without exposing its message; `/check_apis` (`checkApis` of `@mairie360/bffs-lib`) probes the `/health` operation of Core API, E-learning API and BFF User independently (keys `core_api`, `elearning_api`, `user_bff`, schema `CheckApisResponse`) and never returns network details. Course management is restricted to an administrator context by router checks.
 
-Every error, 404 on an unknown route and 400 on an unparsable body included, is answered in the envelope shared by every BFF (`@mairie360/bffs-lib`): `{ "error": { "code": "NOT_FOUND", "message": "Course not found.", "details": [{ "path": "params.courseId", "message": "..." }] } }`. `code` derives from the status (`BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `INTERNAL_ERROR`, `BAD_GATEWAY`); `details` is always an array (one entry per invalid field on a 400). A BFF User status other than 401/403 answers 502.
+Every error, 404 on an unknown route and 400 on an unparsable body included, is answered in the envelope shared by every BFF (`@mairie360/bffs-lib`): `{ "error": { "code": "NOT_FOUND", "message": "Course not found.", "details": [{ "path": "params.courseId", "message": "..." }] } }`. `code` derives from the status (`BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `INTERNAL_ERROR`, `BAD_GATEWAY`); `details` is always an array (one entry per invalid field on a 400). A BFF User status other than 401/403 answers 502. Upstream failures are mapped once by `callUpstream`/`upstreamError` of the lib: only the 4xx a route declares are relayed (with a generic message, never the upstream body), the rest is a 502. Idempotent upstream reads (BFF User `/me`, E-learning GETs) are retried once on no answer, 502, 503 or 504; writes are never retried. An invalid request answers 400 `Validation failed` (`parseRequest`). Security headers come from the lib (`securityHeaders`, plus `apiOnlyHeaders()` everywhere but `/docs`).
 
 ## Synchronization and verification
 

@@ -9,7 +9,7 @@ Les chemins sont relatifs au BFF. Les proxies web conservent méthode, paramètr
 | Méthode | Route | Réponse / schéma |
 | --- | --- | --- |
 | GET | `/health` | 200 OK |
-| GET | `/check_apis` | 200 CheckApiResponse |
+| GET | `/check_apis` | 200 / 502 CheckApisResponse (`core_api`, `elearning_api`, `user_bff`) |
 | POST | `/elearning/admin/courses` | 501 tant que l’API E-learning ne permet pas de créer une formation |
 | PATCH | `/elearning/admin/courses/{courseId}` | 501 tant que l’API E-learning ne permet pas de modifier une formation |
 | DELETE | `/elearning/admin/courses/{courseId}` | 501 tant que l’API E-learning ne permet pas de supprimer une formation |

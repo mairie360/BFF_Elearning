@@ -1,7 +1,8 @@
-import { authorization, HttpError } from '@mairie360/bffs-lib';
-import axios from 'axios';
+import { asCaller, HttpError, INVALID_SESSION_MESSAGE, upstreamError, upstreamStatus, withRetry } from '@mairie360/bffs-lib';
 import type { Request } from 'express';
-import { userBffClient, userBffOptions } from '../../clients/userBffClient';
+import { userBffClient } from '../../clients/userBffClient';
+import { UPSTREAM_TIMEOUT_MS } from '../../clients/upstream';
+import { isRecord } from './elearning_helpers';
 import { z } from 'zod';
 import { CurrentUser } from '../../openapi-registry';
 
@@ -68,37 +69,26 @@ function mapCurrentUser(body: UserResponse): BffCurrentUser {
 
 /**
  * The caller as resolved by BFF User `/me`, with their `Authorization: Bearer <token>` header forwarded
- * (401 before any call without one).
+ * (401 before any call without one, 503 when `USER_BFF_URL` is not configured). A BFF User 401/403 means
+ * the session is refused: 401. Anything else, no answer or an unusable body: 502 (the upstream body is
+ * never relayed).
  */
 export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser> {
-  const options = userBffOptions(authorization(req));
-
   let body: unknown;
   try {
-    const response = await userBffClient.getMe(options);
-    body = response.data;
+    // GET /me is idempotent: retried once on a transient failure.
+    body = (await withRetry(() => userBffClient.getMe(asCaller('USER_BFF', req, UPSTREAM_TIMEOUT_MS)))).data;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        throw new HttpError(401, 'Expired or invalid session.');
-      }
-
-      // Any other status, a timeout or a network failure: the upstream answer is never relayed.
-      throw new HttpError(502, 'The user service is unavailable.');
-    }
-
-    throw error;
+    const status = error instanceof HttpError ? undefined : upstreamStatus(error);
+    if (status === 401 || status === 403) throw new HttpError(401, INVALID_SESSION_MESSAGE, { cause: error });
+    throw upstreamError('USER_BFF', error);
   }
 
   // A 2xx without a `user` object (empty body, text, unexpected JSON) does not prove the session: it must
   // not produce an authenticated "Guest" user.
   if (!isRecord(body) || !isRecord(body.user)) {
-    throw new HttpError(502, 'The user service is unavailable.');
+    throw new HttpError(502, 'The USER_BFF answer is invalid.');
   }
 
   return mapCurrentUser(body as UserResponse);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

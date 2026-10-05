@@ -45,7 +45,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Checks that Core API and E-learning API answer their /health probe */
+        /** Checks that Core API, E-learning API and BFF User answer their /health probe */
         get: {
             parameters: {
                 query?: never;
@@ -55,22 +55,22 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Both APIs are reachable */
+                /** @description Every upstream is reachable */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["CheckApiResponse"];
+                        "application/json": components["schemas"]["CheckApisResponse"];
                     };
                 };
-                /** @description Core API or E-learning API is unreachable or not configured */
+                /** @description At least one upstream is unreachable or not configured */
                 502: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["CheckApiResponse"];
+                        "application/json": components["schemas"]["CheckApisResponse"];
                     };
                 };
             };
@@ -3626,13 +3626,15 @@ export interface components {
                 }[];
             };
         };
-        CheckApiResponse: {
-            /** @example OK */
-            status: string;
-            /** @example Connected */
-            core_api: string;
-            /** @example Connected */
-            elearning_api: string;
+        CheckApisResponse: {
+            /** @enum {string} */
+            status: "OK" | "Error";
+            /** @enum {string} */
+            core_api: "Connected" | "Unreachable";
+            /** @enum {string} */
+            elearning_api: "Connected" | "Unreachable";
+            /** @enum {string} */
+            user_bff: "Connected" | "Unreachable";
         };
     };
     responses: never;
