@@ -101,7 +101,7 @@ services:
       
   elearning-api:
     container_name: elearning-api-bff-elearning-developpement
-    image: ghcr.io/mairie360/elearning-api:0.6.1
+    image: ghcr.io/mairie360/elearning-api:1.0.0
     ports:
       - "3006:3006"
     networks:

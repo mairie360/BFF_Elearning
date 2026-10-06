@@ -152,7 +152,7 @@ services:
       - backend
 
   elearning-api:
-    image: ${ELEARNING_API_IMAGE:-ghcr.io/mairie360/elearning-api:0.6.1}
+    image: ${ELEARNING_API_IMAGE:-ghcr.io/mairie360/elearning-api:1.0.0}
     container_name: bff-elearning-sec-elearning-api
     depends_on:
       liquibase:
