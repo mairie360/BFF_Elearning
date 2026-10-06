@@ -66,7 +66,7 @@ services:
   # core:
   #   profiles: ["legacy-api"]
   #   container_name: core-elearning-bff-developpement
-  #   image: ghcr.io/mairie360/core-api:1.2.0
+  #   image: ghcr.io/mairie360/core-api:2.0.0
   #   ports:
   #     - "3000:3000"
   #   networks:
@@ -87,6 +87,7 @@ services:
   #     PUBLIC_URL: http://core.development.mairie360.fr
   #     JWT_SECRET: b"secret"
   #     JWT_TIMEOUT: 3600
+  #     JWT_ALLOW_WEAK_SECRET: "true"
   #   depends_on:
   #     liquibase:
   #       condition: service_completed_successfully
@@ -101,7 +102,7 @@ services:
       
   elearning-api:
     container_name: elearning-api-bff-elearning-developpement
-    image: ghcr.io/mairie360/elearning-api:0.6.1
+    image: ghcr.io/mairie360/elearning-api:1.0.0
     ports:
       - "3006:3006"
     networks:
@@ -123,7 +124,10 @@ services:
       PUBLIC_URL: http://elearning.development.mairie360.fr
       JWT_SECRET: b"secret"
       JWT_TIMEOUT: 3600
-      # Scaleway Object Storage (S3), requis depuis elearning-api 0.5.0 : placeholders
+      # mairie360_api_lib >= 2.0 (elearning-api >= 1.0.0) refuses the well-known b"secret" without this flag.
+      # Local dev stack only: a deployment uses a random secret of at least 32 bytes (MAIR-428).
+      JWT_ALLOW_WEAK_SECRET: "true"
+      # Scaleway Object Storage (S3), required since elearning-api 0.5.0: placeholders
       S3_BUCKET: mairie360-elearning
       S3_REGION: fr-par
       S3_ENDPOINT: https://s3.fr-par.scw.cloud
