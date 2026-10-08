@@ -68,6 +68,8 @@ Les valeurs ci-dessous sont des exemples locaux ou des comportements expliciteme
 | `USER_BFF_URL` | http://localhost:4000 | Identité de l’utilisateur via `/me` et diagnostic. **Obligatoire.** |
 | `CORE_API_URL` / `CORE_API_PORT` | localhost / 3000 | Écriture du profil (`PATCH /api/v1/user/me/`) et diagnostic. **URL obligatoire.** |
 | `ELEARNING_API_URL` / `ELEARNING_API_PORT` | localhost / 3006 | Formations, progression et diagnostic. **URL obligatoire.** |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | non défini (télémétrie désactivée) | Collecteur OpenTelemetry de l’instance, par ex. `http://otel-collector:4318` : les traces et les métriques HTTP y sont exportées en OTLP (MAIR-504). Seuls la méthode, le statut, la route paramétrée et l’hôte appelé sortent du BFF, jamais une URL, une query string, un en-tête, un identifiant ou une IP. |
+| `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES` | `bff-elearning` ; non défini | Remplacent le nom du service ; attributs de ressource supplémentaires comme `service.version=<tag de l’image>,deployment.environment.name=prod`. `OTEL_SDK_DISABLED=true` désactive la télémétrie. |
 
 Chaque `*_URL` accepte un hôte seul (`elearning-api`, complété par `*_PORT`) ou une URL complète (`http://elearning-api:3006`, `*_PORT` est alors ignoré). Chaque URL est lue à chaque appel via `baseUrl` de `@mairie360/bffs-lib`. Il n’y a aucun repli sur `localhost` : `src/index.ts` charge `.env` en premier (`import 'dotenv/config'`), puis refuse de démarrer (`assertConfigured`) si l’une des trois URL manque ou est invalide, en les nommant toutes ; une requête vers un service non configuré répond 503 `SERVICE_UNAVAILABLE` (`/check_apis` le signale `Unreachable`).
 
