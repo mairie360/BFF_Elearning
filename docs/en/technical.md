@@ -66,6 +66,8 @@ Values below are local examples or explicitly described behavior, not production
 | `USER_BFF_URL` | http://localhost:4000 | User identity through `/me` and diagnostics. **Required.** |
 | `CORE_API_URL` / `CORE_API_PORT` | localhost / 3000 | Profile writes (`PATCH /api/v1/user/me/`) and diagnostics. **URL required.** |
 | `ELEARNING_API_URL` / `ELEARNING_API_PORT` | localhost / 3006 | Courses, progress and diagnostics. **URL required.** |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset (telemetry off) | OpenTelemetry collector of the instance, e.g. `http://otel-collector:4318`: traces and HTTP metrics are exported over OTLP (MAIR-504). Only the method, status, parameterised route and upstream host leave the BFF, never a URL, query string, header, id or IP. |
+| `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES` | `bff-elearning`; unset | Override the service name; extra resource attributes such as `service.version=<image tag>,deployment.environment.name=prod`. `OTEL_SDK_DISABLED=true` turns telemetry off. |
 
 Each `*_URL` accepts a bare host (`elearning-api`, completed by `*_PORT`) or a full URL (`http://elearning-api:3006`, where `*_PORT` is ignored). Every URL is read on each call through `baseUrl` of `@mairie360/bffs-lib`. There is no `localhost` fallback: `src/index.ts` loads `.env` first (`import 'dotenv/config'`), then refuses to start (`assertConfigured`) when one of the three URLs is missing or invalid, naming each of them; a request reaching an unconfigured service answers 503 `SERVICE_UNAVAILABLE` (`/check_apis` reports it `Unreachable`).
 

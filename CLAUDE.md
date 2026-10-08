@@ -78,6 +78,13 @@ The in-memory mock (hard-coded catalogue, per-user Maps, admin CRUD on an array)
 
 `/check_apis` is only a connectivity diagnostic (lib `checkApis`: probes the `/health` operation of Core API, E-learning API and BFF User independently with `withoutSession(...)`, keys `core_api` / `elearning_api` / `user_bff`, schema `CheckApisResponse`; 502 with the per-upstream status if one fails or is not configured, never the network error); `/health` just reports the BFF process is up.
 
+### Telemetry (MAIR-504)
+
+`src/telemetry.ts` calls the lib's `startTelemetry` and is imported by `src/index.ts` right after `dotenv/config`,
+before the app: the Express instrumentation only hooks Express if it is not loaded yet (Express stays external in
+the esbuild bundle). Off without `OTEL_EXPORTER_OTLP_ENDPOINT`; the lib exports only an attribute allowlist, so
+never add span attributes holding request values (ids, URLs, bodies, headers). Tests export nothing.
+
 ## Tests
 
 Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/clients.test.ts` covers the upstream URL configuration, `tests/startup.test.ts` the fail-fast startup, `tests/app-settings.test.ts` `TRUST_PROXY`. Business behaviour is tested only through the contract-driven upstream mocks below.
