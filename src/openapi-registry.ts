@@ -355,7 +355,9 @@ export const ElearningProfileResponse = z
 export const UpdateProfileBody = z
   .object({
     email: z.string().email().optional().openapi({ example: 'security-admin@mairie360.fr' }),
-    phone: z.string().optional().openapi({ example: '0612345678' }),
+    // Core API (MAIR-480) parses a national number only with its country, which this body does not carry:
+    // the phone is sent in E.164.
+    phone: z.string().optional().openapi({ description: 'Phone number in E.164 (`+33612345678`)', example: '+33612345678' }),
     address: z.string().optional().openapi({ example: '1 place de la Mairie' }),
     city: z.string().optional().openapi({ example: 'Paris' }),
   })

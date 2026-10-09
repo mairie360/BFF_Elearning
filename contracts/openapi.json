@@ -3346,7 +3346,8 @@
           },
           "phone": {
             "type": "string",
-            "example": "0612345678"
+            "description": "Phone number in E.164 (`+33612345678`)",
+            "example": "+33612345678"
           },
           "address": {
             "type": "string",
@@ -7379,7 +7380,8 @@
                   },
                   "phone": {
                     "type": "string",
-                    "example": "0612345678"
+                    "description": "Phone number in E.164 (`+33612345678`)",
+                    "example": "+33612345678"
                   },
                   "address": {
                     "type": "string",

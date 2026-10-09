@@ -1,4 +1,4 @@
-import { asCaller, HttpError, INVALID_SESSION_MESSAGE, upstreamError, upstreamStatus, withRetry } from '@mairie360/bffs-lib';
+import { asCaller, HttpError, INVALID_SESSION_MESSAGE, sessionUserId, upstreamError, upstreamStatus, withRetry } from '@mairie360/bffs-lib';
 import type { Request } from 'express';
 import { userBffClient } from '../../clients/userBffClient';
 import { UPSTREAM_TIMEOUT_MS } from '../../clients/upstream';
@@ -38,12 +38,7 @@ function getInitials(firstName: string, lastName: string, name: string): string 
 }
 
 /** The user id as resolved by BFF User (never read from the unverified token), or `undefined` when absent. */
-function userId(id: unknown): string | undefined {
-  if (typeof id === 'number' && Number.isSafeInteger(id)) return String(id);
-  return typeof id === 'string' && id.trim() ? id.trim() : undefined;
-}
-
-function mapCurrentUser(body: UserResponse): BffCurrentUser {
+function mapCurrentUser(body: UserResponse, id: number): BffCurrentUser {
   const rawUser = body.user ?? {};
   const firstName = typeof rawUser.first_name === 'string' ? rawUser.first_name.trim() : '';
   const lastName = typeof rawUser.last_name === 'string' ? rawUser.last_name.trim() : '';
@@ -56,7 +51,7 @@ function mapCurrentUser(body: UserResponse): BffCurrentUser {
     : [];
 
   return {
-    id: userId(rawUser.id) ?? name,
+    id: String(id),
     name,
     initials: getInitials(firstName, lastName, name),
     ...(typeof rawUser.email === 'string' && rawUser.email.trim() ? { email: rawUser.email.trim() } : {}),
@@ -90,5 +85,6 @@ export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser
     throw new HttpError(502, 'The USER_BFF answer is invalid.');
   }
 
-  return mapCurrentUser(body as UserResponse);
+  // The caller is the `sub` of the token `requireSession` verified (MAIR-474), never an id read from an answer.
+  return mapCurrentUser(body as UserResponse, sessionUserId(req));
 }

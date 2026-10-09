@@ -69,7 +69,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     test('forwards the caller session to the contract /me operation and maps the SessionResponse', async () => {
       userBff.on('get', USER_BFF.me, { body: sessionResponse() });
 
-      const response = await withSession(request(app).get('/elearning/profile'), 'agent-42');
+      const response = await withSession(request(app).get('/elearning/profile'), 2);
 
       expect(response.status).toBe(200);
       expectBffContract('get', '/elearning/profile', response);
@@ -86,7 +86,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       const [me] = userBff.calls(USER_BFF.me, 'get');
       expect(userBff.requests).toHaveLength(1);
       expect(me.url.pathname).toBe(userBffUrls.getGetMeUrl());
-      expect(me.headers.authorization).toBe(bearer('agent-42'));
+      expect(me.headers.authorization).toBe(bearer(2));
       expect(me.headers.accept).toBe('application/json');
       expect(me.undeclaredQuery).toEqual([]);
     });
@@ -96,7 +96,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       delete body.user.role;
       userBff.on('get', USER_BFF.me, { body });
 
-      const response = await withSession(request(app).get('/elearning/profile'), 'agent-guest');
+      const response = await withSession(request(app).get('/elearning/profile'), 2);
 
       expect(response.status).toBe(200);
       expectBffContract('get', '/elearning/profile', response);
@@ -119,16 +119,17 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(userBff.requests).toHaveLength(0);
     });
 
-    test('takes the user id from BFF User, never from the unverified token', async () => {
+    // MAIR-474: the caller is the `sub` of the token the BFF verified, never an id read from an answer.
+    test('takes the user id from the verified token, not from the BFF User answer', async () => {
       userBff.on('get', USER_BFF.me, { body: sessionResponse({ id: 57 }) });
 
       const response = await withSession(request(app).get('/elearning/profile'), 1);
 
       expect(response.status).toBe(200);
-      expect(response.body.user.id).toBe('57');
+      expect(response.body.user.id).toBe('1');
     });
 
-    test('falls back to the user name when BFF User returns no id', async () => {
+    test('keeps the verified id when BFF User returns no id', async () => {
       const body = sessionResponse();
       delete body.user.id;
       userBff.on('get', USER_BFF.me, { body });
@@ -137,7 +138,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
       expect(response.status).toBe(200);
       expectBffContract('get', '/elearning/profile', response);
-      expect(response.body.user.id).toBe('Alice Martin');
+      expect(response.body.user.id).toBe('99');
     });
 
     test.each([401, 403])('turns a BFF User %i into a 401', async (status) => {
@@ -330,7 +331,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('GET /elearning/catalog shapes the enrolments, chapters and contents of the caller', async () => {
-      const response = await withSession(request(app).get('/elearning/catalog'), 'catalog-agent');
+      const response = await withSession(request(app).get('/elearning/catalog'), 2);
 
       expect(response.status).toBe(200);
       expectBffContract('get', '/elearning/catalog', response);
@@ -394,11 +395,11 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
         `GET ${elearningApiUrls.getGetModuleUrl(4, 12)}`,
         `GET ${elearningApiUrls.getGetModuleUrl(9, 31)}`,
       ].sort());
-      expect(elearningApi.requests.every((call) => call.headers.authorization === bearer('catalog-agent'))).toBe(true);
+      expect(elearningApi.requests.every((call) => call.headers.authorization === bearer(2))).toBe(true);
     });
 
     test('GET /elearning/catalog filters and pages the courses', async () => {
-      const response = await withSession(request(app).get('/elearning/catalog?status=not-started&search=accueil&pageSize=10'), 'catalog-agent');
+      const response = await withSession(request(app).get('/elearning/catalog?status=not-started&search=accueil&pageSize=10'), 2);
 
       expect(response.status).toBe(200);
       expectBffContract('get', '/elearning/catalog', response);
@@ -426,7 +427,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('validates the catalogue query before resolving the session', async () => {
-      const response = await withSession(request(app).get('/elearning/catalog?pageSize=500'), 'catalog-agent');
+      const response = await withSession(request(app).get('/elearning/catalog?pageSize=500'), 2);
 
       expect(response.status).toBe(400);
       expectBffContract('get', '/elearning/catalog', response);
@@ -588,7 +589,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     test('GET /elearning/profile returns the BFF User session as is', async () => {
       userBff.on('get', USER_BFF.me, { body: sessionResponse() });
 
-      const response = await withSession(request(app).get('/elearning/profile'), 'profile-agent');
+      const response = await withSession(request(app).get('/elearning/profile'), 2);
 
       expect(response.status).toBe(200);
       expectBffContract('get', '/elearning/profile', response);
@@ -601,7 +602,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       userBff.on('get', USER_BFF.me, () => ({ body: sessionResponse(saved ? { email: 'new@mairie.test', phone: '0262000000' } : {}) }));
       coreApi.on('patch', CORE.me, () => { saved = true; return {}; });
 
-      const response = await withSession(request(app).patch('/elearning/profile'), 'profile-agent')
+      const response = await withSession(request(app).patch('/elearning/profile'), 2)
         .send({ email: 'new@mairie.test', phone: '0262000000', role: 'Admin', isAdmin: true });
 
       expect(response.status).toBe(200);
@@ -609,7 +610,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(response.body.user).toMatchObject({ id: '2', email: 'new@mairie.test', phone: '0262000000', role: 'User', isAdmin: false });
       const [patch] = coreApi.calls(CORE.me, 'patch');
       expect(patch.url.pathname).toBe(coreApiUrls.getPatchMeUrl());
-      expect(patch.headers.authorization).toBe(bearer('profile-agent'));
+      expect(patch.headers.authorization).toBe(bearer(2));
       expect(patch.body).toEqual({ email: 'new@mairie.test', phone: '0262000000' });
       expect(userBff.requests).toHaveLength(2);
     });
@@ -618,7 +619,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       jest.spyOn(console, 'error').mockImplementation(() => undefined);
       userBff.on('get', USER_BFF.me, { body: sessionResponse() });
 
-      const response = await withSession(request(app).patch('/elearning/profile'), 'profile-agent')
+      const response = await withSession(request(app).patch('/elearning/profile'), 2)
         .send({ phone: '0262000000', city: 'Saint-Paul' });
 
       expect(response.status).toBe(501);
@@ -626,14 +627,14 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(response.body.error.message).toBe('Address and city are not stored by any service yet: nothing was saved.');
       expect(coreApi.requests).toHaveLength(0);
 
-      const reloaded = await withSession(request(app).get('/elearning/profile'), 'profile-agent');
+      const reloaded = await withSession(request(app).get('/elearning/profile'), 2);
       expect(reloaded.body.user.city).toBeUndefined();
     });
 
     test('PATCH /elearning/profile with nothing to save does not call Core', async () => {
       userBff.on('get', USER_BFF.me, { body: sessionResponse() });
 
-      const response = await withSession(request(app).patch('/elearning/profile'), 'profile-agent').send({});
+      const response = await withSession(request(app).patch('/elearning/profile'), 2).send({});
 
       expect(response.status).toBe(200);
       expectBffContract('patch', '/elearning/profile', response);
@@ -650,7 +651,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       userBff.on('get', USER_BFF.me, { body: sessionResponse() });
       coreApi.on('patch', CORE.me, { status: coreStatus, raw: 'core internal detail', contentType: 'text/plain', outOfContract: true });
 
-      const response = await withSession(request(app).patch('/elearning/profile'), 'profile-agent').send({ email: 'taken@mairie.test' });
+      const response = await withSession(request(app).patch('/elearning/profile'), 2).send({ email: 'taken@mairie.test' });
 
       expect(response.status).toBe(status);
       expectBffContract('patch', '/elearning/profile', response);
@@ -662,7 +663,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       userBff.on('get', USER_BFF.me, { body: sessionResponse() });
       delete process.env.CORE_API_URL;
 
-      const response = await withSession(request(app).patch('/elearning/profile'), 'profile-agent').send({ email: 'new@mairie.test' });
+      const response = await withSession(request(app).patch('/elearning/profile'), 2).send({ email: 'new@mairie.test' });
 
       expect(response.status).toBe(503);
       expectBffContract('patch', '/elearning/profile', response);

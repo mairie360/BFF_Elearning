@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { getBffUser } from '@mairie360/bff-user-openapi/endpoints/bffUser';
 import type { SessionResponse, SessionResponseGroupsItem, SessionResponseUser } from '@mairie360/bff-user-openapi/model';
 import { getCoreAPIMairie360 } from '@mairie360/core-api-openapi/endpoints/coreAPIMairie360';
@@ -29,13 +30,25 @@ export function sessionResponse(
   };
 }
 
-/**
- * JWT-shaped bearer token. The BFF only reads its `sub`; the signature is checked by BFF User and the E-learning
- * API, both mocked here, which receive the token unchanged.
- */
-export function bearer(sub: string | number): string {
+/** Secret of the tests (tests/support/env.ts): the BFF verifies the session tokens with it (bffs-lib requireSession). */
+export const JWT_SECRET = 'elearning-contract-test-secret';
+
+/** Numeric `sub` of a test session: a number as is, a label mapped to a stable id (one session per label). */
+export function sessionSub(sub: string | number): number {
+  if (typeof sub === 'number') return sub;
+  return 100_000 + [...sub].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) % 900_000, 7);
+}
+
+/** HS256 session token of `sub` signed with `secret` (fixed expiry, so a token is the same in every call). */
+export function sessionToken(sub: string | number, secret = JWT_SECRET, exp = 4_102_444_800): string {
   const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
-  return `Bearer ${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: String(sub), exp: 4_102_444_800 })}.signature`;
+  const unsigned = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: String(sessionSub(sub)), exp })}`;
+  return `${unsigned}.${createHmac('sha256', secret).update(unsigned).digest('base64url')}`;
+}
+
+/** `Authorization` header of a session: verified by the BFF, then forwarded unchanged to BFF User and the APIs. */
+export function bearer(sub: string | number): string {
+  return `Bearer ${sessionToken(sub)}`;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
