@@ -1513,7 +1513,10 @@ export interface paths {
                          * @example security-admin@mairie360.fr
                          */
                         email?: string;
-                        /** @example 0612345678 */
+                        /**
+                         * @description Phone number in E.164 (`+33612345678`)
+                         * @example +33612345678
+                         */
                         phone?: string;
                         /** @example 1 place de la Mairie */
                         address?: string;
@@ -3254,7 +3257,10 @@ export interface components {
              * @example security-admin@mairie360.fr
              */
             email?: string;
-            /** @example 0612345678 */
+            /**
+             * @description Phone number in E.164 (`+33612345678`)
+             * @example +33612345678
+             */
             phone?: string;
             /** @example 1 place de la Mairie */
             address?: string;

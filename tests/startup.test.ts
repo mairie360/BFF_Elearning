@@ -28,6 +28,15 @@ describe('startup', () => {
     expect(result.stderr).toContain('Missing or invalid upstream configuration: USER_BFF_URL, ELEARNING_API_URL');
   });
 
+  test('refuses to start without JWT_SECRET, which verifies the session tokens', () => {
+    const result = start({
+      PORT: '0', JWT_SECRET: '', USER_BFF_URL: 'http://bff-user:4000', CORE_API_URL: 'core-api', ELEARNING_API_URL: 'elearning-api',
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Missing configuration: JWT_SECRET');
+  });
+
   test('importing the entry point neither listens nor checks the configuration', async () => {
     const saved = process.env.USER_BFF_URL;
     delete process.env.USER_BFF_URL;

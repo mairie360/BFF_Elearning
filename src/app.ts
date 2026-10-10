@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import {
-  apiOnlyHeaders, errorHandler, noStore, notFoundHandler, parseTrustProxy, requireBearer, securityHeaders,
+  apiOnlyHeaders, errorHandler, noStore, notFoundHandler, parseTrustProxy, requireSession, securityHeaders,
 } from '@mairie360/bffs-lib';
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
@@ -32,8 +32,9 @@ app.use('/health', healthRouter);
 app.use('/check_apis', checkApisRouter);
 
 // Session-bound routes: never cached (`Cache-Control: no-store`) and refused with a 401 before any upstream
-// call when the request carries no `Authorization: Bearer <token>` (cookies and other headers are ignored).
-const session = [noStore, requireBearer];
+// call unless the request carries an `Authorization: Bearer <token>` verified with JWT_SECRET (HS256, expiry;
+// bffs-lib requireSession, MAIR-474). Cookies and other headers are ignored.
+const session = [noStore, requireSession];
 app.use('/elearning/catalog', session, catalogRouter);
 app.use('/elearning/profile', session, profileRouter);
 app.use('/elearning/courses', session, contentCompleteRouter, ratingRouter, startRouter);
