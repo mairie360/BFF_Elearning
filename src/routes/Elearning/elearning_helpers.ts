@@ -30,6 +30,9 @@ type CourseStatus = NonNullable<BffCourse['statusValue']>;
  */
 export type UpstreamFormation = { id: number; name: string; description?: string | null; status?: unknown };
 
+/** Formation of `GET /api/v1/formations/catalog/`: the formation with its modules, each carrying its files. */
+export type UpstreamCatalogFormation = UpstreamFormation & { modules: Array<UpstreamModule & { files: UpstreamFile[] }> };
+
 /** A module with the attachments of `GET /api/v1/formations/{formation_id}/{module_id}/`. */
 export type UpstreamChapter = { module: UpstreamModule; files: UpstreamFile[] };
 

@@ -129,7 +129,7 @@ Before running Docker, check service variables, build secrets and networks in th
 
 ## Troubleshooting
 
-If the catalogue rejects the session, check BFF User. An empty catalogue means the caller is enrolled in no formation of the E-learning API (an administrator enrols users there). A 503 on every course route means `ELEARNING_API_URL` is missing; a 502 usually means it is wrong or the API is down: `/check_apis` tells which service is unreachable.
+If the catalogue rejects the session, check BFF User. The catalogue, a course and `start` are read with a single E-learning API call (`GET /api/v1/formations/catalog/`: formations, modules and files of the caller). An empty catalogue means the caller is enrolled in no formation of the E-learning API (an administrator enrols users there). A 503 on every course route means `ELEARNING_API_URL` is missing; a 502 usually means it is wrong or the API is down: `/check_apis` tells which service is unreachable.
 
 ## Repository reference
 
