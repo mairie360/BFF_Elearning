@@ -3,7 +3,7 @@ import { getBffUser } from '@mairie360/bff-user-openapi/endpoints/bffUser';
 import type { SessionResponse, SessionResponseGroupsItem, SessionResponseUser } from '@mairie360/bff-user-openapi/model';
 import { getCoreAPIMairie360 } from '@mairie360/core-api-openapi/endpoints/coreAPIMairie360';
 import { getELearningAPIMairie360 } from '@mairie360/elearning-api-openapi/endpoints/eLearningAPIMairie360';
-import type { AdminFormation, File as ElearningFile, FileType, Module, Status } from '@mairie360/elearning-api-openapi/model';
+import type { AdminFormation, CatalogFormation, File as ElearningFile, FileType, Module, Status } from '@mairie360/elearning-api-openapi/model';
 
 // Réponses BFF User typées par les modèles du paquet @mairie360/bff-user-openapi installé : un champ ajouté, retiré
 // ou renommé par le contrat fait échouer la compilation des tests. Elles sont en plus validées à l'exécution contre
@@ -61,6 +61,14 @@ export function formation(id: number, name: string, status: Status = 'NotStarted
 
 export function learnerModule(id: number, name: string, completed = false): Module {
   return { id, name, description: `${name} description`, completed };
+}
+
+/** A formation of `GET /api/v1/formations/catalog/` (MAIR-506): the formation with its modules and their files. */
+export function catalogFormation(
+  base: AdminFormation & { status: Status },
+  chapters: Array<{ module: Module; files: ElearningFile[] }>,
+): CatalogFormation {
+  return { ...base, description: base.description ?? '', modules: chapters.map(({ module, files }) => ({ ...module, files })) };
 }
 
 export function attachment(id: number, fileName: string, fileType: FileType = 'Pdf'): ElearningFile {

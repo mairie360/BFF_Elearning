@@ -5,7 +5,7 @@ import { ContractMockServer, unreachableUrl, type MockReply } from './support/co
 import { OpenApiContract } from './support/openapi-contract';
 import { loadOrvalContract } from './support/orval-contract';
 import {
-  attachment, bearer, coreApiUrls, elearningApiUrls, formation, group, learnerModule, sessionResponse, userBffUrls,
+  attachment, bearer, catalogFormation, coreApiUrls, elearningApiUrls, formation, group, learnerModule, sessionResponse, userBffUrls,
 } from './support/user-fixtures';
 
 // The whole app is tested with the real axios clients against real HTTP servers standing in for BFF User (session
@@ -24,8 +24,7 @@ const mocks = [userBff, coreApi, elearningApi];
 const USER_BFF = { me: '/me' } as const;
 const CORE = { me: '/api/v1/user/me/' } as const;
 const ELEARNING = {
-  formations: '/api/v1/formations/',
-  formation: '/api/v1/formations/{formationId}/',
+  catalog: '/api/v1/formations/catalog/',
   module: '/api/v1/formations/{formationId}/{moduleId}/',
 } as const;
 const HEALTH = '/health';
@@ -312,11 +311,12 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       const chapter = (formationId: string, moduleId: string) =>
         enrolment(formationId)?.chapters.find((entry) => String(entry.module.id) === moduleId);
 
-      elearningApi.on('get', ELEARNING.formations, () => ({ body: { formations: enrolments.map((entry) => entry.formation) } }));
-      elearningApi.on('get', ELEARNING.formation, ({ pathParams }) => {
-        const found = enrolment(pathParams.formationId);
-        return found ? { body: { modules: found.chapters.map((entry) => entry.module) } } : elearningError(403);
-      });
+      // MAIR-506: the whole catalogue (formations, modules, files) comes from this one operation.
+      elearningApi.on('get', ELEARNING.catalog, () => ({
+        body: {
+          formations: enrolments.map((entry) => catalogFormation(entry.formation, entry.chapters)),
+        },
+      }));
       elearningApi.on('get', ELEARNING.module, ({ pathParams }) => {
         if (!enrolment(pathParams.formationId)) return elearningError(403);
         const found = chapter(pathParams.formationId, pathParams.moduleId);
@@ -386,15 +386,11 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       });
       expect(accueil).toMatchObject({ id: '9', statusValue: 'not-started', progress: 0, chapters: 1 });
 
-      // Every E-learning call is made on behalf of the caller, through the contract operations.
-      expect(elearningApi.requests.map((call) => `${call.method} ${call.url.pathname}`).sort()).toEqual([
-        `GET ${elearningApiUrls.getGetMyFormationsUrl()}`,
-        `GET ${elearningApiUrls.getGetMyFormationByIdUrl(4)}`,
-        `GET ${elearningApiUrls.getGetMyFormationByIdUrl(9)}`,
-        `GET ${elearningApiUrls.getGetModuleUrl(4, 11)}`,
-        `GET ${elearningApiUrls.getGetModuleUrl(4, 12)}`,
-        `GET ${elearningApiUrls.getGetModuleUrl(9, 31)}`,
-      ].sort());
+      // MAIR-506: one E-learning call whatever the number of formations and modules (it used to be 1 + one per
+      // formation + one per module), made on behalf of the caller through the contract operation.
+      expect(elearningApi.requests.map((call) => `${call.method} ${call.url.pathname}`)).toEqual([
+        `GET ${elearningApiUrls.getGetMyCatalogUrl()}`,
+      ]);
       expect(elearningApi.requests.every((call) => call.headers.authorization === bearer(2))).toBe(true);
     });
 
@@ -437,7 +433,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('turns an E-learning API 401 into a 401', async () => {
-      elearningApi.on('get', ELEARNING.formations, elearningError(401));
+      elearningApi.on('get', ELEARNING.catalog, elearningError(401));
 
       const response = await withSession(request(app).get('/elearning/catalog'), 'revoked-agent');
 
@@ -450,9 +446,11 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       ['a 500', elearningError(500), 'Upstream service error'],
       ['a dropped connection', { dropConnection: true }, 'The ELEARNING_API service is unavailable.'],
       ['a body without formations', { body: { courses: [] }, outOfContract: true }, 'The ELEARNING_API answer is invalid.'],
+      ['a formation without modules', { body: { formations: [{ id: 4, name: 'RGPD' }] }, outOfContract: true }, 'The ELEARNING_API answer is invalid.'],
+      ['a module without files', { body: { formations: [{ id: 4, name: 'RGPD', modules: [{ id: 11, name: 'Module', completed: false }] }] }, outOfContract: true }, 'The ELEARNING_API answer is invalid.'],
     ])('answers 502 without leaking anything when the E-learning API returns %s', async (_label, reply, message) => {
       jest.spyOn(console, 'error').mockImplementation(() => undefined);
-      elearningApi.on('get', ELEARNING.formations, reply);
+      elearningApi.on('get', ELEARNING.catalog, reply);
 
       const response = await withSession(request(app).get('/elearning/catalog'), 'outage-agent');
 
@@ -464,12 +462,12 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
     test('retries an E-learning GET once on a transient failure', async () => {
       let calls = 0;
-      elearningApi.on('get', ELEARNING.formations, () => (++calls === 1 ? elearningError(503) : { body: { formations: [] } }));
+      elearningApi.on('get', ELEARNING.catalog, () => (++calls === 1 ? elearningError(503) : { body: { formations: [] } }));
 
       const response = await withSession(request(app).get('/elearning/catalog'), 'retry-agent');
 
       expect(response.status).toBe(200);
-      expect(elearningApi.calls(ELEARNING.formations, 'get')).toHaveLength(2);
+      expect(elearningApi.calls(ELEARNING.catalog, 'get')).toHaveLength(2);
     });
 
     test('never retries the completion PATCH', async () => {
@@ -561,6 +559,9 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expectBffContract('post', '/elearning/courses/{courseId}/start', started);
       expect(started.body).toMatchObject({ course: { id: '4', progress: 50 }, nextContentId: '29', redirectUrl: '/courses/4' });
       expect(elearningApi.requests.every((call) => call.method === 'GET')).toBe(true);
+      // One catalogue read, no read per module.
+      expect(elearningApi.calls(ELEARNING.catalog, 'get')).toHaveLength(1);
+      expect(elearningApi.calls(ELEARNING.module, 'get')).toHaveLength(0);
 
       const missing = await withSession(request(app).post('/elearning/courses/77/start'), 'start-agent').send({ source: 'catalog' });
       expect(missing.status).toBe(404);

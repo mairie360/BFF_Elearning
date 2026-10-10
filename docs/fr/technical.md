@@ -131,7 +131,7 @@ Avant un lancement Docker, vérifier les variables de service, les secrets de bu
 
 ## Diagnostic
 
-Si le catalogue refuse la session, vérifier BFF User. Un catalogue vide signifie que l’appelant n’est inscrit à aucune formation de l’API E-learning (un administrateur y inscrit les utilisateurs). Un 503 sur toutes les routes de formation signale un `ELEARNING_API_URL` absent ; un 502 signale le plus souvent une URL erronée ou une API arrêtée : `/check_apis` indique quel service est injoignable.
+Si le catalogue refuse la session, vérifier BFF User. Le catalogue, un cours et `start` sont lus en un seul appel à l’API E-learning (`GET /api/v1/formations/catalog/` : formations, modules et fichiers de l’appelant). Un catalogue vide signifie que l’appelant n’est inscrit à aucune formation de l’API E-learning (un administrateur y inscrit les utilisateurs). Un 503 sur toutes les routes de formation signale un `ELEARNING_API_URL` absent ; un 502 signale le plus souvent une URL erronée ou une API arrêtée : `/check_apis` indique quel service est injoignable.
 
 ## Repères dans le dépôt
 
