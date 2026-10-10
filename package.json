@@ -15,7 +15,7 @@
     "@asteasolutions/zod-to-openapi": "9.1.0",
     "@mairie360/bffs-lib": "1.2.0",
     "@mairie360/core-api-openapi": "0.0.0-dev-abaa6c2",
-    "@mairie360/elearning-api-openapi": "0.0.0-dev-3c5724c",
+    "@mairie360/elearning-api-openapi": "0.0.0-dev-9f61ed0",
     "axios": "1.20.0",
     "dotenv": "17.4.2",
     "express": "5.2.1",
