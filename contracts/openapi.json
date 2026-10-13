@@ -4346,20 +4346,12 @@
               "Connected",
               "Unreachable"
             ]
-          },
-          "user_bff": {
-            "type": "string",
-            "enum": [
-              "Connected",
-              "Unreachable"
-            ]
           }
         },
         "required": [
           "status",
           "core_api",
-          "elearning_api",
-          "user_bff"
+          "elearning_api"
         ]
       }
     },
@@ -4386,7 +4378,7 @@
         "tags": [
           "Connectivity"
         ],
-        "summary": "Checks that Core API, E-learning API and BFF User answer their /health probe",
+        "summary": "Checks that Core API and E-learning API answer their /health probe",
         "responses": {
           "200": {
             "description": "Every upstream is reachable",
@@ -4901,7 +4893,7 @@
             }
           },
           "502": {
-            "description": "BFF User or an upstream API is unreachable, failed or answered an unusable body",
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -4911,7 +4903,7 @@
             }
           },
           "503": {
-            "description": "BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
             "content": {
               "application/json": {
                 "schema": {
@@ -5830,7 +5822,7 @@
             }
           },
           "502": {
-            "description": "BFF User or an upstream API is unreachable, failed or answered an unusable body",
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -5840,7 +5832,7 @@
             }
           },
           "503": {
-            "description": "BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
             "content": {
               "application/json": {
                 "schema": {
@@ -5935,7 +5927,7 @@
             }
           },
           "502": {
-            "description": "BFF User or an upstream API is unreachable, failed or answered an unusable body",
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -5945,7 +5937,7 @@
             }
           },
           "503": {
-            "description": "BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
             "content": {
               "application/json": {
                 "schema": {
@@ -6750,7 +6742,7 @@
             }
           },
           "502": {
-            "description": "BFF User or an upstream API is unreachable, failed or answered an unusable body",
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -6760,7 +6752,7 @@
             }
           },
           "503": {
-            "description": "BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7166,7 +7158,7 @@
             }
           },
           "502": {
-            "description": "BFF User or an upstream API is unreachable, failed or answered an unusable body",
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -7176,7 +7168,7 @@
             }
           },
           "503": {
-            "description": "BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7194,7 +7186,7 @@
           "E-learning"
         ],
         "summary": "Loads the E-learning profile",
-        "description": "The caller as resolved by BFF User `/me`, ready to render on the profile page.",
+        "description": "The caller as read from Core API (`GET /api/v1/user/me/`), ready to render on the profile page.",
         "responses": {
           "200": {
             "description": "Profile loaded",
@@ -7339,7 +7331,7 @@
             }
           },
           "502": {
-            "description": "BFF User or an upstream API is unreachable, failed or answered an unusable body",
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -7349,7 +7341,7 @@
             }
           },
           "503": {
-            "description": "BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7365,7 +7357,7 @@
           "E-learning"
         ],
         "summary": "Updates the editable profile fields",
-        "description": "`email` and `phone` are saved by Core API (`PATCH /api/v1/user/me/`), then the profile is read again from BFF User. `address` and `city` are stored by no upstream service: a body carrying them answers 501 and nothing is written. Non-editable fields (role, isAdmin, service, position, lastConnection) are ignored.",
+        "description": "`email` and `phone` are saved by Core API (`PATCH /api/v1/user/me/`), then the profile is read again from Core API. `address` and `city` are stored by no upstream service: a body carrying them answers 501 and nothing is written. Non-editable fields (role, isAdmin, service, position, lastConnection) are ignored.",
         "requestBody": {
           "required": true,
           "content": {
@@ -7531,7 +7523,7 @@
             }
           },
           "502": {
-            "description": "BFF User or an upstream API is unreachable, failed or answered an unusable body",
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -7541,7 +7533,7 @@
             }
           },
           "503": {
-            "description": "BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7702,7 +7694,7 @@
             }
           },
           "502": {
-            "description": "BFF User or an upstream API is unreachable, failed or answered an unusable body",
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -7712,7 +7704,7 @@
             }
           },
           "503": {
-            "description": "BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
             "content": {
               "application/json": {
                 "schema": {
@@ -8232,7 +8224,7 @@
             }
           },
           "502": {
-            "description": "BFF User or an upstream API is unreachable, failed or answered an unusable body",
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
@@ -8242,7 +8234,7 @@
             }
           },
           "503": {
-            "description": "BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
             "content": {
               "application/json": {
                 "schema": {

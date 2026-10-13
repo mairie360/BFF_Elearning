@@ -49,8 +49,8 @@ registry.registerPath({
 router.get('/', async (req: Request, res: Response) => {
   const query = parseRequest(ElearningCatalogQuery, req.query, 'query');
 
-  const user = await getAuthenticatedUser(req);
-  const courses = await loadCourses(req);
+  // Independent reads: the Core profile and the courses start together (MAIR-525).
+  const [user, courses] = await Promise.all([getAuthenticatedUser(req), loadCourses(req)]);
   return res.status(200).json(buildCatalogResponse(query, user, courses));
 });
 

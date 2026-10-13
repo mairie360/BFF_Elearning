@@ -2,26 +2,23 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { JsonSchema, OpenApiContract } from './support/openapi-contract';
 import { loadOrvalContract, resolveOrvalPackage } from './support/orval-contract';
-import { attachment, coreApiUrls, elearningApiUrls, formation, group, learnerModule, sessionResponse, userBffUrls } from './support/user-fixtures';
+import { attachment, coreApiUrls, coreMe, elearningApiUrls, formation, group, learnerModule } from './support/user-fixtures';
 
 // The upstream contracts are rebuilt from the installed @mairie360/*-openapi packages: bumping a version in
 // package.json is enough to test the BFF against the new contract.
 
 const PACKAGES = [
-  { name: '@mairie360/bff-user-openapi', title: /^bff_user$/, dependencies: 'devDependencies' },
   { name: '@mairie360/core-api-openapi', title: /^Core API/, dependencies: 'dependencies' },
   { name: '@mairie360/elearning-api-openapi', title: /^ELearning API/, dependencies: 'dependencies' },
 ] as const;
 
-const userBff = loadOrvalContract('@mairie360/bff-user-openapi');
 const coreApi = loadOrvalContract('@mairie360/core-api-openapi');
 const elearningApi = loadOrvalContract('@mairie360/elearning-api-openapi');
 
 // Upstream operations the BFF actually calls (src/routes/Elearning/auth.ts, elearning_upstream.ts, profile.ts,
 // src/routes/check_apis.ts), addressed through the URL helpers of the generated clients.
 const CONSUMED = [
-  { contract: userBff, operationId: 'getMe', method: 'get', url: userBffUrls.getGetMeUrl() },
-  { contract: userBff, operationId: 'getHealth', method: 'get', url: userBffUrls.getGetHealthUrl() },
+  { contract: coreApi, operationId: 'getMe', method: 'get', url: coreApiUrls.getGetMeUrl() },
   { contract: coreApi, operationId: 'patchMe', method: 'patch', url: coreApiUrls.getPatchMeUrl() },
   { contract: coreApi, operationId: 'health', method: 'get', url: coreApiUrls.getHealthUrl() },
   { contract: elearningApi, operationId: 'getMyFormations', method: 'get', url: elearningApiUrls.getGetMyFormationsUrl() },
@@ -53,22 +50,26 @@ describe('upstream contracts from the installed @mairie360 OpenAPI packages', ()
     expect((match?.operation as { operationId?: string } | undefined)?.operationId).toBe(operationId);
   });
 
-  test('GET /me takes no parameter and returns a SessionResponse; errors are not typed by orval', () => {
-    const me = userBff.match('GET', userBffUrls.getGetMeUrl())!;
-    expect(me.operation.parameters).toEqual([]);
-    expect(userBff.responseSchema(me, 200)).toEqual({ documented: true, schema: { $ref: '#/components/schemas/SessionResponse' } });
-    expect(userBff.responseSchema(me, 401).documented).toBe(false);
-    expect(userBff.schema('SessionResponse')).toMatchObject({ required: ['user', 'groups', 'roles'] });
+  test('Core GET /api/v1/user/me/ takes no parameter and lists every role and group of the caller', () => {
+    const me = coreApi.match('GET', coreApiUrls.getGetMeUrl())!;
+    expect(me.operation.parameters ?? []).toEqual([]);
+    expect(coreApi.responseSchema(me, 200)).toEqual({ documented: true, schema: { $ref: '#/components/schemas/GetMeResponseView' } });
+    expect(coreApi.schema('GetMeResponseView')).toMatchObject({ required: expect.arrayContaining(['email', 'first_name', 'last_name', 'groups', 'roles']) });
+  });
+
+  test('MAIR-525: the BFF depends on no other BFF contract', () => {
+    const all = { ...packageJson.dependencies, ...packageJson.devDependencies };
+    expect(Object.keys(all).filter((name) => name.startsWith('@mairie360/bff-'))).toEqual([]);
   });
 });
 
 describe('upstream fixtures conform to the upstream contracts', () => {
   test.each([
-    ['a regular agent', sessionResponse()],
-    ['an administrator without phone nor group', sessionResponse({ role: 'Admin', phone: null }, [])],
-    ['a user without role', sessionResponse({ role: undefined }, [group(9)])],
-  ])('BFF User GET /me 200 for %s', (_name, body) => {
-    expect(userBff.validate(responseSchema(userBff, 'get', userBffUrls.getGetMeUrl(), 200), JSON.parse(JSON.stringify(body)))).toEqual([]);
+    ['a regular agent', coreMe()],
+    ['an administrator without phone nor group', coreMe({ role: 'admin', roles: ['admin', 'User'], phone: null }, [])],
+    ['a user without role', coreMe({ role: '', roles: [] }, [group(9)])],
+  ])('Core GET /api/v1/user/me/ 200 for %s', (_name, body) => {
+    expect(coreApi.validate(responseSchema(coreApi, 'get', coreApiUrls.getGetMeUrl(), 200), JSON.parse(JSON.stringify(body)))).toEqual([]);
   });
 });
 
@@ -89,20 +90,20 @@ describe('E-learning API fixtures conform to its contract', () => {
 });
 
 describe('contract validator', () => {
-  test('reports missing required properties and wrong types in a session', () => {
-    const invalid = { user: { first_name: 'Alice', email: 42, status: 'active' }, groups: [{ id: '1', name: 'Urbanisme' }] };
-    expect(userBff.validate(responseSchema(userBff, 'get', userBffUrls.getGetMeUrl(), 200), invalid)).toEqual(expect.arrayContaining([
+  test('reports missing required properties and wrong types in a profile', () => {
+    const invalid = { first_name: 'Alice', email: 42, status: 'active', groups: [{ id: '1', name: 'Urbanisme' }] };
+    expect(coreApi.validate(responseSchema(coreApi, 'get', coreApiUrls.getGetMeUrl(), 200), invalid)).toEqual(expect.arrayContaining([
       expect.stringContaining('$.roles: propriété requise manquante'),
-      expect.stringContaining('$.user.last_name: propriété requise manquante'),
-      expect.stringContaining('$.user.email: type string attendu'),
+      expect.stringContaining('$.last_name: propriété requise manquante'),
+      expect.stringContaining('$.email: type string attendu'),
       expect.stringContaining('$.groups[0].id: type number attendu'),
       expect.stringContaining('$.groups[0].owner_id: propriété requise manquante'),
     ]));
   });
 
   test('rejects operations absent from the contract', () => {
-    expect(userBff.validateRequest('POST', new URL(userBffUrls.getGetMeUrl(), 'http://bff-user')).errors)
-      .toEqual([expect.stringContaining(`n'existe pas dans le contrat ${userBff.title}`)]);
-    expect(userBff.match('GET', '/elearning/catalog')).toBeUndefined();
+    expect(coreApi.validateRequest('DELETE', new URL(coreApiUrls.getGetMeUrl(), 'http://core-api')).errors)
+      .toEqual([expect.stringContaining(`n'existe pas dans le contrat ${coreApi.title}`)]);
+    expect(coreApi.match('GET', '/elearning/catalog')).toBeUndefined();
   });
 });

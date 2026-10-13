@@ -1,4 +1,4 @@
-import { asCaller, HttpError, upstreamError, upstreamStatus, withRetry } from '@mairie360/bffs-lib';
+import { asCaller, DEFAULT_CONCURRENCY, HttpError, mapWithConcurrency, upstreamError, upstreamStatus, withRetry } from '@mairie360/bffs-lib';
 import type { Request } from 'express';
 import { elearningClient } from '../../clients/elearningClient';
 import { UPSTREAM_TIMEOUT_MS } from '../../clients/upstream';
@@ -76,18 +76,21 @@ async function loadChapters(req: Caller, formationId: number, notFound?: () => H
   const body = await call(() => elearningClient.getMyFormationById(formationId, options(req)), read);
   const modules = arrayOf<UpstreamChapter['module']>(body, 'modules');
 
-  return Promise.all(
-    modules.map(async (module) => {
+  return mapWithConcurrency(
+    modules,
+    DEFAULT_CONCURRENCY,
+    async (module) => {
       const moduleBody = await call(() => elearningClient.getModule(formationId, module.id, options(req)), read);
       return { module, files: arrayOf<UpstreamChapter['files'][number]>(moduleBody, 'files') };
-    }),
+    },
   );
 }
 
 /** Courses the caller is enrolled in, with their chapters, contents and progress. */
 export async function loadCourses(req: Caller): Promise<BffCourse[]> {
   const formations = await listFormations(req);
-  return Promise.all(formations.map(async (formation) => toCourse(formation, await loadChapters(req, formation.id))));
+  // Bounded fan-out (MAIR-525): at most DEFAULT_CONCURRENCY formations, each reading DEFAULT_CONCURRENCY modules at a time.
+  return mapWithConcurrency(formations, DEFAULT_CONCURRENCY, async (formation) => toCourse(formation, await loadChapters(req, formation.id)));
 }
 
 /** One course of the caller; 404 when it does not exist or the caller is not enrolled in it. */

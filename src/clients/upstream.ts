@@ -1,7 +1,7 @@
-export type UpstreamService = 'USER_BFF' | 'CORE_API' | 'ELEARNING_API';
+export type UpstreamService = 'CORE_API' | 'ELEARNING_API';
 
 /** Every upstream the BFF calls: `src/index.ts` refuses to start when one `<SERVICE>_URL` is missing or invalid. */
-export const UPSTREAM_SERVICES: readonly UpstreamService[] = ['USER_BFF', 'CORE_API', 'ELEARNING_API'];
+export const UPSTREAM_SERVICES: readonly UpstreamService[] = ['CORE_API', 'ELEARNING_API'];
 
 /**
  * Timeout of every upstream call, in ms. The base URL and the caller's session are given per call with
