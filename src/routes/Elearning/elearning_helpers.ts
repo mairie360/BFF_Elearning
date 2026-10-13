@@ -23,11 +23,7 @@ type BffCatalogQuery = z.infer<typeof ElearningCatalogQuery>;
 type BffCatalogResponse = z.infer<typeof ElearningCatalogResponse>;
 type CourseStatus = NonNullable<BffCourse['statusValue']>;
 
-/**
- * Formation of `GET /api/v1/formations/`. The published package types it as `AdminFormation`
- * (two upstream schemas share the name `GetFormationsResultView`), but the API also returns the
- * caller's progress `status`, read here when present.
- */
+/** Formation of the caller, as `GET /api/v1/formations/catalog/` returns it (`CatalogFormation`), its modules aside. */
 export type UpstreamFormation = { id: number; name: string; description?: string | null; status?: unknown };
 
 /** A module with the attachments of `GET /api/v1/formations/{formation_id}/{module_id}/`. */
