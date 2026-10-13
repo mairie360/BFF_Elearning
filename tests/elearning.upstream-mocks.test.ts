@@ -731,24 +731,43 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     test('MAIR-525: reads the admin role in the token without calling Core', async () => {
       jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
-      const response = await withSession(request(app).delete('/elearning/admin/courses/4'), 'jwt-admin', { roles: ['User', 'admin'] });
+      const response = await withSession(request(app).delete('/elearning/admin/courses/4'), 'jwt-admin', { role: 'admin' });
 
       expect(response.status).toBe(501);
       expectBffContract('delete', '/elearning/admin/courses/{courseId}', response);
       expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
     });
 
-    test('MAIR-525: forbids a token whose roles hold no admin, without calling Core', async () => {
+    test('MAIR-525: forbids a token whose role is not admin, without calling Core', async () => {
       coreApi.on('get', CORE.me, { body: coreMe({ role: 'admin', roles: ['admin'] }) });
 
-      const response = await withSession(request(app).delete('/elearning/admin/courses/4'), 'jwt-agent', { roles: [] });
+      const response = await withSession(request(app).delete('/elearning/admin/courses/4'), 'jwt-agent', { role: 'User' });
 
       expect(response.status).toBe(403);
       expectBffContract('delete', '/elearning/admin/courses/{courseId}', response);
       expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
     });
 
-    test('propagates a Core outage as 502 for a token without roles claim', async () => {
+    test('MAIR-529: reads the role from Core for an empty `role` claim', async () => {
+      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      coreApi.on('get', CORE.me, { body: coreMe({ role: 'admin', roles: ['admin'] }) });
+
+      const response = await withSession(request(app).delete('/elearning/admin/courses/4'), 'jwt-empty-role', { role: '' });
+
+      expect(response.status).toBe(501);
+      expect(coreApi.requests).toHaveLength(1);
+    });
+
+    test('MAIR-529: ignores a `roles` claim and reads the role from Core', async () => {
+      coreApi.on('get', CORE.me, { body: coreMe() });
+
+      const response = await withSession(request(app).delete('/elearning/admin/courses/4'), 'jwt-roles-only', { roles: ['admin'] });
+
+      expect(response.status).toBe(403);
+      expect(coreApi.requests).toHaveLength(1);
+    });
+
+    test('propagates a Core outage as 502 for a token without role claim', async () => {
       coreApi.on('get', CORE.me, { dropConnection: true });
 
       const response = await withSession(request(app).delete('/elearning/admin/courses/4'), 'admin-offline');

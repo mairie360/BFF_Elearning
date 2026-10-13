@@ -1,6 +1,6 @@
 import type { GetMeResponseView } from '@mairie360/core-api-openapi/model/getMeResponseView';
 import {
-  asCaller, HttpError, INVALID_SESSION_MESSAGE, sessionRoles, sessionUserId, upstreamError, upstreamStatus, withRetry,
+  asCaller, HttpError, INVALID_SESSION_MESSAGE, sessionRole, sessionUserId, upstreamError, upstreamStatus, withRetry,
 } from '@mairie360/bffs-lib';
 import type { Request } from 'express';
 import { coreClient } from '../../clients/coreClient';
@@ -90,10 +90,11 @@ export async function getAuthenticatedUser(req: Request): Promise<BffCurrentUser
 }
 
 /**
- * Whether the caller holds an `admin` role: read in the verified token (`roles` claim, MAIR-529) without any call,
- * or from Core's profile for a token issued before that claim existed.
+ * Whether the caller holds an `admin` role: read in the verified token (`role` claim, MAIR-529) without any call,
+ * or from Core's profile for a token without that claim (or with an empty one).
  */
 export async function isCallerAdmin(req: Request): Promise<boolean> {
-  const roles = sessionRoles(req) ?? coreRoles(await readCoreMe(req));
-  return roles.some(isAdminRole);
+  const role = sessionRole(req);
+  if (role !== undefined) return isAdminRole(role);
+  return coreRoles(await readCoreMe(req)).some(isAdminRole);
 }

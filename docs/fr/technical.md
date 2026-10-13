@@ -6,7 +6,7 @@
 
 Serveur Express 5.2.1 écrit en TypeScript. Les schémas Zod et leur registre OpenAPI décrivent les objets échangés; les routeurs adaptent les services amont aux besoins des interfaces.
 
-`src/app.ts` monte les routes `/elearning`. `auth.ts` lit le profil de l’appelant auprès de Core API `GET /api/v1/user/me/` (délai de 5 secondes) et ses rôles dans la claim `roles` du jeton vérifié, ou dans ce profil pour un jeton plus ancien (MAIR-525 : aucun appel à un autre BFF). `elearning_upstream.ts` appelle l’API E-learning pour le compte de l’appelant (son Bearer est transmis) et `elearning_helpers.ts` met en forme ses réponses; `profile.ts` enregistre e-mail et téléphone via Core API. Les routes administrateur exigent un rôle `admin` parmi ceux de l’appelant.
+`src/app.ts` monte les routes `/elearning`. `auth.ts` lit le profil de l’appelant auprès de Core API `GET /api/v1/user/me/` (délai de 5 secondes) et son rôle dans la claim `role` du jeton vérifié, ou dans ce profil pour un jeton qui n’en a pas (MAIR-525 : aucun appel à un autre BFF). `elearning_upstream.ts` appelle l’API E-learning pour le compte de l’appelant (son Bearer est transmis) et `elearning_helpers.ts` met en forme ses réponses; `profile.ts` enregistre e-mail et téléphone via Core API. Les routes administrateur exigent un rôle `admin` parmi ceux de l’appelant.
 
 ## Données et persistance
 

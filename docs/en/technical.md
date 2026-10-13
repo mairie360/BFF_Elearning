@@ -6,7 +6,7 @@
 
 Express 5.2.1 server written in TypeScript. Zod schemas and their OpenAPI registry describe exchanged objects; routers adapt upstream services to interface needs.
 
-`src/app.ts` mounts `/elearning` routes. `auth.ts` reads the caller's profile from Core API `GET /api/v1/user/me/` (5-second timeout) and their roles from the verified token's `roles` claim, or from that profile for an older token (MAIR-525: no call to another BFF). `elearning_upstream.ts` calls the E-learning API on behalf of the caller (their bearer is forwarded) and `elearning_helpers.ts` shapes its answers; `profile.ts` writes e-mail and phone through Core API. Administrator routes need an `admin` role among the caller's roles.
+`src/app.ts` mounts `/elearning` routes. `auth.ts` reads the caller's profile from Core API `GET /api/v1/user/me/` (5-second timeout) and their role from the verified token's `role` claim, or from that profile for a token without it (MAIR-525: no call to another BFF). `elearning_upstream.ts` calls the E-learning API on behalf of the caller (their bearer is forwarded) and `elearning_helpers.ts` shapes its answers; `profile.ts` writes e-mail and phone through Core API. Administrator routes need an `admin` role among the caller's roles.
 
 ## Data and persistence
 
