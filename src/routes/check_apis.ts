@@ -3,6 +3,7 @@ import { Router } from 'express';
 import coreClient from '../clients/coreClient';
 import elearningClient from '../clients/elearningClient';
 import { UPSTREAM_TIMEOUT_MS } from '../clients/upstream';
+import { logger } from '../logger';
 import { registry } from '../openapi-registry';
 
 const router = Router();
@@ -37,7 +38,7 @@ router.get(
   checkApis({
     core_api: () => coreClient.health(withoutSession('CORE_API', UPSTREAM_TIMEOUT_MS)),
     elearning_api: () => elearningClient.health(withoutSession('ELEARNING_API', UPSTREAM_TIMEOUT_MS)),
-  } satisfies Record<(typeof UPSTREAMS)[number], () => Promise<unknown>>),
+  } satisfies Record<(typeof UPSTREAMS)[number], () => Promise<unknown>>, { logger }),
 );
 
 export default router;
