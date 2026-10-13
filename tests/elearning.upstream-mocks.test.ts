@@ -7,6 +7,7 @@ import { loadOrvalContract } from './support/orval-contract';
 import {
   attachment, bearer, coreApiUrls, coreMe, elearningApiUrls, formation, group, learnerModule,
 } from './support/user-fixtures';
+import { captureLogs } from './support/logs';
 
 // The whole app is tested with the real axios clients against real HTTP servers standing in for Core API (profile and
 // roles, profile writes, /check_apis) and E-learning API (courses, progress, /check_apis). No other BFF is called
@@ -170,7 +171,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       ['a text body', { raw: 'OK', contentType: 'text/plain', outOfContract: true }, 'The CORE_API answer is invalid.'],
       ['a JSON body that is not a profile', { body: { groups: [], roles: [] }, outOfContract: true }, 'The CORE_API answer is invalid.'],
     ])('answers 502 when Core returns %s', async (_label, reply, message) => {
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
       coreApi.on('get', CORE.me, reply);
 
       const response = await withSession(request(app).get('/elearning/profile'), 'agent-broken');
@@ -192,7 +193,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
     test('answers 503 when CORE_API_URL is not configured, instead of calling localhost', async () => {
       delete process.env.CORE_API_URL;
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
 
       const response = await withSession(request(app).get('/elearning/profile'), 'agent-unconfigured');
 
@@ -444,7 +445,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       ['a dropped connection', { dropConnection: true }, 'The ELEARNING_API service is unavailable.'],
       ['a body without formations', { body: { courses: [] }, outOfContract: true }, 'The ELEARNING_API answer is invalid.'],
     ])('answers 502 without leaking anything when the E-learning API returns %s', async (_label, reply, message) => {
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
       elearningApi.on('get', ELEARNING.formations, reply);
 
       const response = await withSession(request(app).get('/elearning/catalog'), 'outage-agent');
@@ -466,7 +467,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('never retries the completion PATCH', async () => {
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
       elearningApi.on('patch', ELEARNING.module, elearningError(503));
 
       const response = await withSession(request(app).post('/elearning/courses/4/contents/29/complete'), 'retry-agent')
@@ -479,7 +480,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
 
     test('answers 503 when ELEARNING_API_URL is not configured, instead of calling localhost', async () => {
       delete process.env.ELEARNING_API_URL;
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
 
       const response = await withSession(request(app).get('/elearning/catalog'), 'config-agent');
 
@@ -525,7 +526,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('POST .../complete answers 501 for completed: false, which the E-learning API cannot undo', async () => {
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
 
       const response = await withSession(request(app).post('/elearning/courses/4/contents/27/complete'), 'undo-agent')
         .send({ chapterId: '11', completed: false });
@@ -562,7 +563,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('POST .../rating answers 501 instead of keeping the rating in memory, and validates first', async () => {
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
       const rated = await withSession(request(app).post('/elearning/courses/4/rating'), 'rating-agent').send({ rating: 5 });
 
       expect(rated.status).toBe(501);
@@ -610,7 +611,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('PATCH /elearning/profile answers 501 for address or city and writes nothing', async () => {
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
       coreApi.on('get', CORE.me, { body: coreMe() });
 
       const response = await withSession(request(app).patch('/elearning/profile'), 2)
@@ -653,7 +654,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('PATCH /elearning/profile answers 503 when CORE_API_URL is not configured, and writes nothing', async () => {
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
       coreApi.on('get', CORE.me, { body: coreMe() });
       delete process.env.CORE_API_URL;
 
@@ -666,7 +667,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('hides unexpected errors behind a generic 500', async () => {
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
       coreApi.on('get', CORE.me, { body: coreMe() });
       const helpers = await import('../src/routes/Elearning/elearning_helpers');
       jest.spyOn(helpers, 'footer').mockImplementation(() => { throw new Error('secret stack detail'); });
@@ -689,7 +690,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     };
 
     test.each(['Admin', 'admin', 'ADMIN'])('answers 501 to a Core role %s: the E-learning API cannot edit courses', async (role) => {
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
       coreApi.on('get', CORE.me, { body: coreMe({ role: 'User', roles: ['User', role] }) });
 
       const responses = [
@@ -729,7 +730,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('MAIR-525: reads the admin role in the token without calling Core', async () => {
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
 
       const response = await withSession(request(app).delete('/elearning/admin/courses/4'), 'jwt-admin', { role: 'admin' });
 
@@ -749,7 +750,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('MAIR-529: reads the role from Core for an empty `role` claim', async () => {
-      jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      captureLogs();
       coreApi.on('get', CORE.me, { body: coreMe({ role: 'admin', roles: ['admin'] }) });
 
       const response = await withSession(request(app).delete('/elearning/admin/courses/4'), 'jwt-empty-role', { role: '' });
@@ -795,7 +796,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('reports each upstream independently and leaks no network detail', async () => {
-      jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      captureLogs();
       process.env.CORE_API_PORT = new URL(await unreachableUrl()).port;
 
       const response = await request(app).get('/check_apis');
@@ -821,7 +822,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     test.each([
       ['ELEARNING_API', 'elearning_api'],
     ])('reports %s without configured URL as unreachable', async (service, key) => {
-      jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      captureLogs();
       delete process.env[`${service}_URL`];
 
       const response = await request(app).get('/check_apis');
@@ -834,7 +835,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     test.each<[string, ContractMockServer]>([
       ['E-learning API', elearningApi],
     ])('reports %s unreachable when it answers an error', async (_label, mock) => {
-      jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      captureLogs();
       mock.on('get', HEALTH, { status: 503, raw: 'down', contentType: 'text/plain', outOfContract: true });
 
       const response = await request(app).get('/check_apis');

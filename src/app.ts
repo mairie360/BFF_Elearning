@@ -1,10 +1,11 @@
 import 'dotenv/config';
 import {
-  apiOnlyHeaders, errorHandler, noStore, notFoundHandler, parseTrustProxy, requireSession, securityHeaders,
+  apiOnlyHeaders, errorHandler, noStore, notFoundHandler, parseTrustProxy, requestLogger, requireSession, securityHeaders,
 } from '@mairie360/bffs-lib';
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
 import { openApiDocument } from './openapi';
+import { logger } from './logger';
 import healthRouter from './routes/health';
 import checkApisRouter from './routes/check_apis';
 import catalogRouter from './routes/Elearning/catalog';
@@ -17,6 +18,8 @@ import adminCoursesRouter from './routes/Elearning/admin_courses';
 export const app = express();
 // Client IP (req.ip) as seen behind the ingress: unset or `false` trusts no proxy.
 app.set('trust proxy', parseTrustProxy(process.env.TRUST_PROXY));
+// First: every request gets an id and one JSON log line when it ends (method, route, status, duration; MAIR-531).
+app.use(requestLogger({ logger }));
 // Security headers shared by every BFF on every response, then the stricter API-only headers everywhere but
 // /docs; both run before body parsing so that they also cover body-parse error responses.
 app.use(securityHeaders);
@@ -44,6 +47,6 @@ app.use('/elearning/admin/courses', session, adminCoursesRouter);
 // status of the error is kept (400 for an unparsable body, 401, 403, 404, 409, 502, 503...) and anything
 // unexpected becomes a 500 without leaking its message (it is only logged).
 app.use(notFoundHandler);
-app.use(errorHandler({ onError: (error) => console.error('[BFF] Unexpected error', error) }));
+app.use(errorHandler({ logger }));
 
 export default app;
