@@ -20,12 +20,19 @@ function start(env: Record<string, string>) {
   });
 }
 
+/** The JSON line `src/index.ts` writes on stdout before exiting (MAIR-531: logs go through the lib logger). */
+function startupError(stdout: string) {
+  return stdout.split('\n').filter(Boolean).map((line) => JSON.parse(line)).find((line) => line.level === 'ERROR');
+}
+
 describe('startup', () => {
   test('refuses to start and names every missing upstream URL', () => {
     const result = start({ PORT: '0', CORE_API_PORT: '3000' });
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Missing or invalid upstream configuration: CORE_API_URL, ELEARNING_API_URL');
+    expect(startupError(result.stdout)).toEqual(expect.objectContaining({
+      target: 'bff-elearning', message: 'invalid configuration', error: expect.stringContaining('Missing or invalid upstream configuration: CORE_API_URL, ELEARNING_API_URL'),
+    }));
   });
 
   test('refuses to start without JWT_SECRET, which verifies the session tokens', () => {
@@ -34,7 +41,9 @@ describe('startup', () => {
     });
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Missing configuration: JWT_SECRET');
+    expect(startupError(result.stdout)).toEqual(expect.objectContaining({
+      target: 'bff-elearning', message: 'invalid configuration', error: expect.stringContaining('Missing configuration: JWT_SECRET'),
+    }));
   });
 
   test('importing the entry point neither listens nor checks the configuration', async () => {
