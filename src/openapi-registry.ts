@@ -483,6 +483,11 @@ export const sessionErrorResponses = {
     description: 'Missing, expired or invalid session',
     content: { 'application/json': { schema: ErrorResponse } },
   },
+  // bffs-lib >= 2.4.0 relays an upstream 429 with its Retry-After instead of a 502 (MAIR-562).
+  429: {
+    description: 'An upstream API rate limit is reached: retry after the Retry-After header (seconds)',
+    content: { 'application/json': { schema: ErrorResponse } },
+  },
   502: {
     description: 'An upstream API is unreachable, failed or answered an unusable body',
     content: { 'application/json': { schema: ErrorResponse } },

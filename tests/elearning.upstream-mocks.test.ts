@@ -155,7 +155,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(JSON.stringify(response.body)).not.toContain('panic');
     });
 
-    test.each([404, 409, 422, 429])('turns an undeclared Core %i into a 502', async (status) => {
+    test.each([404, 409, 422])('turns an undeclared Core %i into a 502', async (status) => {
       coreApi.on('get', CORE.me, coreError(status));
 
       const response = await withSession(request(app).get('/elearning/profile'), 'agent-odd');
@@ -163,6 +163,17 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(response.status).toBe(502);
       expectBffContract('get', '/elearning/profile', response);
       expect(response.body).toEqual({ error: { code: 'BAD_GATEWAY', message: 'Upstream service error', details: [] } });
+    });
+
+    test('mair_562 a persistent Core 429 is answered 429 with Retry-After, not 502', async () => {
+      coreApi.on('get', CORE.me, { ...coreError(429), headers: { 'Retry-After': '30' } });
+
+      const response = await withSession(request(app).get('/elearning/profile'), 'agent-odd');
+
+      expect(response.status).toBe(429);
+      expect(response.headers['retry-after']).toBe('30');
+      expectBffContract('get', '/elearning/profile', response);
+      expect(response.body.error.code).toBe('TOO_MANY_REQUESTS');
     });
 
     test.each<[string, MockReply, string]>([
