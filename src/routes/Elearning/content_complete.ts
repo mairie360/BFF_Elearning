@@ -11,7 +11,6 @@ import {
 } from '../../openapi-registry';
 import { notImplemented } from './elearning_helpers';
 import { completeContent } from './elearning_upstream';
-import { getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -75,8 +74,7 @@ router.post('/:courseId/contents/:contentId/complete', async (req: Request, res:
   const { courseId, contentId } = parseRequest(CourseContentParams, req.params, 'params');
   const body = parseRequest(CompleteContentBody, req.body, 'body');
 
-  await getAuthenticatedUser(req);
-
+  // No profile read (MAIR-525): `requireSession` verified the token and the E-learning API checks the session again.
   if (!body.completed) {
     throw notImplemented('The e-learning service cannot mark a chapter as not completed.');
   }

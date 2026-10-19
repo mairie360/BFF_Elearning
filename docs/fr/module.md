@@ -19,7 +19,7 @@ Domaine fonctionnel: Formation en ligne.
 
 ## Parcours type
 
-1. Valider la session auprès de BFF User et charger le catalogue.
+1. Lire le profil auprès de Core API et charger le catalogue.
 2. Démarrer une formation, consulter son contenu et enregistrer la progression.
 3. Retrouver la même progression depuis n’importe quelle instance et après redémarrage : elle est stockée par l’API E-learning.
 
@@ -31,7 +31,7 @@ Ce dépôt contient le serveur BFF et son contrat. Les web services associés po
 
 ## Données et état actuel
 
-Le BFF ne conserve aucun état. Formations, chapitres (modules), contenus (pièces jointes), inscriptions et progression viennent de l’API E-learning ; l’identité de BFF User ; les modifications de profil sont écrites dans Core API.
+Le BFF ne conserve aucun état. Formations, chapitres (modules), contenus (pièces jointes), inscriptions et progression viennent de l’API E-learning ; l’identité et les rôles de Core API (jamais d’un autre BFF) ; les modifications de profil sont écrites dans Core API.
 
 ## Périmètre et limites
 

@@ -9,13 +9,13 @@ Les chemins sont relatifs au BFF. Les proxies web conservent méthode, paramètr
 | Méthode | Route | Réponse / schéma |
 | --- | --- | --- |
 | GET | `/health` | 200 OK |
-| GET | `/check_apis` | 200 / 502 CheckApisResponse (`core_api`, `elearning_api`, `user_bff`) |
+| GET | `/check_apis` | 200 / 502 CheckApisResponse (`core_api`, `elearning_api`) |
 | POST | `/elearning/admin/courses` | 501 tant que l’API E-learning ne permet pas de créer une formation |
 | PATCH | `/elearning/admin/courses/{courseId}` | 501 tant que l’API E-learning ne permet pas de modifier une formation |
 | DELETE | `/elearning/admin/courses/{courseId}` | 501 tant que l’API E-learning ne permet pas de supprimer une formation |
 | GET | `/elearning/catalog` | 200 Formations de l’appelant, lues dans l’API E-learning |
 | POST | `/elearning/courses/{courseId}/contents/{contentId}/complete` | 200 Progression enregistrée par l’API E-learning (par chapitre) ; 501 pour `completed: false` |
-| GET | `/elearning/profile` | 200 Profil issu de BFF User |
+| GET | `/elearning/profile` | 200 Profil issu de Core API (`GET /api/v1/user/me/`) |
 | PATCH | `/elearning/profile` | 200 E-mail et téléphone enregistrés par Core API ; 501 pour `address` / `city` |
 | POST | `/elearning/courses/{courseId}/rating` | 501 tant qu’aucun service ne stocke les notes |
 | POST | `/elearning/courses/{courseId}/start` | 200 Formation à démarrer ou reprendre (lecture seule) |
@@ -28,4 +28,4 @@ Le générateur de types est fixé à `openapi-typescript@7.10.1`. Il est exécu
 
 ## Persistance
 
-Le BFF ne stocke rien en mémoire : formations, inscriptions et progression viennent de l’API E-learning, l’identité de BFF User et les modifications d’e-mail et de téléphone sont écrites dans Core API. Les identifiants (`courseId`, `contentId`, `chapterId`) sont ceux de l’API E-learning, en chaînes numériques. Les fonctions sans stockage amont (notation, adresse et ville, administration des formations) répondent 501.
+Le BFF ne stocke rien en mémoire : formations, inscriptions et progression viennent de l’API E-learning, l’identité et les rôles de Core API (jamais d’un autre BFF, MAIR-525) et les modifications d’e-mail et de téléphone sont écrites dans Core API. Les identifiants (`courseId`, `contentId`, `chapterId`) sont ceux de l’API E-learning, en chaînes numériques. Les fonctions sans stockage amont (notation, adresse et ville, administration des formations) répondent 501.

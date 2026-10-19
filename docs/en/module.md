@@ -19,7 +19,7 @@ Business domain: E-learning.
 
 ## Typical workflow
 
-1. Validate the session with BFF User and load the catalogue.
+1. Read the profile from Core API and load the catalogue.
 2. Start a course, view its content and record progress.
 3. Find the same progress from any instance and after any restart: it is stored by the E-learning API.
 
@@ -31,7 +31,7 @@ This repository contains the BFF server and its contract. Associated web service
 
 ## Data and current state
 
-The BFF keeps no state. Courses (formations), chapters (modules), contents (attachments), enrolments and progress come from the E-learning API; identity from BFF User; profile writes go to Core API.
+The BFF keeps no state. Courses (formations), chapters (modules), contents (attachments), enrolments and progress come from the E-learning API; identity and roles from Core API (never from another BFF); profile writes go to Core API.
 
 ## Scope and limitations
 

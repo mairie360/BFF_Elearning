@@ -10,7 +10,6 @@ import {
   SubmitRatingBody,
 } from '../../openapi-registry';
 import { notImplemented } from './elearning_helpers';
-import { getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -66,7 +65,7 @@ router.post('/:courseId/rating', async (req: Request, _res: Response) => {
   parseRequest(CourseIdParams, req.params, 'params');
   parseRequest(SubmitRatingBody, req.body, 'body');
 
-  await getAuthenticatedUser(req);
+  // The token was verified by `requireSession`; nothing is read or written, so no upstream call (MAIR-525).
   throw notImplemented('Course ratings are not stored by the e-learning service yet.');
 });
 
