@@ -293,6 +293,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -383,6 +392,15 @@ export interface paths {
                 };
                 /** @description Restricted to administrators */
                 403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -782,6 +800,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1120,6 +1147,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1329,6 +1365,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1453,6 +1498,15 @@ export interface paths {
                 };
                 /** @description Missing, expired or invalid session */
                 401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1598,6 +1652,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1711,6 +1774,15 @@ export interface paths {
                 };
                 /** @description Missing, expired or invalid session */
                 401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1976,6 +2048,15 @@ export interface paths {
                 };
                 /** @description Unknown course, or the caller is not enrolled in it */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
                     headers: {
                         [name: string]: unknown;
                     };
