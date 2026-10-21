@@ -100,7 +100,7 @@ Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/clients
 ## CI / Docker
 
 - `contracts.yml`: Node 24, `npm ci`, `npm run contracts:check`, `npm test -- --runInBand`.
-- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v3.2.0` (`node_version: "24"`).
+- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v4.4.0` (`node_version: "24"`).
 - Everything targets **Node 24**; `Dockerfile` and `development.Dockerfile` pin `node:24-alpine@sha256:ebfe2f90…` by digest; the production image runs `CMD ["node", "dist/index.js"]` with a 180 MB heap cap.
 - `docker-compose.yml` is the local dev stack (redis + `elearning-api` + this BFF via `development.Dockerfile`, with `develop.watch` sync on `./src`). GitHub Packages secrets are passed as build secrets (`npmrc`, `node_auth_token`).
 
@@ -135,3 +135,11 @@ and scalar fields only; an error goes through `describeError(error)`, never as i
 ## Pull request reviewers
 
 Every PR requests a review from the whole team, minus its author: `CarolinHugo`, `LAURETbenjamin`, `MathTek` and `Quentintnrl` (`gh pr create … --reviewer CarolinHugo,LAURETbenjamin,MathTek`). `.github/CODEOWNERS` makes GitHub request them automatically as well.
+
+## Promotion to staging and prod (MAIR-494)
+
+A push to `main` only releases dev (`cicd.yml` stops at `release-dev`). Staging and prod are manual:
+`gh workflow run promote-staging.yml -R mairie360/BFF_Elearning` (main's newest commit) or `gh workflow run promote-staging.yml -R mairie360/BFF_Elearning -f sha=SHA` (a given commit), then the same with `promote-prod.yml`
+(environments `Staging` / `Prod`). Staging refuses a commit without `dev-<sha>` and a green main run, and runs
+the ZAP and k6 stacks on that image; prod refuses one without `staging-<sha>` and tags the version semantic-release computes
+for that commit. `cicd.yml`, `promote-staging.yml` and `promote-prod.yml` pin the same mairie360/CICD release.
