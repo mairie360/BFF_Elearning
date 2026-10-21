@@ -119,7 +119,7 @@ Le job `contracts.yml` utilise Node.js 24, `actions/checkout@v7` et `actions/set
 
 `Dockerfile` et `development.Dockerfile` utilisent `node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1` (épinglée par digest, le même Node.js 24 que les jobs de CI) ; la commande de l’image est `["node", "dist/index.js"]`.
 
-`security_test.sh` et `performance_test.sh` testent l’image désignée par `IMAGE_REF`: en CI, l’image que `release-dev` vient de publier, soit l’artefact ensuite promu en staging puis en prod. Quand `IMAGE_REF` est vide (usage local), ils construisent d’abord `bff-elearning:local` depuis `development.Dockerfile`, ce qui demande `NODE_AUTH_TOKEN` et `./.npmrc`.
+`security_test.sh` et `performance_test.sh` testent l’image désignée par `IMAGE_REF`: en CI, l’image `dev-<sha>` publiée par `release-dev`, lancés par `promote-staging.yml` avant que ce même artefact soit promu en staging puis en prod (MAIR-494). Quand `IMAGE_REF` est vide (usage local), ils construisent d’abord `bff-elearning:local` depuis `development.Dockerfile`, ce qui demande `NODE_AUTH_TOKEN` et `./.npmrc`.
 
 `security_test.sh` lance la stack OWASP ZAP de `docker-compose-security.yml`: ZAP rejoue chaque opération de `/openapi.json` avec un JWT admin statique (`sub=1`, HS256, `JWT_SECRET=b"secret"`) et remplit corps, requêtes et paramètres de chemin avec les exemples du contrat. `init-test.sql` crée les utilisateurs 1 (Admin) et 2 (User) et la formation E-learning des exemples du contrat (formation `4`, module `11`, pièce jointe `27`), avec les deux utilisateurs inscrits. Garder exemples et données alignés en ajoutant une route.
 
