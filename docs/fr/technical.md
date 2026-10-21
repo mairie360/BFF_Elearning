@@ -115,7 +115,7 @@ Le générateur de types est fixé à `openapi-typescript@7.10.1` dans `scripts/
 
 Le job `contracts.yml` utilise Node.js 24, `actions/checkout@v7` et `actions/setup-node@v7`. Il s’exécute sur push, pull request et lancement manuel; il installe avec `npm ci`, contrôle les contrats et lance les tests dédiés.
 
-`cicd.yml` appelle `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v4.4.0`, avec `cicd_version: v4.4.0` et `node_version: "24"`. Les étapes réutilisables et les environnements GitHub déterminent les contrôles, publications et déploiements effectifs. Un push sur `main` s’arrête après `release-dev` ; staging et prod passent par les workflows manuels `promote-staging.yml` / `promote-prod.yml` (MAIR-494).
+`cicd.yml` appelle `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v4.4.3`, avec `cicd_version: v4.4.3` et `node_version: "24"`. Les étapes réutilisables et les environnements GitHub déterminent les contrôles, publications et déploiements effectifs. Un push sur `main` s’arrête après `release-dev` ; staging et prod passent par les workflows manuels `promote-staging.yml` / `promote-prod.yml` (MAIR-494).
 
 `Dockerfile` et `development.Dockerfile` utilisent `node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1` (épinglée par digest, le même Node.js 24 que les jobs de CI) ; la commande de l’image est `["node", "dist/index.js"]`.
 
