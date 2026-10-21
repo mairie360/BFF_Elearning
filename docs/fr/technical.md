@@ -115,11 +115,11 @@ Le générateur de types est fixé à `openapi-typescript@7.10.1` dans `scripts/
 
 Le job `contracts.yml` utilise Node.js 24, `actions/checkout@v7` et `actions/setup-node@v7`. Il s’exécute sur push, pull request et lancement manuel; il installe avec `npm ci`, contrôle les contrats et lance les tests dédiés.
 
-`cicd.yml` appelle `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v3.2.0`, avec `cicd_version: v3.2.0` et `node_version: "24"`. Les étapes réutilisables et les environnements GitHub déterminent les contrôles, publications et déploiements effectifs.
+`cicd.yml` appelle `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v4.4.0`, avec `cicd_version: v4.4.0` et `node_version: "24"`. Les étapes réutilisables et les environnements GitHub déterminent les contrôles, publications et déploiements effectifs. Un push sur `main` s’arrête après `release-dev` ; staging et prod passent par les workflows manuels `promote-staging.yml` / `promote-prod.yml` (MAIR-494).
 
 `Dockerfile` et `development.Dockerfile` utilisent `node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1` (épinglée par digest, le même Node.js 24 que les jobs de CI) ; la commande de l’image est `["node", "dist/index.js"]`.
 
-`security_test.sh` et `performance_test.sh` testent l’image désignée par `IMAGE_REF`: en CI, l’image `dev-<sha>` publiée par `release-dev`, lancés par `promote-staging.yml` avant que ce même artefact soit promu en staging puis en prod (MAIR-494). Quand `IMAGE_REF` est vide (usage local), ils construisent d’abord `bff-elearning:local` depuis `development.Dockerfile`, ce qui demande `NODE_AUTH_TOKEN` et `./.npmrc`.
+`security_test.sh` et `performance_test.sh` testent l’image désignée par `IMAGE_REF`: en CI, `release-dev` publie l’image `dev-<sha>`, et `promote-staging.yml` lance les deux tests sur cette image avant que ce même artefact soit promu en staging puis en prod (MAIR-494). Quand `IMAGE_REF` est vide (usage local), ils construisent d’abord `bff-elearning:local` depuis `development.Dockerfile`, ce qui demande `NODE_AUTH_TOKEN` et `./.npmrc`.
 
 `security_test.sh` lance la stack OWASP ZAP de `docker-compose-security.yml`: ZAP rejoue chaque opération de `/openapi.json` avec un JWT admin statique (`sub=1`, HS256, `JWT_SECRET=b"secret"`) et remplit corps, requêtes et paramètres de chemin avec les exemples du contrat. `init-test.sql` crée les utilisateurs 1 (Admin) et 2 (User) et la formation E-learning des exemples du contrat (formation `4`, module `11`, pièce jointe `27`), avec les deux utilisateurs inscrits. Garder exemples et données alignés en ajoutant une route.
 
