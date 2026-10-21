@@ -1,0 +1,1937 @@
+{
+  "info": {
+    "name": "BFF Elearning integration tests",
+    "description": "MAIR-262: working checks (the BFF starts, resolves sessions against Core API, reaches the E-learning API) and the enrolment and progression journey the fronts rely on, replayed by newman on docker-compose-integration.yml (./integration_test.sh). The seeded Admin (user 1) and agent (user 2) are impersonated with JWTs forged from the JWT_SECRET of the stack; both are enrolled in the seeded course 4 (chapter 11, content 27), whose progress init-test.sql resets on every run. The E-learning API publishes no operation to create, update, delete or rate a course yet: the BFF answers 501 on those routes after the validation and the administrator check, and the collection pins that behaviour until the upstream supports them.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// One fresh account per run so the collection is replayable against a persistent database.",
+          "if (!pm.environment.get('run_id')) {",
+          "    pm.environment.set('run_id', String(Date.now()));",
+          "}",
+          "if (!pm.environment.get('test_user_email')) {",
+          "    pm.environment.set('test_user_email', `newman.${pm.environment.get('run_id')}@mairie360.test`);",
+          "}",
+          "// The seeded accounts have no known password: forge their JWT exactly like mairie360_api_lib::jwt_manager",
+          "// does (HS256, claims { sub, role, exp }), signed with the JWT_SECRET of the stack, injected by",
+          "// docker-compose-integration.yml (random per run, MAIR-428). `role` is the claim the BFFs read (MAIR-529).",
+          "const cryptoJs = require('crypto-js');",
+          "const b64url = (words) => cryptoJs.enc.Base64.stringify(words).replace(/=+$/, '').replace(/\\+/g, '-').replace(/\\//g, '_');",
+          "const signJwt = (sub, role) => {",
+          "    const header = b64url(cryptoJs.enc.Utf8.parse(JSON.stringify({ alg: 'HS256', typ: 'JWT' })));",
+          "    const payload = b64url(cryptoJs.enc.Utf8.parse(JSON.stringify({ sub: String(sub), role, exp: Math.floor(Date.now() / 1000) + 3600 })));",
+          "    return `${header}.${payload}.${b64url(cryptoJs.HmacSHA256(`${header}.${payload}`, pm.environment.get('jwt_secret')))}`;",
+          "};",
+          "pm.environment.set('jwt_admin', signJwt(pm.environment.get('admin_user_id'), 'admin'));",
+          "pm.environment.set('jwt_agent', signJwt(pm.environment.get('agent_user_id'), 'user'));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Service",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Core API and E-learning API are reachable",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/check_apis",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "check_apis"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Both upstream services are connected\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.status).to.eql('OK');",
+                  "    pm.expect(body.core_api).to.eql('Connected');",
+                  "    pm.expect(body.elearning_api).to.eql('Connected');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "OpenAPI document",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/openapi.json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "openapi.json"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Document lists the routes\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.openapi).to.be.a('string');",
+                  "    pm.expect(body.paths).to.have.property('/elearning/catalog');",
+                  "    pm.expect(body.paths).to.have.property('/elearning/courses/{courseId}/start');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Unknown route answers a JSON 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/newman/unknown-route",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "newman",
+                "unknown-route"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ],
+      "description": "The BFF is up and reaches its upstream services."
+    },
+    {
+      "name": "Session resolution",
+      "item": [
+        {
+          "name": "Profile without a session is rejected",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "profile"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});",
+                  "pm.test(\"Answer is not cacheable\", function () {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Profile of the seeded administrator",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "profile"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Answer is not cacheable\", function () {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "});",
+                  "pm.test(\"Profile comes from Core API with the admin role\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.user.id).to.eql(pm.environment.get('admin_user_id'));",
+                  "    pm.expect(body.user.email, 'seeded Admin (liquibase keeps its own values)').to.be.a('string').and.not.empty;",
+                  "    pm.expect(body.user.initials).to.match(/^[A-Z]{1,2}$/);",
+                  "    pm.expect(body.user.role.toLowerCase()).to.eql('admin');",
+                  "    pm.expect(body.user.isAdmin).to.eql(true);",
+                  "    pm.expect(body.footer.links).to.be.an('array').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Profile of the seeded agent",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "profile"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Agent is a plain user\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.user.id).to.eql(pm.environment.get('agent_user_id'));",
+                  "    pm.expect(body.user.email).to.eql('perf-tester@mairie360.fr');",
+                  "    pm.expect(body.user.name).to.eql('Perf Tester');",
+                  "    pm.expect(body.user.role.toLowerCase()).to.eql('user');",
+                  "    pm.expect(body.user.isAdmin).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ],
+      "description": "The session comes from the Bearer JWT and the profile is read from Core API."
+    },
+    {
+      "name": "Course administration",
+      "item": [
+        {
+          "name": "A plain user cannot create courses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"newman-course-{{run_id}}\",\n  \"title\": \"Newman course {{run_id}}\",\n  \"description\": \"Course created by the integration tests\",\n  \"category\": \"Integration\",\n  \"duration\": \"1 h\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});",
+                  "pm.test(\"Answer is not cacheable\", function () {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Course creation is not available upstream yet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"newman-course-{{run_id}}\",\n  \"title\": \"Newman course {{run_id}}\",\n  \"description\": \"Course created by the integration tests\",\n  \"category\": \"Integration\",\n  \"duration\": \"1 h\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 501\", function () {",
+                  "    pm.response.to.have.status(501);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});",
+                  "pm.test(\"The message says the e-learning service does not support it\", function () {",
+                  "    pm.expect(pm.response.json().error.message).to.include('not available');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "A plain user cannot update courses",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{course_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{course_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"4\",\n  \"title\": \"RGPD pour les agents territoriaux\",\n  \"description\": \"Edited by the integration tests\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Course update is not available upstream yet",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{course_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{course_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"4\",\n  \"title\": \"RGPD pour les agents territoriaux\",\n  \"description\": \"Edited by the integration tests\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 501\", function () {",
+                  "    pm.response.to.have.status(501);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "A plain user cannot delete courses",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{course_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{course_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Course deletion is not available upstream yet",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{course_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{course_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 501\", function () {",
+                  "    pm.response.to.have.status(501);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The seeded course is untouched",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/catalog",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "catalog"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The administrator still sees the seeded course, not started\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.user.isAdmin).to.eql(true);",
+                  "    const course = pm.response.json().catalog.courses.find((c) => c.id === pm.environment.get('course_id'));",
+                  "    pm.expect(course, 'seeded course').to.be.an('object');",
+                  "    pm.expect(course.title).to.eql('RGPD pour les agents territoriaux');",
+                  "    pm.expect(course.statusValue).to.eql('not-started');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ],
+      "description": "An administrator creates, updates and deletes a course; a plain user cannot. The E-learning API cannot edit formations yet, so the administrator gets the documented 501 after the role check."
+    },
+    {
+      "name": "Enrolment: catalogue and start",
+      "item": [
+        {
+          "name": "Catalogue without a session is rejected",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/catalog",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "catalog"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The agent sees the course in the catalogue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/catalog",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "catalog"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Answer is not cacheable\", function () {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "});",
+                  "pm.test(\"The catalogue is ready to render with the seeded course not started\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.user.id).to.eql(pm.environment.get('agent_user_id'));",
+                  "    pm.expect(body.user.isAdmin).to.eql(false);",
+                  "    pm.expect(body.notifications.unreadCount).to.eql(0);",
+                  "    pm.expect(body.catalog.title).to.eql('Centre de Formation');",
+                  "    pm.expect(body.catalog.statuses.map((s) => s.value)).to.include.members(['all', 'not-started', 'in-progress', 'completed']);",
+                  "    pm.expect(body.catalog.certificationCount).to.eql(0);",
+                  "    const course = pm.response.json().catalog.courses.find((c) => c.id === pm.environment.get('course_id'));",
+                  "    pm.expect(course, 'seeded course').to.be.an('object');",
+                  "    pm.expect(course.title).to.eql('RGPD pour les agents territoriaux');",
+                  "    pm.expect(course.statusValue).to.eql('not-started');",
+                  "    pm.expect(course.progress).to.eql(0);",
+                  "    pm.expect(course.chapters).to.eql(1);",
+                  "    pm.expect(course.details.chapters).to.have.lengthOf(1);",
+                  "    const chapter = course.details.chapters[0];",
+                  "    pm.expect(chapter.id).to.eql(pm.environment.get('chapter_id'));",
+                  "    pm.expect(chapter.title).to.eql('Les principes du RGPD');",
+                  "    pm.expect(chapter.completed).to.eql(false);",
+                  "    pm.expect(chapter.active).to.eql(true);",
+                  "    pm.expect(chapter.contents.map((c) => c.id)).to.include(pm.environment.get('content_id'));",
+                  "    const content = chapter.contents.find((c) => c.id === pm.environment.get('content_id'));",
+                  "    pm.expect(content.type).to.eql('pdf');",
+                  "    pm.expect(content.fileName).to.eql('rgpd-principes.pdf');",
+                  "    pm.expect(content.completed).to.eql(false);",
+                  "    pm.expect(body.footer.productName).to.eql('Mairie360');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Search finds the course",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/catalog?search=rgpd&status=not-started&page=1&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "catalog"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "rgpd"
+                },
+                {
+                  "key": "status",
+                  "value": "not-started"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The filtered page holds the seeded course\", function () {",
+                  "    const courses = pm.response.json().catalog.courses;",
+                  "    pm.expect(courses.map((c) => c.id)).to.include(pm.environment.get('course_id'));",
+                  "    courses.forEach((c) => pm.expect(c.statusValue).to.eql('not-started'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The completed filter is empty before the course is done",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/catalog?status=completed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "catalog"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "completed"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"No course is completed yet\", function () {",
+                  "    pm.expect(pm.response.json().catalog.courses.map((c) => c.id)).to.not.include(pm.environment.get('course_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Starting an unknown course answers 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/999999999/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "999999999",
+                "start"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source\": \"catalog\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Start the course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "start"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"source\": \"catalog\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Answer is not cacheable\", function () {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "});",
+                  "pm.test(\"The player opens on the first content of the course\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.course.id).to.eql(pm.environment.get('course_id'));",
+                  "    pm.expect(body.course.progress).to.eql(0);",
+                  "    pm.expect(body.nextContentId).to.eql(pm.environment.get('content_id'));",
+                  "    pm.expect(body.redirectUrl).to.eql(`/courses/${pm.environment.get('course_id')}`);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ],
+      "description": "The agent finds the seeded course in the catalogue, filters it and starts it."
+    },
+    {
+      "name": "Progression: completing the contents",
+      "item": [
+        {
+          "name": "Completing a content of another chapter answers 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/contents/{{content_id}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "contents",
+                "{{content_id}}",
+                "complete"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chapterId\": \"999999999\",\n  \"completed\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Completing an unknown content answers 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/contents/999999999/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "contents",
+                "999999999",
+                "complete"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chapterId\": \"11\",\n  \"completed\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});",
+                  "pm.test(\"The detail names the content\", function () {",
+                  "    pm.expect(pm.response.json().error.details[0].path).to.eql('params.contentId');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Un-completing a content is not supported upstream",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/contents/{{content_id}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "contents",
+                "{{content_id}}",
+                "complete"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chapterId\": \"11\",\n  \"completed\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 501\", function () {",
+                  "    pm.response.to.have.status(501);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Complete the content",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/contents/{{content_id}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "contents",
+                "{{content_id}}",
+                "complete"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chapterId\": \"11\",\n  \"completed\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Answer is not cacheable\", function () {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "});",
+                  "pm.test(\"The chapter and the course are completed\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.progress).to.eql(100);",
+                  "    pm.expect(body.completed).to.eql(true);",
+                  "    pm.expect(body.completedChapters).to.eql(1);",
+                  "    pm.expect(body.totalChapters).to.eql(1);",
+                  "    pm.expect(body.completedRequiredContents).to.eql(body.totalRequiredContents);",
+                  "    pm.expect(body.chapter.id).to.eql(pm.environment.get('chapter_id'));",
+                  "    pm.expect(body.chapter.completed).to.eql(true);",
+                  "    pm.expect(body.content.id).to.eql(pm.environment.get('content_id'));",
+                  "    pm.expect(body.content.completed).to.eql(true);",
+                  "    pm.expect(body.chapters.map((c) => c.id)).to.include(pm.environment.get('chapter_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The catalogue shows the course completed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/catalog",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "catalog"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Progress is 100 % and the course counts as a certification\", function () {",
+                  "    const body = pm.response.json();",
+                  "    const course = pm.response.json().catalog.courses.find((c) => c.id === pm.environment.get('course_id'));",
+                  "    pm.expect(course.statusValue).to.eql('completed');",
+                  "    pm.expect(course.progress).to.eql(100);",
+                  "    pm.expect(course.statusBadge.variant).to.eql('completed');",
+                  "    pm.expect(course.details.completed).to.eql(true);",
+                  "    pm.expect(body.catalog.certificationCount).to.eql(1);",
+                  "    const done = body.catalog.stats.find((s) => s.label === 'Terminees');",
+                  "    pm.expect(done.value).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The completed filter lists the course",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/catalog?status=completed",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "catalog"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "completed"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The seeded course is in the completed page\", function () {",
+                  "    pm.expect(pm.response.json().catalog.courses.map((c) => c.id)).to.include(pm.environment.get('course_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Resuming the completed course has no next content",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "start"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Nothing is left to open\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.course.progress).to.eql(100);",
+                  "    pm.expect(body.course.statusValue).to.eql('completed');",
+                  "    pm.expect(body).to.not.have.property('nextContentId');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The administrator progress is separate",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/catalog",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "catalog"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The course is still not started for the administrator\", function () {",
+                  "    const course = pm.response.json().catalog.courses.find((c) => c.id === pm.environment.get('course_id'));",
+                  "    pm.expect(course.statusValue).to.eql('not-started');",
+                  "    pm.expect(course.progress).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ],
+      "description": "The agent completes the contents one by one; the progress is recorded by the E-learning API."
+    },
+    {
+      "name": "Rating",
+      "item": [
+        {
+          "name": "Rating without a session is rejected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/rating",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "rating"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Rating the course is not available upstream yet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/rating",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "rating"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 501\", function () {",
+                  "    pm.response.to.have.status(501);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});",
+                  "pm.test(\"Answer is not cacheable\", function () {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ],
+      "description": "The agent rates the completed course: ratings are not stored upstream yet (501)."
+    },
+    {
+      "name": "Profile update",
+      "item": [
+        {
+          "name": "Update the phone number",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+33612345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Answer is not cacheable\", function () {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "});",
+                  "pm.test(\"The profile is read again from Core API with the new phone\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.user.id).to.eql(pm.environment.get('agent_user_id'));",
+                  "    pm.expect(body.user.email).to.eql('perf-tester@mairie360.fr');",
+                  "    pm.expect(String(body.user.phone)).to.match(/612345678$/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The new phone is on the profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "profile"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Phone was saved\", function () {",
+                  "    pm.expect(String(pm.response.json().user.phone)).to.match(/612345678$/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "An empty update changes nothing",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The profile is returned as is\", function () {",
+                  "    pm.expect(pm.response.json().user.email).to.eql('perf-tester@mairie360.fr');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "An e-mail change without the current password is refused by Core API",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newman.{{run_id}}@mairie360.test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Core API (MAIR-390) requires current_password to change an e-mail; this route does not take it, so the change is refused."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Address and city are not stored by any service",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"1 place de la Mairie\",\n  \"city\": \"Paris\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 501\", function () {",
+                  "    pm.response.to.have.status(501);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The e-mail was not changed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "profile"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The agent keeps its e-mail\", function () {",
+                  "    pm.expect(pm.response.json().user.email).to.eql('perf-tester@mairie360.fr');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ],
+      "description": "The agent edits the fields Core API stores; address and city are not stored anywhere."
+    }
+  ]
+}

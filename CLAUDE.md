@@ -23,6 +23,8 @@ npm run lint                 # eslint . --ext .ts  (flat config: eslint.config.c
 npm run lint:fix
 npm run contracts:generate   # regenerate contracts/openapi.json + contracts/bff.d.ts from the code
 npm run contracts:check      # fails if the committed contract or types are stale (runs in CI)
+
+./integration_test.sh        # docker-compose-integration.yml: real Core API + E-learning API, newman replaying tests/postman/ (MAIR-262)
 ```
 
 `.eslintrc.js` is legacy and unused — ESLint reads `eslint.config.cjs`. `no-await-in-loop` is an error (MAIR-525): independent upstream calls start together, a sequential loop says why in a comment. `@typescript-eslint/no-explicit-any` is an **error**, but the type-aware config block only targets `src/**/*.ts` (tests, `scripts/export-swagger.ts`, `jest.config.ts` are excluded). Unused vars are a warning unless prefixed `_`.
@@ -97,6 +99,48 @@ Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/clients
 - E-learning bodies are built with `formation()` / `learnerModule()` / `attachment()` from `tests/support/user-fixtures.ts` (typed by the package models).
 - `openapi-contract.ts`, `contract-mock-server.ts` and `orval-contract.ts` are shared verbatim with `BFF_user`, `BFF_Calendar` and `BFF_Dashboard`; keep the copies identical.
 
+## Integration tests on the real stack (MAIR-262)
+
+Jest tests mock Core API and the E-learning API; `integration_test.sh` is the only test of the BFF on a real
+stack. It brings up `docker-compose-integration.yml` (the upstream services of the ZAP / k6 stacks: published
+Core API and E-learning API images, database + liquibase + `init-test.sql`, Redis) and a `newman` service that
+replays `tests/postman/collection.json` with `tests/postman/environment.json` against the BFF, `--bail` on the
+first failing request; the exit code of newman is the exit code of the script. Like the other stacks it tests
+the image named by `IMAGE_REF` (`bff-elearning:local` built from `development.Dockerfile` when empty), sources
+`stack_secrets.sh` (random `JWT_SECRET` per run) and drops the volumes before and after. In CI it is the
+`integration_tests` staging gate of `promote-staging.yml` (mairie360/CICD `integration/bffs`) on the published
+`dev-<sha>` image: a failure blocks the promotion; the junit report (`newman-reports/newman.xml`, gitignored) is
+published as job summary and artifact.
+
+The collection is split in two kinds of checks, both on the BFF's own routes:
+
+- **working checks** (folders `Service`, `Session resolution`): the BFF starts, `/health`, `/check_apis` with
+  both upstream services `Connected`, `/openapi.json`, a JSON 404, the session is resolved against Core API
+  (401 without a Bearer, the seeded Admin `sub=1` and agent `sub=2` through `/elearning/profile`);
+- **business journeys** the fronts rely on, the enrolment and progression of a course on the seeded formation
+  `4` (chapter `11`, content `27`, both users enrolled, progress reset by `init-test.sql`): course
+  administration (403 for a plain user on create / update / delete, the documented 501 for the administrator
+  while the E-learning API cannot edit formations, the seeded course untouched), the agent finds the course in
+  the catalogue (filters `search` / `status`, 404 on an unknown course), starts it (`nextContentId`,
+  `redirectUrl`), completes its content (404 on a wrong chapter or content, 501 on `completed: false`, then
+  progress 100 %, `certificationCount`, the completed filter, resume without a next content, the
+  administrator's own progress untouched), rates it (501 until ratings are stored upstream) and edits its
+  profile (phone saved by Core API and read again, an e-mail change refused with 400 because Core API requires
+  the current password this route does not take, 501 on address / city).
+
+The seeded accounts have no known password: the collection-level pre-request script forges their JWTs
+(HS256 `{ sub, role, exp }`, like `mairie360_api_lib`) with the `jwt_secret` the compose file injects
+(`jwt_admin`, `jwt_agent`); the committed `environment.json` holds no secret or token. The collection writes
+nothing it cannot replay: the only upstream write is the completion of module `11`, which the seed resets.
+Isolated endpoint checks (validation errors, token refusals) stay in jest: the collection only holds journeys
+and the checks that need a real upstream.
+
+`tests/integration-collection.test.ts` guards the collection with the unit tests: every operation of
+`contracts/openapi.json` has at least one request (a new route needs its request), every request has a
+`pm.test`, every request targets a declared route (or `/openapi.json` / the 404 check), and the environment
+commits no secret. The collection is generated for now from a session script; edit the JSON directly
+(Postman v2.1), keeping one folder per journey and English names.
+
 ## CI / Docker
 
 - `contracts.yml`: Node 24, `npm ci`, `npm run contracts:check`, `npm test -- --runInBand`.
@@ -141,5 +185,5 @@ Every PR requests a review from the whole team, minus its author: `CarolinHugo`,
 A push to `main` only releases dev (`cicd.yml` stops at `release-dev`). Staging and prod are manual:
 `gh workflow run promote-staging.yml -R mairie360/BFF_Elearning` (main's newest commit) or `gh workflow run promote-staging.yml -R mairie360/BFF_Elearning -f sha=SHA` (a given commit), then the same with `promote-prod.yml`
 (environments `Staging` / `Prod`). Staging refuses a commit without `dev-<sha>` and a green main run, and runs
-the ZAP and k6 stacks on that image; prod refuses one without `staging-<sha>` and tags the version semantic-release computes
+the integration (newman, MAIR-262), ZAP and k6 stacks on that image; prod refuses one without `staging-<sha>` and tags the version semantic-release computes
 for that commit. `cicd.yml`, `promote-staging.yml` and `promote-prod.yml` pin the same mairie360/CICD release.
