@@ -45,7 +45,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Checks that Core API, E-learning API and BFF User answer their /health probe */
+        /** Checks that Core API and E-learning API answer their /health probe */
         get: {
             parameters: {
                 query?: never;
@@ -293,6 +293,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -311,7 +320,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -320,7 +329,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -390,6 +399,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -408,7 +426,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -417,7 +435,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -782,6 +800,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -800,7 +827,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -809,7 +836,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -1120,6 +1147,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1129,7 +1165,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -1138,7 +1174,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -1329,6 +1365,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1347,7 +1392,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -1356,7 +1401,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -1382,7 +1427,7 @@ export interface paths {
         };
         /**
          * Loads the E-learning profile
-         * @description The caller as resolved by BFF User `/me`, ready to render on the profile page.
+         * @description The caller as read from Core API (`GET /api/v1/user/me/`), ready to render on the profile page.
          */
         get: {
             parameters: {
@@ -1460,6 +1505,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1469,7 +1523,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -1478,7 +1532,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -1496,7 +1550,7 @@ export interface paths {
         head?: never;
         /**
          * Updates the editable profile fields
-         * @description `email` and `phone` are saved by Core API (`PATCH /api/v1/user/me/`), then the profile is read again from BFF User. `address` and `city` are stored by no upstream service: a body carrying them answers 501 and nothing is written. Non-editable fields (role, isAdmin, service, position, lastConnection) are ignored.
+         * @description `email` and `phone` are saved by Core API (`PATCH /api/v1/user/me/`), then the profile is read again from Core API. `address` and `city` are stored by no upstream service: a body carrying them answers 501 and nothing is written. Non-editable fields (role, isAdmin, service, position, lastConnection) are ignored.
          */
         patch: {
             parameters: {
@@ -1513,7 +1567,10 @@ export interface paths {
                          * @example security-admin@mairie360.fr
                          */
                         email?: string;
-                        /** @example 0612345678 */
+                        /**
+                         * @description Phone number in E.164 (`+33612345678`)
+                         * @example +33612345678
+                         */
                         phone?: string;
                         /** @example 1 place de la Mairie */
                         address?: string;
@@ -1595,6 +1652,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1613,7 +1679,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -1622,7 +1688,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -1715,6 +1781,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1733,7 +1808,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -1742,7 +1817,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -1980,6 +2055,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Unexpected server error */
                 500: {
                     headers: {
@@ -1989,7 +2073,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is unreachable, failed or answered an unusable body */
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
                 502: {
                     headers: {
                         [name: string]: unknown;
@@ -1998,7 +2082,7 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
                 503: {
                     headers: {
                         [name: string]: unknown;
@@ -3254,7 +3338,10 @@ export interface components {
              * @example security-admin@mairie360.fr
              */
             email?: string;
-            /** @example 0612345678 */
+            /**
+             * @description Phone number in E.164 (`+33612345678`)
+             * @example +33612345678
+             */
             phone?: string;
             /** @example 1 place de la Mairie */
             address?: string;
@@ -3633,8 +3720,6 @@ export interface components {
             core_api: "Connected" | "Unreachable";
             /** @enum {string} */
             elearning_api: "Connected" | "Unreachable";
-            /** @enum {string} */
-            user_bff: "Connected" | "Unreachable";
         };
     };
     responses: never;

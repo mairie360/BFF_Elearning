@@ -7,9 +7,8 @@ extendZodWithOpenApi(z);
 
 export const registry = new OpenAPIRegistry();
 
-// Bearer JWT read by `getAuthenticatedUser` (src/routes/Elearning/auth.ts) and resolved against BFF
-// User `/me`. The document requires it on every operation (`openapi.ts`); public operations opt out
-// with `security: []`. The ZAP OpenAPI coverage gate reads this to tell which operations must be
+// Bearer JWT verified by `requireSession` (src/app.ts) and forwarded to Core API and the E-learning API.
+// The document requires it on every operation (`openapi.ts`); public operations opt out with `security: []`. The ZAP OpenAPI coverage gate reads this to tell which operations must be
 // reached authenticated.
 export const bearerAuth = registry.registerComponent('securitySchemes', 'bearerAuth', {
   type: 'http',
@@ -355,7 +354,9 @@ export const ElearningProfileResponse = z
 export const UpdateProfileBody = z
   .object({
     email: z.string().email().optional().openapi({ example: 'security-admin@mairie360.fr' }),
-    phone: z.string().optional().openapi({ example: '0612345678' }),
+    // Core API (MAIR-480) parses a national number only with its country, which this body does not carry:
+    // the phone is sent in E.164.
+    phone: z.string().optional().openapi({ description: 'Phone number in E.164 (`+33612345678`)', example: '+33612345678' }),
     address: z.string().optional().openapi({ example: '1 place de la Mairie' }),
     city: z.string().optional().openapi({ example: 'Paris' }),
   })
@@ -476,18 +477,23 @@ registry.register('CourseActionResponse', CourseActionResponse);
 // adds .openapi() to schemas created after the extension.
 export const ErrorResponse = registry.register('ErrorResponse', ErrorResponseSchema.clone());
 
-// Errors shared by the routes that resolve the session against BFF User (routes/Elearning/auth.ts).
+// Errors shared by the routes that call Core API or the E-learning API on behalf of the caller (routes/Elearning/auth.ts).
 export const sessionErrorResponses = {
   401: {
     description: 'Missing, expired or invalid session',
     content: { 'application/json': { schema: ErrorResponse } },
   },
+  // bffs-lib >= 2.4.0 relays an upstream 429 with its Retry-After instead of a 502 (MAIR-562).
+  429: {
+    description: 'An upstream API rate limit is reached: retry after the Retry-After header (seconds)',
+    content: { 'application/json': { schema: ErrorResponse } },
+  },
   502: {
-    description: 'BFF User or an upstream API is unreachable, failed or answered an unusable body',
+    description: 'An upstream API is unreachable, failed or answered an unusable body',
     content: { 'application/json': { schema: ErrorResponse } },
   },
   503: {
-    description: 'BFF User or an upstream API is not configured (`<SERVICE>_URL` missing or invalid)',
+    description: 'An upstream API is not configured (`<SERVICE>_URL` missing or invalid)',
     content: { 'application/json': { schema: ErrorResponse } },
   },
 };

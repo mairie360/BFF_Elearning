@@ -23,9 +23,11 @@ npm run lint                 # eslint . --ext .ts  (flat config: eslint.config.c
 npm run lint:fix
 npm run contracts:generate   # regenerate contracts/openapi.json + contracts/bff.d.ts from the code
 npm run contracts:check      # fails if the committed contract or types are stale (runs in CI)
+
+./integration_test.sh        # docker-compose-integration.yml: real Core API + E-learning API, newman replaying tests/postman/ (MAIR-262)
 ```
 
-`.eslintrc.js` is legacy and unused — ESLint reads `eslint.config.cjs`. `@typescript-eslint/no-explicit-any` is an **error**, but the type-aware config block only targets `src/**/*.ts` (tests, `scripts/export-swagger.ts`, `jest.config.ts` are excluded). Unused vars are a warning unless prefixed `_`.
+`.eslintrc.js` is legacy and unused — ESLint reads `eslint.config.cjs`. `no-await-in-loop` is an error (MAIR-525): independent upstream calls start together, a sequential loop says why in a comment. `@typescript-eslint/no-explicit-any` is an **error**, but the type-aware config block only targets `src/**/*.ts` (tests, `scripts/export-swagger.ts`, `jest.config.ts` are excluded). Unused vars are a warning unless prefixed `_`.
 
 ## Private dependencies
 
@@ -33,7 +35,7 @@ npm run contracts:check      # fails if the committed contract or types are stal
 
 ## Environment variables
 
-`import 'dotenv/config'` (first line of `src/index.ts` and `src/app.ts`) loads `.env` from the repo root. `PORT` defaults to 4006. `USER_BFF_URL`, `CORE_API_URL` and `ELEARNING_API_URL` have **no default** — `src/index.ts` (only when run directly, `require.main === module`) exits when `assertConfigured(UPSTREAM_SERVICES)` names a missing/invalid URL. Local example: `PORT=4006`, `USER_BFF_URL=http://localhost:4000`, `CORE_API_URL` / `CORE_API_PORT`, `ELEARNING_API_URL` / `ELEARNING_API_PORT`. Every base URL goes through lib `baseUrl('<SERVICE>')` (bare host + `*_PORT`, or full URL whose port wins), read on each request; a missing or invalid one answers 503 `SERVICE_UNAVAILABLE` (there is no `localhost` fallback). `TRUST_PROXY` (optional) sets Express `trust proxy`.
+`import 'dotenv/config'` (first line of `src/index.ts` and `src/app.ts`) loads `.env` from the repo root. `PORT` defaults to 4006. `CORE_API_URL` and `ELEARNING_API_URL` have **no default** — `src/index.ts` (only when run directly, `require.main === module`) exits when `assertConfigured(UPSTREAM_SERVICES)` names a missing/invalid URL. Local example: `PORT=4006`, `CORE_API_URL` / `CORE_API_PORT`, `ELEARNING_API_URL` / `ELEARNING_API_PORT`. Every base URL goes through lib `baseUrl('<SERVICE>')` (bare host + `*_PORT`, or full URL whose port wins), read on each request; a missing or invalid one answers 503 `SERVICE_UNAVAILABLE` (there is no `localhost` fallback). `TRUST_PROXY` (optional) sets Express `trust proxy`.
 
 ## Architecture
 
@@ -57,26 +59,33 @@ If a route registers a path that no router serves (or vice versa), Swagger and t
 `src/app.ts` mounts: `/health`, `/check_apis`, `/elearning/catalog`, `/elearning/profile`, `/elearning/admin/courses` (admin CRUD), and three routers (`content_complete`, `rating`, `start`) all on `/elearning/courses` that disambiguate via their own sub-paths (`.../{courseId}/contents/{contentId}/complete`, `.../{courseId}/rating`, `.../{courseId}/start`). `contracts/openapi.json` / `CONTRACT.md` list the full route table.
 
 Every business route:
-1. Is mounted in `app.ts` behind `noStore` + `requireBearer` (`@mairie360/bffs-lib`): `Cache-Control: no-store`, and 401 before any upstream call without `Authorization: Bearer <token>` (cookies, `x-session-token` and other schemes are ignored). `app.ts` also sets `trust proxy` (`parseTrustProxy(process.env.TRUST_PROXY)`) and the lib's `securityHeaders` + `apiOnlyHeaders()`.
+1. Is mounted in `app.ts` behind `noStore` + `requireSession` (`@mairie360/bffs-lib` >= 1.2.0, MAIR-474): `Cache-Control: no-store`, and 401 before any upstream call unless `Authorization: Bearer <token>` carries a token verified with `JWT_SECRET` (HS256, `exp`, positive `sub`; cookies, `x-session-token` and other schemes are ignored). `src/index.ts` refuses to start without `JWT_SECRET`. `tests/token-refusals.test.ts` walks the contract: every secured operation refuses forged tokens without any upstream call and lets a genuine one through. `app.ts` also sets `trust proxy` (`parseTrustProxy(process.env.TRUST_PROXY)`) and the lib's `securityHeaders` + `apiOnlyHeaders()`.
 2. Validates params/query/body with lib `parseRequest(schema, value, '<body|params|query>')` (HTTP 400 `Validation failed`, code `BAD_REQUEST`, one `details` entry per issue with a `path` like `body.rating`).
-3. Calls `getAuthenticatedUser(req)` (`src/routes/Elearning/auth.ts`): `GET {USER_BFF_URL}/me` with lib `asCaller('USER_BFF', req, UPSTREAM_TIMEOUT_MS)` (5 s, normalised `Bearer <token>`), retried once on a transient failure (`withRetry`), maps the response to `CurrentUser`. BFF User 401/403 → `HttpError(401)`; anything else → lib `upstreamError` (502, the upstream body is never relayed). The user `id` is `user.id` from the `/me` answer (never read from the unverified token); it falls back to the user's name when BFF User returns none. Missing `role` defaults to `'Guest'`, missing name to `'Utilisateur'`.
-4. Admin routes (`admin_courses.ts`) then check `user.isAdmin` (derived from a case-insensitive `role === 'admin'` in the `/me` payload) → 403 `FORBIDDEN` otherwise.
+3. **Never calls another BFF (MAIR-525).** `getAuthenticatedUser(req)` (`src/routes/Elearning/auth.ts`) reads Core API `GET /api/v1/user/me/` with lib `asCaller('CORE_API', req, UPSTREAM_TIMEOUT_MS)` (5 s), retried once on a transient failure, and maps it to `CurrentUser` (role = first of Core's `roles`, `'Guest'` without any; `isAdmin` = any `admin` role, like Core's guard). Core 401/403 → `HttpError(401)`; anything else → lib `upstreamError` (502, the body is never relayed); a 2xx that is not a profile is a 502, never a Guest session. The user `id` is the verified `sub` (`sessionUserId`). Only the catalogue (in parallel with the courses) and the profile read it: `start` and `complete` only call the E-learning API, which checks the session again, and `rating` calls nothing.
+4. Admin routes (`admin_courses.ts`) call `isCallerAdmin(req)`: the lib's `sessionRole(req)` (the `role` claim Core signs, MAIR-529) without any call, or Core's profile for a token without it (or with an empty one) → 403 `FORBIDDEN` without an `admin` role.
 5. Calls the upstream services on behalf of the caller with lib `asCaller(service, req)`: `elearning_upstream.ts` for the E-learning API (its `call()` = lib `withRetry` on GETs + `upstreamError(…, [401])`, plus the route's 403/404 → 404 mapping), `profile.ts` for Core API `patchMe` (lib `callUpstream` with `declared: [400, 401, 409]`). `elearning_helpers.ts` holds the pure shaping functions.
-6. Errors are thrown (`HttpError` from `@mairie360/bffs-lib`; Express 5 forwards async rejections) and answered by `notFoundHandler` / `errorHandler()` at the end of `src/app.ts` in the envelope shared by every BFF, `{ error: { code, message, details } }` (schema `ErrorResponse`, registered once in `openapi-registry.ts` with `ErrorResponseSchema.clone()`). The status is kept; `code` derives from it (`NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `BAD_GATEWAY`, `SERVICE_UNAVAILABLE`...); anything unexpected becomes 500 `INTERNAL_ERROR` with a generic message (the real error is only logged). Every authenticated route documents 401/502/503 through `sessionErrorResponses` (`openapi-registry.ts`); a `/me` 2xx without a `user` object is a 502, never a Guest session.
+6. Errors are thrown (`HttpError` from `@mairie360/bffs-lib`; Express 5 forwards async rejections) and answered by `notFoundHandler` / `errorHandler()` at the end of `src/app.ts` in the envelope shared by every BFF, `{ error: { code, message, details } }` (schema `ErrorResponse`, registered once in `openapi-registry.ts` with `ErrorResponseSchema.clone()`). The status is kept; `code` derives from it (`NOT_FOUND`, `CONFLICT`, `UNPROCESSABLE_ENTITY`, `BAD_GATEWAY`, `SERVICE_UNAVAILABLE`...); anything unexpected becomes 500 `INTERNAL_ERROR` with a generic message (the real error is only logged). Every authenticated route documents 401/502/503 through `sessionErrorResponses` (`openapi-registry.ts`); a Core 2xx that is not a profile is a 502, never a Guest session.
 
 ### No state in the BFF — data comes from the upstream services
 
 The in-memory mock (hard-coded catalogue, per-user Maps, admin CRUD on an array) was removed in MAIR-401. Mapping:
 
 - E-learning API *formation* = BFF course, *module* = chapter, *attachment* = content. Upstream numeric ids are exposed as decimal strings and validated (`/^[1-9]\d{0,14}$/`, 400 otherwise).
-- `GET /elearning/catalog`: `getMyFormations` + `getMyFormationById` per formation + `getModule` per module (fan-out with `Promise.all`; only the caller's enrolments are listed). `start` is the same read for one course, it writes nothing.
+- `GET /elearning/catalog`: one `getMyCatalog` call (`GET /api/v1/formations/catalog/`: the caller's enrolments with their modules and files), whatever the number of courses (MAIR-552: the former `getMyFormations` + `getMyFormationById` per formation + `getModule` per module made 166 calls for a learner of the perf seed and saturated the BFF). `start` reads the same catalogue and keeps one course, it writes nothing.
 - `POST .../complete`: `getModule` (checks the content belongs to the chapter) then `completeModule`, then the course is read again. Progress is per module upstream, so one content completes its whole chapter; `completed: false` → 501.
 - E-learning errors: 401 → 401, 403 (not enrolled) / 404 → 404 on course routes, anything else → 502; text/plain bodies are never relayed (relayed statuses carry the lib's generic message). GETs are retried once on a transient failure, `completeModule` (PATCH) never.
-- `PATCH /elearning/profile`: `email`/`phone` → Core `patchMe` (400/401/409 kept, else 502), then `/me` is read again; `address`/`city` → 501 before any write.
+- `PATCH /elearning/profile`: `email`/`phone` → Core `patchMe` (400/401/409 kept, else 502), then the Core profile is read again; `address`/`city` → 501 before any write.
 - **501 (no upstream operation):** ratings, admin course create/update/delete (after validation + admin check), un-completing a chapter, address/city. `bffs-lib` has no `NOT_IMPLEMENTED` code, so the body code is `INTERNAL_ERROR` with an explicit message.
 - `getMyFormations` is typed by the published package as `AdminFormation` (upstream schema-name clash), but the API also returns `status`; `toCourse` reads it when present.
 
-`/check_apis` is only a connectivity diagnostic (lib `checkApis`: probes the `/health` operation of Core API, E-learning API and BFF User independently with `withoutSession(...)`, keys `core_api` / `elearning_api` / `user_bff`, schema `CheckApisResponse`; 502 with the per-upstream status if one fails or is not configured, never the network error); `/health` just reports the BFF process is up.
+`/check_apis` is only a connectivity diagnostic (lib `checkApis`: probes the `/health` operation of Core API and E-learning API independently with `withoutSession(...)`, keys `core_api` / `elearning_api`, schema `CheckApisResponse`; 502 with the per-upstream status if one fails or is not configured, never the network error); `/health` just reports the BFF process is up.
+
+### Telemetry (MAIR-504)
+
+`src/telemetry.ts` calls the lib's `startTelemetry` and is imported by `src/index.ts` right after `dotenv/config`,
+before the app: the Express instrumentation only hooks Express if it is not loaded yet (Express stays external in
+the esbuild bundle). Off without `OTEL_EXPORTER_OTLP_ENDPOINT`; the lib exports only an attribute allowlist, so
+never add span attributes holding request values (ids, URLs, bodies, headers). Tests export nothing.
 
 ## Tests
 
@@ -84,17 +93,68 @@ Jest + `ts-jest` + `supertest`, files match `tests/**/*.test.ts`. `tests/clients
 
 ### Tests with contract-driven upstream mocks
 
-`tests/elearning.upstream-mocks.test.ts` imports the **whole app** with the **real** `auth.ts`/axios and serves BFF User (`/me`, `/health`), Core API (`patchMe`, `/health`) and E-learning API (enrolments, modules, attachments, `completeModule`, `/health`) from local HTTP servers (`tests/support/contract-mock-server.ts`). Their contracts are rebuilt at test time from the **installed** `@mairie360/bff-user-openapi` (devDependency, aligned with the `bff-user` image of the test stacks), `@mairie360/core-api-openapi` and `@mairie360/elearning-api-openapi` packages (`tests/support/orval-contract.ts` parses the orval `endpoints/*.ts` + `model/*.ts` with the TypeScript compiler API), so bumping a package is enough to test a new contract. The mock rejects paths, methods, params and bodies absent from the contract and validates mocked success responses; orval does not type errors, so mocked error replies need `outOfContract: true`. Every BFF response is checked against `contracts/openapi.json` (status documented + schema), so an undocumented status fails the test. `tests/upstream-contracts.test.ts` pins package versions and the consumed operations.
+`tests/elearning.upstream-mocks.test.ts` imports the **whole app** with the **real** `auth.ts`/axios and serves Core API (`getMe`, `patchMe`, `/health`) and E-learning API (enrolments, modules, attachments, `completeModule`, `/health`) from local HTTP servers (`tests/support/contract-mock-server.ts`). Their contracts are rebuilt at test time from the **installed** `@mairie360/core-api-openapi` and `@mairie360/elearning-api-openapi` packages (`tests/support/orval-contract.ts` parses the orval `endpoints/*.ts` + `model/*.ts` with the TypeScript compiler API), so bumping a package is enough to test a new contract. The mock rejects paths, methods, params and bodies absent from the contract and validates mocked success responses; orval does not type errors, so mocked error replies need `outOfContract: true`. Every BFF response is checked against `contracts/openapi.json` (status documented + schema), so an undocumented status fails the test. `tests/upstream-contracts.test.ts` pins package versions and the consumed operations.
 
-- `USER_BFF_URL` and `CORE_API_*`/`ELEARNING_API_*` are read per request, so tests set them in `beforeEach` (no module reload).
+- `CORE_API_*`/`ELEARNING_API_*` are read per request, so tests set them in `beforeEach` (no module reload).
 - E-learning bodies are built with `formation()` / `learnerModule()` / `attachment()` from `tests/support/user-fixtures.ts` (typed by the package models).
 - `openapi-contract.ts`, `contract-mock-server.ts` and `orval-contract.ts` are shared verbatim with `BFF_user`, `BFF_Calendar` and `BFF_Dashboard`; keep the copies identical.
 
+## Integration tests on the real stack (MAIR-262)
+
+Jest tests mock Core API and the E-learning API; `integration_test.sh` is the only test of the BFF on a real
+stack. It brings up `docker-compose-integration.yml` (the upstream services of the ZAP / k6 stacks: published
+Core API and E-learning API images, database + liquibase + `init-test.sql`, Redis) and a `newman` service that
+replays `tests/postman/collection.json` with `tests/postman/environment.json` against the BFF, `--bail` on the
+first failing request; the exit code of newman is the exit code of the script. Like the other stacks it tests
+the image named by `IMAGE_REF` (`bff-elearning:local` built from `development.Dockerfile` when empty), sources
+`stack_secrets.sh` (random `JWT_SECRET` per run) and drops the volumes before and after. In CI it is the
+`integration_tests` staging gate of `promote-staging.yml` (mairie360/CICD `integration/bffs`) on the published
+`dev-<sha>` image: a failure blocks the promotion; the junit report (`newman-reports/newman.xml`, gitignored) is
+published as job summary and artifact.
+
+The collection is split in two kinds of checks, both on the BFF's own routes:
+
+- **working checks** (folders `Service`, `Session resolution`): the BFF starts, `/health`, `/check_apis` with
+  both upstream services `Connected`, `/openapi.json`, a JSON 404, the session is resolved against Core API
+  (401 without a Bearer, the seeded Admin `sub=1` and agent `sub=2` through `/elearning/profile`);
+- **business journeys** the fronts rely on, the enrolment and progression of a course on the seeded formation
+  `4` (chapter `11`, content `27`, both users enrolled, progress reset by `init-test.sql`): course
+  administration (403 for a plain user on create / update / delete, the documented 501 for the administrator
+  while the E-learning API cannot edit formations, the seeded course untouched), the agent finds the course in
+  the catalogue (filters `search` / `status`, 404 on an unknown course), starts it (`nextContentId`,
+  `redirectUrl`), completes its content (404 on a wrong chapter or content, 501 on `completed: false`, then
+  progress 100 %, `certificationCount`, the completed filter, resume without a next content, the
+  administrator's own progress untouched), rates it (501 until ratings are stored upstream) and edits its
+  profile (phone saved by Core API and read again, an e-mail change refused with 400 because Core API requires
+  the current password this route does not take, 501 on address / city).
+
+The seeded accounts have no known password: the collection-level pre-request script forges their JWTs
+(HS256 `{ sub, role, exp }`, like `mairie360_api_lib`) with the `jwt_secret` the compose file injects
+(`jwt_admin`, `jwt_agent`); the committed `environment.json` holds no secret or token. The collection writes
+nothing it cannot replay: the only upstream write is the completion of module `11`, which the seed resets.
+Isolated endpoint checks (validation errors, token refusals) stay in jest: the collection only holds journeys
+and the checks that need a real upstream.
+
+`tests/integration-collection.test.ts` guards the collection with the unit tests: every operation of
+`contracts/openapi.json` has at least one request (a new route needs its request), every request has a
+`pm.test`, every request targets a declared route (or `/openapi.json` / the 404 check), and the environment
+commits no secret. The collection is generated for now from a session script; edit the JSON directly
+(Postman v2.1), keeping one folder per journey and English names.
+
+### Non-regression tests of a bug fix
+
+Every bug fix ships three tests that fail on the old code and pass on the fix, named after the ticket or the bug:
+a **technical unit test** (jest: the upstream-mock suite or the unit test of the route / helper), a **technical
+integration test** (a request of `tests/postman/collection.json` that reproduces the bug on the real stack and pins
+the status, the error envelope and the answer's fields) and a **business integration test** (the journey of the
+collection that the bug broke, extended so that it replays the user flow end to end). Run `./integration_test.sh`
+before opening the PR; skip one of the three only when that layer cannot observe the bug, and say why in the PR.
+
 ## CI / Docker
 
-- `contracts.yml`: Node 24, `npm ci`, `npm run contracts:check`, `npm test -- --runInBand`.
-- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v3.2.0` (`node_version: "24"`).
-- Everything targets **Node 24**; `Dockerfile` and `development.Dockerfile` pin `node:24-alpine@sha256:ebfe2f90…` by digest; the production image runs `CMD ["node", "dist/index.js"]` with a 180 MB heap cap.
+- `contracts.yml`: Node 24.22.1, `npm ci`, `npm run contracts:check`, `npm test -- --runInBand`.
+- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v4.5.0` (`node_version: "24.22.1"`).
+- Everything targets **Node 24.22.1**; `Dockerfile` and `development.Dockerfile` pin `node:24.22.1-alpine@sha256:06d7adf3…` by digest; the production image runs `CMD ["node", "dist/index.js"]` with a 180 MB heap cap.
 - `docker-compose.yml` is the local dev stack (redis + `elearning-api` + this BFF via `development.Dockerfile`, with `develop.watch` sync on `./src`). GitHub Packages secrets are passed as build secrets (`npmrc`, `node_auth_token`).
 
 ### ZAP OpenAPI coverage gate
@@ -105,6 +165,8 @@ the pinned `cicd_version` (`CICD_VERSION=<branch>` overrides it). ZAP runs its `
 non-401/403 answer. The spec requires `bearerAuth` at the top level (`openapi.ts`); `/health` and
 `/check_apis` set `security: []` in `registerPath`.
 
+Core ≥ MAIR-522 refuses to start without `RESEND_API_KEY` / `RESEND_BASE_URL` / `EMAIL_DOMAIN`: the stacks give it a fake key and an unreachable URL (no route of this BFF sends an e-mail). MAIR-474: both scripts source `stack_secrets.sh` (a random `JWT_SECRET` per run, `ADMIN_JWT` for the ZAP replacer), drop the volumes before and after a run, exit 1 when a dependency does not start, and `performance_test.sh` pins the stack to `min(PERF_CPUS, nproc)` CPUs (4 by default). `.zap/rules.tsv` no longer ignores rule `100000` (server errors) except on the routes whose documented answer is 501 (admin courses, rating, profile with address/city). The perf seeder also runs `init-perf.sql`, ELearning_API's seed copied as is (300 formations of 10 modules, learners `200001`-`202000` enrolled in 15 formations each); the reads run as random learners and check their own profile and formations; `catalog_rush` sends `GET /elearning/catalog` at a fixed rate; thresholds are strict (`checks == 100%`, `http_req_failed == 0`, `dropped_iterations == 0`); `K6_PROFILE` is `ci` (default) or `stress`. **Known failure:** the catalogue reads every enrolled formation, then every module of each, one call each (about 165 E-learning API calls per page for a learner of 15 formations): on this volume the rush times out. MAIR-525 (Core instead of BFF User, the profile read in parallel, the fan-out bounded to 5 × 5) measured on the same stack (2026-10-13): `GET /elearning/catalog` p95 14.2 s → 4.8 s, `/health` 1.94 s → 0.43 s, failed checks 8.6 % → 1.3 %, but `catalog_rush` stays at a p95 of about 56 s. Fixing it needs an aggregated read on the E-learning API side.
+
 k6 mounts `coverage.js` and `contracts/openapi.json`: `load-test.js` has **one handler per
 operation**, and a new route without a handler makes k6 abort at init. Two scenarios: `crud` (2 VUs)
 runs every handler through `coverage.run()` and carries the gate; `reads` (ramp to 20 VUs) replays
@@ -114,6 +176,23 @@ count in `http_req_failed`. The learner handlers use formation `4` / module `11`
 by `init-test.sql` with users 1 and 2 enrolled. Every operation gets a `p(95)` threshold from its family
 (`budgetOf`).
 
+## Logs (MAIR-531)
+
+Logs are JSON lines on stdout, through `logger` (`src/logger.ts`, `createLogger({ target: 'bff-elearning' })` of
+`@mairie360/bffs-lib` >= 2.1.0); **no `console.*` in `src/`**. `src/app.ts` mounts `requestLogger({ logger })` first
+(one `request completed` line per request: `request_id`, `method`, matched route, `status`, `duration_ms`; `X-Request-Id`
+answered) and passes the same `logger` to `errorHandler` and `checkApis`. Another line takes `request_id: requestId(req)`
+and scalar fields only; an error goes through `describeError(error)`, never as is (MAIR-290). Tests read the lines with
+`captureLogs()` (`tests/support/logs.ts`), which also silences them.
+
 ## Pull request reviewers
 
 Every PR requests a review from the whole team, minus its author: `CarolinHugo`, `LAURETbenjamin`, `MathTek` and `Quentintnrl` (`gh pr create … --reviewer CarolinHugo,LAURETbenjamin,MathTek`). `.github/CODEOWNERS` makes GitHub request them automatically as well.
+
+## Promotion to staging and prod (MAIR-494)
+
+A push to `main` only releases dev (`cicd.yml` stops at `release-dev`). Staging and prod are manual:
+`gh workflow run promote-staging.yml -R mairie360/BFF_Elearning` (main's newest commit) or `gh workflow run promote-staging.yml -R mairie360/BFF_Elearning -f sha=SHA` (a given commit), then the same with `promote-prod.yml`
+(environments `Staging` / `Prod`). Staging refuses a commit without `dev-<sha>` and a green main run, and runs
+the integration (newman, MAIR-262), ZAP and k6 stacks on that image; prod refuses one without `staging-<sha>` and tags the version semantic-release computes
+for that commit. `cicd.yml`, `promote-staging.yml` and `promote-prod.yml` pin the same mairie360/CICD release.

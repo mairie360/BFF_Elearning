@@ -11,7 +11,7 @@ import {
   registry,
   sessionErrorResponses,
 } from '../../openapi-registry';
-import { getAuthenticatedUser } from './auth';
+import { isCallerAdmin } from './auth';
 import { notImplemented } from './elearning_helpers';
 
 const router = Router();
@@ -87,6 +87,7 @@ registry.registerPath({
     },
     401: commonResponses[401],
     403: commonResponses[403],
+    429: commonResponses[429],
     500: commonResponses[500],
     502: commonResponses[502],
     503: commonResponses[503],
@@ -94,15 +95,15 @@ registry.registerPath({
   },
 });
 
-function ensureAdmin(isAdmin: boolean): void {
-  if (!isAdmin) throw new HttpError(403, 'This action is restricted to administrators.');
+/** 403 unless the caller holds an `admin` role (from the token, or Core for an older token). */
+async function ensureAdmin(req: Request): Promise<void> {
+  if (!(await isCallerAdmin(req))) throw new HttpError(403, 'This action is restricted to administrators.');
 }
 
 router.post('/', async (req: Request, _res: Response) => {
   parseRequest(AdminCourseCreateBody, req.body, 'body');
 
-  const user = await getAuthenticatedUser(req);
-  ensureAdmin(user.isAdmin);
+  await ensureAdmin(req);
 
   throw notImplemented(NOT_AVAILABLE);
 });
@@ -111,8 +112,7 @@ router.patch('/:courseId', async (req: Request, _res: Response) => {
   parseRequest(CourseIdParams, req.params, 'params');
   parseRequest(ElearningCourse, req.body, 'body');
 
-  const user = await getAuthenticatedUser(req);
-  ensureAdmin(user.isAdmin);
+  await ensureAdmin(req);
 
   throw notImplemented(NOT_AVAILABLE);
 });
@@ -120,8 +120,7 @@ router.patch('/:courseId', async (req: Request, _res: Response) => {
 router.delete('/:courseId', async (req: Request, _res: Response) => {
   parseRequest(CourseIdParams, req.params, 'params');
 
-  const user = await getAuthenticatedUser(req);
-  ensureAdmin(user.isAdmin);
+  await ensureAdmin(req);
 
   throw notImplemented(NOT_AVAILABLE);
 });
