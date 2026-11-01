@@ -1,0 +1,89 @@
+# GDPR log marker journey (MAIR-290), played by mairie360/CICD tests/gdpr/marker.
+#
+# The E-learning profile carries the agent's e-mail, phone, address and city; the catalog search
+# and the course texts (title, description, instructor) are free text. The marker's values go
+# there, into query strings and into deliberate errors; the logs of every container of
+# docker-compose-gdpr-marker.yml (the BFF, E-learning API, Core API, Postgres, Redis)
+# are then searched for them (see gdpr_marker_test.sh). A log describes an error by its type and
+# context, never by the value it received.
+version: 1
+target: http://bff-elearning:4006
+wait: /health
+# The admin JWT of the run (sub=1, the seeded Admin), signed by stack_secrets.sh with its random secret.
+env: [ADMIN_JWT]
+steps:
+  - name: read the profile
+    request: {method: GET, path: /elearning/profile, headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}}
+  - name: save the marker's phone in the profile
+    request:
+      method: PATCH
+      path: /elearning/profile
+      headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}
+      # Core API (MAIR-480) takes an E.164 number only: the marker's national number behind +33 (Core drops
+      # the trunk 0 and stores +336..., whose national digits the scan looks for).
+      json: {phone: "+33{{marker.phone}}"}
+  - name: change the e-mail to the marker's (deliberate error)
+    request:
+      method: PATCH
+      path: /elearning/profile
+      headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}
+      json: {email: "{{marker.email}}", phone: "+33{{marker.phone}}"}
+    # Core API requires the current password for an e-mail change, which this route does not take.
+    expect: [400]
+  - name: save a refused e-mail in the profile (deliberate error)
+    request:
+      method: PATCH
+      path: /elearning/profile
+      headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}
+      json: {email: "{{marker.last_name}}", phone: "{{marker.phone}}"}
+    expect: [400]
+  - name: save an address no upstream stores (deliberate error)
+    request:
+      method: PATCH
+      path: /elearning/profile
+      headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}
+      json: {address: "1 rue {{marker.last_name}}", city: "{{marker.first_name}}ville"}
+    expect: [501]
+  - name: save a phone of the wrong type (deliberate error)
+    request:
+      method: PATCH
+      path: /elearning/profile
+      headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}
+      json: {email: "{{marker.email}}", phone: ["{{marker.phone}}"]}
+    expect: [400]
+  - name: search the catalog for the marker (query string)
+    request: {method: GET, path: "/elearning/catalog?search={{marker.last_name}}&page=1&pageSize=10", headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}}
+  - name: search the catalog with a refused status (deliberate error, query string)
+    request: {method: GET, path: "/elearning/catalog?search={{marker.email}}&status={{marker.first_name}}", headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}}
+    expect: [400]
+  - name: create a course naming the marker (not supported upstream, deliberate error)
+    request:
+      method: POST
+      path: /elearning/admin/courses
+      headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}
+      json: {id: "gdpr-marker", title: "Course of {{marker.last_name}}", description: "Ask {{marker.first_name}} at {{marker.email}}", instructor: "{{marker.first_name}} {{marker.last_name}}"}
+    expect: [501]
+  - name: create a course with a refused body (deliberate error)
+    request:
+      method: POST
+      path: /elearning/admin/courses
+      headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}
+      json: {title: "Course of {{marker.last_name}}", description: 5, instructor: "{{marker.email}}"}
+    expect: [400]
+  - name: rate a course with a value of the wrong type (deliberate error)
+    request:
+      method: POST
+      path: /elearning/courses/4/rating
+      headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}
+      json: {rating: "{{marker.phone}}"}
+    expect: [400]
+  - name: start a course that does not exist (deliberate error)
+    request:
+      method: POST
+      path: /elearning/courses/999999/start
+      headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}
+      json: {source: "{{marker.email}}"}
+    expect: [400, 404]
+  - name: read the profile with an invalid token (deliberate error)
+    request: {method: GET, path: /elearning/profile, headers: {Authorization: "Bearer {{marker.password}}"}}
+    expect: [401]

@@ -691,6 +691,38 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(response.body).toEqual({ error: { code, message, details: [] } });
     });
 
+    // MAIR-290: the cause of an upstream 502 is the axios error, which holds the caller's Bearer token and the
+    // request and response bodies. Whatever the BFF writes (JSON log lines on stdout, stderr, console) about the
+    // failure describes it by its type and status, never by these values.
+    test('MAIR-290 logs an upstream failure without the token, the profile values or the upstream body', async () => {
+      const stdout = captureLogs();
+      const stderr: string[] = [];
+      jest.spyOn(process.stderr, 'write').mockImplementation(((chunk: string | Uint8Array) => {
+        stderr.push(String(chunk));
+        return true;
+      }) as typeof process.stderr.write);
+      for (const level of ['log', 'info', 'warn', 'error', 'debug'] as const) {
+        jest.spyOn(console, level).mockImplementation((...args: unknown[]) => {
+          stderr.push(args.map((arg) => (arg instanceof Error ? `${arg.stack} ${JSON.stringify(arg)}` : typeof arg === 'string' ? arg : JSON.stringify(arg))).join(' '));
+        });
+      }
+      const authorization = bearer(2);
+      const email = 'jeanne.marker290@example.org';
+      const phone = '0612345678';
+      coreApi.on('get', CORE.me, { body: coreMe() });
+      coreApi.on('patch', CORE.me, { status: 500, raw: 'Update failed for Jeanne Marker-290', contentType: 'text/plain', outOfContract: true });
+
+      const response = await request(app).patch('/elearning/profile').set('Authorization', authorization).send({ email, phone });
+
+      expect(response.status).toBe(502);
+      expectBffContract('patch', '/elearning/profile', response);
+      const written = [...stdout.map((line) => JSON.stringify(line)), ...stderr].join('\n');
+      expect(written).toContain('502');
+      for (const value of [authorization.replace(/^Bearer /, ''), email, phone, 'Marker-290']) {
+        expect(written).not.toContain(value);
+      }
+    });
+
     test('PATCH /elearning/profile answers 503 when CORE_API_URL is not configured, and writes nothing', async () => {
       captureLogs();
       coreApi.on('get', CORE.me, { body: coreMe() });
