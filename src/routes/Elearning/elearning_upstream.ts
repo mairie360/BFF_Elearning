@@ -1,4 +1,5 @@
 import { asCaller, HttpError, upstreamError, upstreamStatus, withRetry } from '@mairie360/bffs-lib';
+import type { CatalogFormation } from '@mairie360/elearning-api-openapi/model';
 import type { Request } from 'express';
 import { elearningClient } from '../../clients/elearningClient';
 import { UPSTREAM_TIMEOUT_MS } from '../../clients/upstream';
@@ -11,7 +12,6 @@ import {
   isRecord,
   toCourse,
   type UpstreamChapter,
-  type UpstreamFormation,
 } from './elearning_helpers';
 
 // Every learner read and write goes to the E-learning API on behalf of the caller (their bearer is
@@ -66,35 +66,23 @@ function toNumber(id: string): number {
   return Number.parseInt(id, 10);
 }
 
-async function listFormations(req: Caller): Promise<UpstreamFormation[]> {
-  const body = await call(() => elearningClient.getMyFormations(options(req)), { retry: true });
-  return arrayOf<UpstreamFormation>(body, 'formations');
-}
-
-async function loadChapters(req: Caller, formationId: number, notFound?: () => HttpError): Promise<UpstreamChapter[]> {
-  const read = { retry: true, notFound };
-  const body = await call(() => elearningClient.getMyFormationById(formationId, options(req)), read);
-  const modules = arrayOf<UpstreamChapter['module']>(body, 'modules');
-
-  return Promise.all(
-    modules.map(async (module) => {
-      const moduleBody = await call(() => elearningClient.getModule(formationId, module.id, options(req)), read);
-      return { module, files: arrayOf<UpstreamChapter['files'][number]>(moduleBody, 'files') };
-    }),
-  );
-}
-
-/** Courses the caller is enrolled in, with their chapters, contents and progress. */
+/**
+ * Courses the caller is enrolled in, with their chapters, contents and progress, in one E-learning call whatever
+ * their number (`GET /api/v1/formations/catalog/`, MAIR-552): reading each formation then each module cost
+ * 1 + N + N x M calls per catalogue and saturated the BFF under load.
+ */
 export async function loadCourses(req: Caller): Promise<BffCourse[]> {
-  const formations = await listFormations(req);
-  return Promise.all(formations.map(async (formation) => toCourse(formation, await loadChapters(req, formation.id))));
+  const body = await call(() => elearningClient.getMyCatalog(options(req)), { retry: true });
+  return arrayOf<CatalogFormation>(body, 'formations').map((formation) =>
+    toCourse(formation, arrayOf<CatalogFormation['modules'][number]>(formation, 'modules').map(({ files, ...module }) => ({ module, files }))),
+  );
 }
 
 /** One course of the caller; 404 when it does not exist or the caller is not enrolled in it. */
 export async function loadCourse(req: Caller, courseId: string): Promise<BffCourse> {
-  const formation = (await listFormations(req)).find((entry) => String(entry.id) === courseId);
-  if (!formation) throw courseNotFound(courseId);
-  return toCourse(formation, await loadChapters(req, formation.id, () => courseNotFound(courseId)));
+  const course = (await loadCourses(req)).find((entry) => entry.id === courseId);
+  if (!course) throw courseNotFound(courseId);
+  return course;
 }
 
 export type ContentCompletion = CourseProgress & { chapters: BffChapter[]; chapter: BffChapter; content: BffContent };

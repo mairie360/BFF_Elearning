@@ -36,27 +36,28 @@ describe('upstream configuration', () => {
   });
 
   test('reads the URL on every call, never at import time', () => {
-    process.env.USER_BFF_URL = 'http://bff-user:4000';
-    expect(withoutSession('USER_BFF').baseURL).toBe('http://bff-user:4000');
+    process.env.CORE_API_URL = 'http://core-api:3000';
+    expect(withoutSession('CORE_API').baseURL).toBe('http://core-api:3000');
 
-    process.env.USER_BFF_URL = 'http://bff-user-2:4000';
-    expect(withoutSession('USER_BFF').baseURL).toBe('http://bff-user-2:4000');
+    process.env.CORE_API_URL = 'http://core-api-2:3000';
+    expect(withoutSession('CORE_API').baseURL).toBe('http://core-api-2:3000');
   });
 
   test('forwards the caller session to the configured service, with the BFF timeout', () => {
-    process.env.USER_BFF_URL = 'http://bff-user:4000';
+    process.env.CORE_API_URL = 'http://core-api:3000';
 
-    expect(asCaller('USER_BFF', caller, UPSTREAM_TIMEOUT_MS)).toEqual({
-      baseURL: 'http://bff-user:4000', timeout: 5_000, headers: { Authorization: 'Bearer abc' },
+    expect(asCaller('CORE_API', caller, UPSTREAM_TIMEOUT_MS)).toEqual({
+      baseURL: 'http://core-api:3000', timeout: 5_000, headers: { Authorization: 'Bearer abc' },
     });
   });
 
   test('the startup check covers every upstream the BFF calls', () => {
     for (const service of UPSTREAM_SERVICES) delete process.env[`${service}_URL`];
 
-    expect(UPSTREAM_SERVICES).toEqual(['USER_BFF', 'CORE_API', 'ELEARNING_API']);
+    // MAIR-525: no other BFF, only the APIs.
+    expect(UPSTREAM_SERVICES).toEqual(['CORE_API', 'ELEARNING_API']);
     expect(() => assertConfigured(UPSTREAM_SERVICES)).toThrow(
-      'Missing or invalid upstream configuration: USER_BFF_URL, CORE_API_URL, ELEARNING_API_URL',
+      'Missing or invalid upstream configuration: CORE_API_URL, ELEARNING_API_URL',
     );
   });
 

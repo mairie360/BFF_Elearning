@@ -10,7 +10,6 @@ import {
 } from '../../openapi-registry';
 import { nextContentId } from './elearning_helpers';
 import { loadCourse } from './elearning_upstream';
-import { getAuthenticatedUser } from './auth';
 
 const router = Router();
 
@@ -73,7 +72,7 @@ router.post('/:courseId/start', async (req: Request, res: Response) => {
   const { courseId } = parseRequest(CourseIdParams, req.params, 'params');
   parseRequest(StartCourseBody, req.body ?? {}, 'body');
 
-  await getAuthenticatedUser(req);
+  // No profile read (MAIR-525): `requireSession` verified the token and the E-learning API checks the session again.
   const course = await loadCourse(req, courseId);
   const next = nextContentId(course);
 

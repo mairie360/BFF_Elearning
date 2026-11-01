@@ -1,41 +1,54 @@
-import { getBffUser } from '@mairie360/bff-user-openapi/endpoints/bffUser';
-import type { SessionResponse, SessionResponseGroupsItem, SessionResponseUser } from '@mairie360/bff-user-openapi/model';
+import { createHmac } from 'node:crypto';
 import { getCoreAPIMairie360 } from '@mairie360/core-api-openapi/endpoints/coreAPIMairie360';
 import { getELearningAPIMairie360 } from '@mairie360/elearning-api-openapi/endpoints/eLearningAPIMairie360';
+import type { GetMeResponseView, Group } from '@mairie360/core-api-openapi/model';
 import type { AdminFormation, File as ElearningFile, FileType, Module, Status } from '@mairie360/elearning-api-openapi/model';
 
-// Réponses BFF User typées par les modèles du paquet @mairie360/bff-user-openapi installé : un champ ajouté, retiré
-// ou renommé par le contrat fait échouer la compilation des tests. Elles sont en plus validées à l'exécution contre
-// le contrat reconstruit (upstream-contracts.test.ts, mock HTTP). Jetons de session des tests.
+// Upstream bodies typed by the models of the installed @mairie360/*-openapi packages: a field added, removed or renamed
+// by a contract breaks the compilation of the tests. They are also validated at run time against the rebuilt contract
+// (upstream-contracts.test.ts, HTTP mock). Session tokens of the tests.
 
 /** Chemins des opérations amont, tels que les construisent les clients générés (helpers `get*Url`). */
-export const userBffUrls = getBffUser();
 export const coreApiUrls = getCoreAPIMairie360();
 export const elearningApiUrls = getELearningAPIMairie360();
 
-export function group(id: number, name = `Groupe ${id}`): SessionResponseGroupsItem {
+export function group(id: number, name = `Groupe ${id}`): Group {
   return { id, name, owner_id: 1, description: null };
 }
 
-/** Corps de `GET /me` (SessionResponse). Les champs non lus par le BFF E-learning sont volontairement présents. */
-export function sessionResponse(
-  user: Partial<SessionResponseUser> = {},
-  groups: SessionResponseGroupsItem[] = [group(1, 'Service urbanisme'), group(2, 'Direction générale')],
-): SessionResponse {
+/** Body of Core `GET /api/v1/user/me/`. Fields the BFF E-learning does not read are present on purpose. */
+export function coreMe(
+  fields: Partial<GetMeResponseView> = {},
+  groups: Group[] = [group(1, 'Service urbanisme'), group(2, 'Direction générale')],
+): GetMeResponseView {
   return {
-    user: { id: 2, first_name: 'Alice', last_name: 'Martin', email: 'alice.martin@mairie.test', phone: '+33123456789', status: 'active', role: 'User', ...user },
-    groups,
-    roles: [{ id: 3, name: 'User' }],
+    first_name: 'Alice', last_name: 'Martin', email: 'alice.martin@mairie.test', phone: '+33123456789', status: 'active',
+    role: 'User', roles: ['User'], groups, ...fields,
   };
 }
 
+/** Secret of the tests (tests/support/env.ts): the BFF verifies the session tokens with it (bffs-lib requireSession). */
+export const JWT_SECRET = 'elearning-contract-test-secret';
+
+/** Numeric `sub` of a test session: a number as is, a label mapped to a stable id (one session per label). */
+export function sessionSub(sub: string | number): number {
+  if (typeof sub === 'number') return sub;
+  return 100_000 + [...sub].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) % 900_000, 7);
+}
+
 /**
- * JWT-shaped bearer token. The BFF only reads its `sub`; the signature is checked by BFF User and the E-learning
- * API, both mocked here, which receive the token unchanged.
+ * HS256 session token of `sub` signed with `secret` (fixed expiry, so a token is the same in every call). `claims`
+ * adds claims, such as the `role` Core signs (MAIR-529); without it the token predates that claim.
  */
-export function bearer(sub: string | number): string {
+export function sessionToken(sub: string | number, secret = JWT_SECRET, exp = 4_102_444_800, claims: object = {}): string {
   const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
-  return `Bearer ${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: String(sub), exp: 4_102_444_800 })}.signature`;
+  const unsigned = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: String(sessionSub(sub)), exp, ...claims })}`;
+  return `${unsigned}.${createHmac('sha256', secret).update(unsigned).digest('base64url')}`;
+}
+
+/** `Authorization` header of a session: verified by the BFF, then forwarded unchanged to the APIs. */
+export function bearer(sub: string | number, claims: object = {}): string {
+  return `Bearer ${sessionToken(sub, JWT_SECRET, 4_102_444_800, claims)}`;
 }
 
 // ---------------------------------------------------------------------------------------------------------------

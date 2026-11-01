@@ -21,7 +21,7 @@ registry.registerPath({
   path: '/elearning/profile',
   tags: ['E-learning'],
   summary: 'Loads the E-learning profile',
-  description: 'The caller as resolved by BFF User `/me`, ready to render on the profile page.',
+  description: 'The caller as read from Core API (`GET /api/v1/user/me/`), ready to render on the profile page.',
   responses: {
     200: {
       description: 'Profile loaded',
@@ -49,7 +49,7 @@ registry.registerPath({
   tags: ['E-learning'],
   summary: 'Updates the editable profile fields',
   description:
-    '`email` and `phone` are saved by Core API (`PATCH /api/v1/user/me/`), then the profile is read again from BFF User. `address` and `city` are stored by no upstream service: a body carrying them answers 501 and nothing is written. Non-editable fields (role, isAdmin, service, position, lastConnection) are ignored.',
+    '`email` and `phone` are saved by Core API (`PATCH /api/v1/user/me/`), then the profile is read again from Core API. `address` and `city` are stored by no upstream service: a body carrying them answers 501 and nothing is written. Non-editable fields (role, isAdmin, service, position, lastConnection) are ignored.',
   request: {
     body: {
       required: true,
