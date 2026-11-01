@@ -1,35 +1,27 @@
 # Journal des releases — BFF_Elearning
 
-<!-- release-journal-state {"dev": "90805aefb8735baecbe9ac38ecb72551ab96efbd", "prod": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "prod_tag": "v1.1.0", "staging": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "updated": {"dev": "2026-10-23 13:26 UTC", "prod": "2026-10-21 10:10 UTC", "staging": "2026-10-21 09:55 UTC"}} -->
+<!-- release-journal-state {"dev": "2c9a493d4e418ad3bfee676e2a290aa1826d2451", "prod": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "prod_tag": "v1.1.0", "staging": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "updated": {"dev": "2026-11-01 11:43 UTC", "prod": "2026-10-21 10:10 UTC", "staging": "2026-10-21 09:55 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v1.1.0 | `95dccba` | 2026-10-21 10:10 UTC |
 | staging | — | `95dccba` | 2026-10-21 09:55 UTC |
-| dev | — | `90805ae` | 2026-10-23 13:26 UTC |
+| dev | — | `2c9a493` | 2026-11-01 11:43 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v1.1.0)
 
-#### Changements de comportement
-
-- L'image de développement (`development.Dockerfile`) tourne désormais sous l'utilisateur `node` (`USER node`, `/app` lui appartient) au lieu de l'utilisateur par défaut de l'image, root. ([#200](https://github.com/mairie360/BFF_Elearning/pull/200))
-
 #### Technique
-
-- Runtime Node.js passé de `24` à `24.22.1`, correctif de sécurité d'octobre 2026 : images `Dockerfile` et `development.Dockerfile` épinglées par digest, jobs `contracts.yml` et `cicd.yml` alignés. (MAIR-262 non concerné, [#200](https://github.com/mairie360/BFF_Elearning/pull/200))
-- Tests d'intégration newman sur la stack réelle (`docker-compose-integration.yml`, `integration_test.sh`, collection Postman, garde jest), porte `integration_tests` de la promotion staging, et passage de CICD à `v4.5.0` dans `cicd.yml`, `promote-staging.yml` et `promote-prod.yml`. Aucun changement de l'API. (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199))
+- Contrôle GDPR des pull requests : nouveau workflow `gdpr-pr.yml` qui vérifie la section « Personal data » de la description (check « GDPR checklist », à rendre requis sur `main`). `zod` passe de 4.6.5 à 4.6.7. (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154))
+- Runtime Node.js épinglé en 24.22.1 (CI, `Dockerfile` et `development.Dockerfile`, par digest). Le conteneur de développement tourne désormais sous l'utilisateur `node`. Pas de changement de comportement applicatif. ([#200](https://github.com/mairie360/BFF_Elearning/pull/200))
+- Tests d'intégration newman sur la stack réelle (`integration_test.sh`, `docker-compose-integration.yml`, `tests/postman/`), gate `integration_tests` de la promotion staging, et passage de `cicd.yml`, `promote-staging.yml` et `promote-prod.yml` au tag mairie360/CICD v4.5.0. (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199))
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
-#### Changements de comportement
-
-- L'image de développement (`development.Dockerfile`) tourne désormais sous l'utilisateur `node` (`USER node`, `/app` lui appartient) au lieu de l'utilisateur par défaut de l'image, root. ([#200](https://github.com/mairie360/BFF_Elearning/pull/200))
-
 #### Technique
-
-- Runtime Node.js passé de `24` à `24.22.1`, correctif de sécurité d'octobre 2026 : images `Dockerfile` et `development.Dockerfile` épinglées par digest, jobs `contracts.yml` et `cicd.yml` alignés. (MAIR-262 non concerné, [#200](https://github.com/mairie360/BFF_Elearning/pull/200))
-- Tests d'intégration newman sur la stack réelle (`docker-compose-integration.yml`, `integration_test.sh`, collection Postman, garde jest), porte `integration_tests` de la promotion staging, et passage de CICD à `v4.5.0` dans `cicd.yml`, `promote-staging.yml` et `promote-prod.yml`. Aucun changement de l'API. (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199))
+- Contrôle GDPR des pull requests : nouveau workflow `gdpr-pr.yml` qui vérifie la section « Personal data » de la description (check « GDPR checklist », à rendre requis sur `main`). `zod` passe de 4.6.5 à 4.6.7. (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154))
+- Runtime Node.js épinglé en 24.22.1 (CI, `Dockerfile` et `development.Dockerfile`, par digest). Le conteneur de développement tourne désormais sous l'utilisateur `node`. Pas de changement de comportement applicatif. ([#200](https://github.com/mairie360/BFF_Elearning/pull/200))
+- Tests d'intégration newman sur la stack réelle (`integration_test.sh`, `docker-compose-integration.yml`, `tests/postman/`), gate `integration_tests` de la promotion staging, et passage de `cicd.yml`, `promote-staging.yml` et `promote-prod.yml` au tag mairie360/CICD v4.5.0. (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199))
 
 ## Différence staging → prod (en staging, pas encore en prod)
 
@@ -40,6 +32,7 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-01 11:43 UTC | dev | — | `2c9a493` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41302827810) |
 | 2026-10-23 13:26 UTC | dev | — | `90805ae` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/39960669113) |
 | 2026-10-22 09:01 UTC | dev | — | `c3239ca` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/39751718619) |
 | 2026-10-21 10:10 UTC | prod | v1.1.0 | `95dccba` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/39580929317) |
