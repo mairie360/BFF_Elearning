@@ -38,6 +38,12 @@ CORE_API_URL=localhost
 CORE_API_PORT=3000
 ELEARNING_API_URL=localhost
 ELEARNING_API_PORT=3006
+# Core's Ed25519 public key (PEM, `\n`-escaped line breaks accepted), MAIR-680: the BFF verifies the session
+# tokens Core signs with it and refuses to start without it. Paste the public key of the Core you run against.
+JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n<base64 of Core's public key>\n-----END PUBLIC KEY-----"
+# HS256 transition only: the former shared secret also lets the BFF start and accepts HS256 tokens. Remove it
+# once JWT_PUBLIC_KEY is deployed.
+# JWT_SECRET=
 ```
 
 ```bash

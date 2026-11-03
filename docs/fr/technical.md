@@ -40,6 +40,13 @@ CORE_API_URL=localhost
 CORE_API_PORT=3000
 ELEARNING_API_URL=localhost
 ELEARNING_API_PORT=3006
+# Clé publique Ed25519 de Core (PEM, retours à la ligne échappés en `\n` acceptés), MAIR-680 : le BFF vérifie
+# avec elle les jetons de session que Core signe et refuse de démarrer sans elle. Coller la clé publique du Core
+# utilisé.
+JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n<base64 de la clé publique de Core>\n-----END PUBLIC KEY-----"
+# Transition HS256 uniquement : l’ancien secret partagé permet aussi au BFF de démarrer et accepte les jetons
+# HS256. À retirer une fois JWT_PUBLIC_KEY déployée.
+# JWT_SECRET=
 ```
 
 ```bash
