@@ -35,8 +35,8 @@ app.use('/health', healthRouter);
 app.use('/check_apis', checkApisRouter);
 
 // Session-bound routes: never cached (`Cache-Control: no-store`) and refused with a 401 before any upstream
-// call unless the request carries an `Authorization: Bearer <token>` verified with JWT_SECRET (HS256, expiry;
-// bffs-lib requireSession, MAIR-474). Cookies and other headers are ignored.
+// call unless the request carries an `Authorization: Bearer <token>` verified with Core's public key JWT_PUBLIC_KEY
+// (EdDSA, expiry; bffs-lib requireSession, MAIR-474, MAIR-680). Cookies and other headers are ignored.
 const session = [noStore, requireSession];
 app.use('/elearning/catalog', session, catalogRouter);
 app.use('/elearning/profile', session, profileRouter);

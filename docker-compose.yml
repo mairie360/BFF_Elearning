@@ -66,7 +66,7 @@ services:
   # core:
   #   profiles: ["legacy-api"]
   #   container_name: core-elearning-bff-developpement
-  #   image: ghcr.io/mairie360/core-api:2.2.0
+  #   image: ghcr.io/mairie360/core-api:dev-3b40c2a
   #   ports:
   #     - "3000:3000"
   #   networks:
@@ -102,7 +102,7 @@ services:
       
   elearning-api:
     container_name: elearning-api-bff-elearning-developpement
-    image: ghcr.io/mairie360/elearning-api:1.2.0
+    image: ghcr.io/mairie360/elearning-api:dev-82404ec
     ports:
       - "3006:3006"
     networks:
@@ -123,6 +123,10 @@ services:
       DB_PORT: 5432
       PUBLIC_URL: http://elearning.development.mairie360.fr
       JWT_SECRET: b"secret"
+      # MAIR-680: the public key of the Core that signs this stack's sessions (local or remote), from the
+      # shell (`source ./stack_secrets.sh` gives a pair only for a Core started here with it); JWT_SECRET
+      # is the HS256 transition of the dev stack only.
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:-}
       JWT_TIMEOUT: 3600
       # mairie360_api_lib >= 2.0 (elearning-api >= 1.0.0) refuses the well-known b"secret" without this flag.
       # Local dev stack only: a deployment uses a random secret of at least 32 bytes (MAIR-428).
@@ -177,6 +181,10 @@ services:
       # Same development secret as the APIs and BFF User of the local stacks: the BFF verifies the session
       # tokens with it (bffs-lib requireSession, MAIR-474) and refuses to start without it.
       JWT_SECRET: b"secret"
+      # MAIR-680: the public key of the Core that signs this stack's sessions (local or remote), from the
+      # shell (`source ./stack_secrets.sh` gives a pair only for a Core started here with it); JWT_SECRET
+      # is the HS256 transition of the dev stack only.
+      JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY:-}
     volumes:
       - /app/node_modules # Isolation des modules pour éviter les conflits OS (Mac/Windows vs Linux)
     # depends_on:
