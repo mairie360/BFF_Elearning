@@ -35,14 +35,14 @@ describe('startup', () => {
     }));
   });
 
-  test('refuses to start without JWT_SECRET, which verifies the session tokens', () => {
+  test('MAIR-680 refuses to start without JWT_PUBLIC_KEY (nor JWT_SECRET), which verifies the session tokens', () => {
     const result = start({
-      PORT: '0', JWT_SECRET: '', CORE_API_URL: 'core-api', ELEARNING_API_URL: 'elearning-api',
+      PORT: '0', JWT_PUBLIC_KEY: '', JWT_SECRET: '', CORE_API_URL: 'core-api', ELEARNING_API_URL: 'elearning-api',
     });
 
     expect(result.status).toBe(1);
     expect(startupError(result.stdout)).toEqual(expect.objectContaining({
-      target: 'bff-elearning', message: 'invalid configuration', error: expect.stringContaining('Missing configuration: JWT_SECRET'),
+      target: 'bff-elearning', message: 'invalid configuration', error: expect.stringContaining('Missing configuration: JWT_PUBLIC_KEY'),
     }));
   });
 
