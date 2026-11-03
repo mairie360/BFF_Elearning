@@ -1,29 +1,33 @@
 # Journal des releases — BFF_Elearning
 
-<!-- release-journal-state {"dev": "efcf9f0b67c288de2197e7f4f19e24bd5b931e93", "prod": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "prod_tag": "v1.1.0", "staging": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "updated": {"dev": "2026-11-01 12:13 UTC", "prod": "2026-10-21 10:10 UTC", "staging": "2026-10-21 09:55 UTC"}} -->
+<!-- release-journal-state {"dev": "6a8d4188efb0ad9dd7450218fddbacfbea41e444", "prod": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "prod_tag": "v1.1.0", "staging": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "updated": {"dev": "2026-11-03 00:03 UTC", "prod": "2026-10-21 10:10 UTC", "staging": "2026-10-21 09:55 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v1.1.0 | `95dccba` | 2026-10-21 10:10 UTC |
 | staging | — | `95dccba` | 2026-10-21 09:55 UTC |
-| dev | — | `efcf9f0` | 2026-11-01 12:13 UTC |
+| dev | — | `6a8d418` | 2026-11-03 00:03 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v1.1.0)
 
 #### Technique
-- Test de marqueur RGPD ajouté (`gdpr_marker_test.sh`, `docker-compose-gdpr-marker.yml`, `gdpr-marker.yaml`) : il rejoue un parcours avec des valeurs marqueurs à travers le BFF et cherche ces valeurs dans les journaux de tous les conteneurs. Un test unitaire vérifie qu'une erreur amont relayée en 502 n'écrit ni le jeton, ni l'e-mail, ni le téléphone, ni le corps amont dans les journaux. Le code de `src/` n'est pas modifié. (MAIR-290, [#150](https://github.com/mairie360/BFF_Elearning/pull/150))
-- Garde RGPD sur les pull requests : nouveau workflow `gdpr-pr.yml` qui contrôle la section « Données personnelles » de la description, et `renovate.json` mis à jour pour suivre `cicd_version` dans ce workflow. Aucun effet sur le service. (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154))
-- Tests d'intégration sur la stack réelle : `docker-compose-integration.yml`, `integration_test.sh` et la collection Postman `tests/postman/`, rejouée par newman contre le BFF, avec le contrôle `integration_tests` avant la promotion staging. Les workflows `cicd.yml`, `promote-staging.yml` et `promote-prod.yml` passent à CICD v4.5.0. (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199))
-- Mise à jour de l'environnement d'exécution : images Node.js passées à 24.22.1 (Dockerfile, development.Dockerfile, CI), conteneur de développement lancé sous l'utilisateur `node`, dépendance `zod` 4.6.5 → 4.6.7 et documentation alignée. Sans effet visible pour les appelants. ([#200](https://github.com/mairie360/BFF_Elearning/pull/200), sans clé Jira)
+- Pipeline CI/CD : `cicd.yml`, `promote-staging.yml` et `promote-prod.yml` appellent désormais CICD v5.2.2 (au lieu de v4.5.0), et `gdpr-pr.yml` passe de v4.12.0 à v5.2.2. `ANTHROPIC_WORKSPACE_ID` est transmis à la revue IA des workflows concernés, et un test jest (`tests/mair-771-cicd-version.test.ts`) vérifie que tous les workflows appellent la même version. (MAIR-771, [#207](https://github.com/mairie360/BFF_Elearning/pull/207))
+- Checklist RGPD des pull requests : le workflow `gdpr-pr.yml` contrôle que la section « Données personnelles » de la description est remplie et que le « Oui » est accompagné de l'inventaire. Il a été ajouté avec un pin sur une branche de CICD, puis aligné sur v5.2.2 par #207. (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154))
+- Tests de marqueur RGPD : `gdpr-marker.yaml`, `docker-compose-gdpr-marker.yml` et `gdpr_marker_test.sh` rejouent un parcours avec des valeurs marqueur à travers le BFF, puis cherchent ces valeurs dans les journaux de chaque conteneur. Un test unitaire vérifie qu'un échec amont ne fait apparaître ni le jeton, ni les données du profil, ni le corps de la réponse amont dans les journaux. Le code de `src/` n'est pas modifié. (MAIR-290, [#150](https://github.com/mairie360/BFF_Elearning/pull/150), diff tronqué)
+- Tests d'intégration : `integration_test.sh`, `docker-compose-integration.yml` et la collection Postman `tests/postman/` rejouent avec newman des parcours (inscription, progression, profil) contre la stack réelle (Core API, E-learning API, base, Redis). Ils forment le gate `integration_tests` de la promotion staging. (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199), diff tronqué)
+- Images Node : `Dockerfile` et `development.Dockerfile` sont épinglés sur `node:24.22.1-alpine` par digest, et la CI tourne sur Node 24.22.1. Le conteneur de développement s'exécute désormais avec l'utilisateur `node`. Le paquet `zod` passe de 4.6.5 à 4.6.7. ([#200](https://github.com/mairie360/BFF_Elearning/pull/200), [#154](https://github.com/mairie360/BFF_Elearning/pull/154))
+- Documentation (`CLAUDE.md`, `docs/en/technical.md`, `docs/fr/technical.md`) mise à jour pour les versions de CICD et de Node.
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
 #### Technique
-- Test de marqueur RGPD ajouté (`gdpr_marker_test.sh`, `docker-compose-gdpr-marker.yml`, `gdpr-marker.yaml`) : il rejoue un parcours avec des valeurs marqueurs à travers le BFF et cherche ces valeurs dans les journaux de tous les conteneurs. Un test unitaire vérifie qu'une erreur amont relayée en 502 n'écrit ni le jeton, ni l'e-mail, ni le téléphone, ni le corps amont dans les journaux. Le code de `src/` n'est pas modifié. (MAIR-290, [#150](https://github.com/mairie360/BFF_Elearning/pull/150))
-- Garde RGPD sur les pull requests : nouveau workflow `gdpr-pr.yml` qui contrôle la section « Données personnelles » de la description, et `renovate.json` mis à jour pour suivre `cicd_version` dans ce workflow. Aucun effet sur le service. (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154))
-- Tests d'intégration sur la stack réelle : `docker-compose-integration.yml`, `integration_test.sh` et la collection Postman `tests/postman/`, rejouée par newman contre le BFF, avec le contrôle `integration_tests` avant la promotion staging. Les workflows `cicd.yml`, `promote-staging.yml` et `promote-prod.yml` passent à CICD v4.5.0. (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199))
-- Mise à jour de l'environnement d'exécution : images Node.js passées à 24.22.1 (Dockerfile, development.Dockerfile, CI), conteneur de développement lancé sous l'utilisateur `node`, dépendance `zod` 4.6.5 → 4.6.7 et documentation alignée. Sans effet visible pour les appelants. ([#200](https://github.com/mairie360/BFF_Elearning/pull/200), sans clé Jira)
+- Pipeline CI/CD : `cicd.yml`, `promote-staging.yml` et `promote-prod.yml` appellent désormais CICD v5.2.2 (au lieu de v4.5.0), et `gdpr-pr.yml` passe de v4.12.0 à v5.2.2. `ANTHROPIC_WORKSPACE_ID` est transmis à la revue IA des workflows concernés, et un test jest (`tests/mair-771-cicd-version.test.ts`) vérifie que tous les workflows appellent la même version. (MAIR-771, [#207](https://github.com/mairie360/BFF_Elearning/pull/207))
+- Checklist RGPD des pull requests : le workflow `gdpr-pr.yml` contrôle que la section « Données personnelles » de la description est remplie et que le « Oui » est accompagné de l'inventaire. Il a été ajouté avec un pin sur une branche de CICD, puis aligné sur v5.2.2 par #207. (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154))
+- Tests de marqueur RGPD : `gdpr-marker.yaml`, `docker-compose-gdpr-marker.yml` et `gdpr_marker_test.sh` rejouent un parcours avec des valeurs marqueur à travers le BFF, puis cherchent ces valeurs dans les journaux de chaque conteneur. Un test unitaire vérifie qu'un échec amont ne fait apparaître ni le jeton, ni les données du profil, ni le corps de la réponse amont dans les journaux. Le code de `src/` n'est pas modifié. (MAIR-290, [#150](https://github.com/mairie360/BFF_Elearning/pull/150), diff tronqué)
+- Tests d'intégration : `integration_test.sh`, `docker-compose-integration.yml` et la collection Postman `tests/postman/` rejouent avec newman des parcours (inscription, progression, profil) contre la stack réelle (Core API, E-learning API, base, Redis). Ils forment le gate `integration_tests` de la promotion staging. (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199), diff tronqué)
+- Images Node : `Dockerfile` et `development.Dockerfile` sont épinglés sur `node:24.22.1-alpine` par digest, et la CI tourne sur Node 24.22.1. Le conteneur de développement s'exécute désormais avec l'utilisateur `node`. Le paquet `zod` passe de 4.6.5 à 4.6.7. ([#200](https://github.com/mairie360/BFF_Elearning/pull/200), [#154](https://github.com/mairie360/BFF_Elearning/pull/154))
+- Documentation (`CLAUDE.md`, `docs/en/technical.md`, `docs/fr/technical.md`) mise à jour pour les versions de CICD et de Node.
 
 ## Différence staging → prod (en staging, pas encore en prod)
 
@@ -34,6 +38,7 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-03 00:03 UTC | dev | — | `6a8d418` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41548510179) |
 | 2026-11-01 12:13 UTC | dev | — | `efcf9f0` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41305216964) |
 | 2026-11-01 11:43 UTC | dev | — | `2c9a493` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41302827810) |
 | 2026-10-23 13:26 UTC | dev | — | `90805ae` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/39960669113) |
