@@ -1,29 +1,41 @@
 # Journal des releases — BFF_Elearning
 
-<!-- release-journal-state {"dev": "efcf9f0b67c288de2197e7f4f19e24bd5b931e93", "prod": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "prod_tag": "v1.1.0", "staging": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "updated": {"dev": "2026-11-01 12:13 UTC", "prod": "2026-10-21 10:10 UTC", "staging": "2026-10-21 09:55 UTC"}} -->
+<!-- release-journal-state {"dev": "b7e6af7ebc5368f2b97893d1a6a31554d2ecf4ef", "prod": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "prod_tag": "v1.1.0", "staging": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "updated": {"dev": "2026-11-03 14:33 UTC", "prod": "2026-10-21 10:10 UTC", "staging": "2026-10-21 09:55 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v1.1.0 | `95dccba` | 2026-10-21 10:10 UTC |
 | staging | — | `95dccba` | 2026-10-21 09:55 UTC |
-| dev | — | `efcf9f0` | 2026-11-01 12:13 UTC |
+| dev | — | `b7e6af7` | 2026-11-03 14:33 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v1.1.0)
 
+#### Changements de comportement
+- Les jetons de session sont désormais vérifiés avec la clé publique Ed25519 de Core (`JWT_PUBLIC_KEY`, EdDSA sous le `kid` de Core, contrôles `iss`, `aud`, `exp`, `sub`) et non plus avec le secret HS256 partagé. Un jeton HS256 n'est accepté que tant que `JWT_SECRET` est encore défini (transition) ; sans ce secret il reçoit 401 avant tout appel amont. Les appelants qui signaient leurs jetons en HS256 (scripts de test, k6, collections Postman) doivent utiliser un jeton EdDSA émis par Core. (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211))
+- Le démarrage échoue désormais sans `JWT_PUBLIC_KEY` ou si cette clé est mal formée (`assertStartupConfiguration()`) : c'est une nouvelle variable d'environnement obligatoire pour le déploiement. (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211))
+
+#### Corrections
+- Avant : un jeton HS256 signé avec le secret partagé par 12 services était accepté, donc tout service détenant ce secret pouvait forger un jeton admin. Maintenant : la vérification passe par la clé publique de Core, et cette voie est fermée dès que `JWT_SECRET` est retiré. (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211))
+
 #### Technique
-- Test de marqueur RGPD ajouté (`gdpr_marker_test.sh`, `docker-compose-gdpr-marker.yml`, `gdpr-marker.yaml`) : il rejoue un parcours avec des valeurs marqueurs à travers le BFF et cherche ces valeurs dans les journaux de tous les conteneurs. Un test unitaire vérifie qu'une erreur amont relayée en 502 n'écrit ni le jeton, ni l'e-mail, ni le téléphone, ni le corps amont dans les journaux. Le code de `src/` n'est pas modifié. (MAIR-290, [#150](https://github.com/mairie360/BFF_Elearning/pull/150))
-- Garde RGPD sur les pull requests : nouveau workflow `gdpr-pr.yml` qui contrôle la section « Données personnelles » de la description, et `renovate.json` mis à jour pour suivre `cicd_version` dans ce workflow. Aucun effet sur le service. (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154))
-- Tests d'intégration sur la stack réelle : `docker-compose-integration.yml`, `integration_test.sh` et la collection Postman `tests/postman/`, rejouée par newman contre le BFF, avec le contrôle `integration_tests` avant la promotion staging. Les workflows `cicd.yml`, `promote-staging.yml` et `promote-prod.yml` passent à CICD v4.5.0. (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199))
-- Mise à jour de l'environnement d'exécution : images Node.js passées à 24.22.1 (Dockerfile, development.Dockerfile, CI), conteneur de développement lancé sous l'utilisateur `node`, dépendance `zod` 4.6.5 → 4.6.7 et documentation alignée. Sans effet visible pour les appelants. ([#200](https://github.com/mairie360/BFF_Elearning/pull/200), sans clé Jira)
+- Stacks de test : `stack_secrets.sh` génère une paire Ed25519 par run et refuse une paire invalide ou désappariée, `performance_test.sh` signe les jetons k6 dans un fichier et s'arrête si `mktemp` échoue ; images Core et E-learning API épinglées sur `dev-3b40c2a` et `dev-82404ec`. (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211), [#212](https://github.com/mairie360/BFF_Elearning/pull/212))
+- CI/CD : workflows de mairie360/CICD passés en v5.2.2 avec `ANTHROPIC_WORKSPACE_ID` transmis et test de cohérence des versions (MAIR-771, [#207](https://github.com/mairie360/BFF_Elearning/pull/207)) ; checklist RGPD sur les PR (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154)) ; test du marqueur RGPD dans les journaux (MAIR-290, [#150](https://github.com/mairie360/BFF_Elearning/pull/150)) ; stack d'intégration newman et collection Postman (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199)).
+- Images et dépendances : Node.js 24.22.1 dans les Dockerfiles et les jobs, conteneur de développement lancé en utilisateur `node` ([#200](https://github.com/mairie360/BFF_Elearning/pull/200)) ; images et actions épinglées par digest ou SHA et mises à jour Renovate ([#205](https://github.com/mairie360/BFF_Elearning/pull/205)) ; `zod` passe de 4.6.5 à 4.6.7 ([#154](https://github.com/mairie360/BFF_Elearning/pull/154)).
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
+#### Changements de comportement
+- Les jetons de session sont désormais vérifiés avec la clé publique Ed25519 de Core (`JWT_PUBLIC_KEY`, EdDSA sous le `kid` de Core, contrôles `iss`, `aud`, `exp`, `sub`) et non plus avec le secret HS256 partagé. Un jeton HS256 n'est accepté que tant que `JWT_SECRET` est encore défini (transition) ; sans ce secret il reçoit 401 avant tout appel amont. Les appelants qui signaient leurs jetons en HS256 (scripts de test, k6, collections Postman) doivent utiliser un jeton EdDSA émis par Core. (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211))
+- Le démarrage échoue désormais sans `JWT_PUBLIC_KEY` ou si cette clé est mal formée (`assertStartupConfiguration()`) : c'est une nouvelle variable d'environnement obligatoire pour le déploiement. (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211))
+
+#### Corrections
+- Avant : un jeton HS256 signé avec le secret partagé par 12 services était accepté, donc tout service détenant ce secret pouvait forger un jeton admin. Maintenant : la vérification passe par la clé publique de Core, et cette voie est fermée dès que `JWT_SECRET` est retiré. (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211))
+
 #### Technique
-- Test de marqueur RGPD ajouté (`gdpr_marker_test.sh`, `docker-compose-gdpr-marker.yml`, `gdpr-marker.yaml`) : il rejoue un parcours avec des valeurs marqueurs à travers le BFF et cherche ces valeurs dans les journaux de tous les conteneurs. Un test unitaire vérifie qu'une erreur amont relayée en 502 n'écrit ni le jeton, ni l'e-mail, ni le téléphone, ni le corps amont dans les journaux. Le code de `src/` n'est pas modifié. (MAIR-290, [#150](https://github.com/mairie360/BFF_Elearning/pull/150))
-- Garde RGPD sur les pull requests : nouveau workflow `gdpr-pr.yml` qui contrôle la section « Données personnelles » de la description, et `renovate.json` mis à jour pour suivre `cicd_version` dans ce workflow. Aucun effet sur le service. (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154))
-- Tests d'intégration sur la stack réelle : `docker-compose-integration.yml`, `integration_test.sh` et la collection Postman `tests/postman/`, rejouée par newman contre le BFF, avec le contrôle `integration_tests` avant la promotion staging. Les workflows `cicd.yml`, `promote-staging.yml` et `promote-prod.yml` passent à CICD v4.5.0. (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199))
-- Mise à jour de l'environnement d'exécution : images Node.js passées à 24.22.1 (Dockerfile, development.Dockerfile, CI), conteneur de développement lancé sous l'utilisateur `node`, dépendance `zod` 4.6.5 → 4.6.7 et documentation alignée. Sans effet visible pour les appelants. ([#200](https://github.com/mairie360/BFF_Elearning/pull/200), sans clé Jira)
+- Stacks de test : `stack_secrets.sh` génère une paire Ed25519 par run et refuse une paire invalide ou désappariée, `performance_test.sh` signe les jetons k6 dans un fichier et s'arrête si `mktemp` échoue ; images Core et E-learning API épinglées sur `dev-3b40c2a` et `dev-82404ec`. (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211), [#212](https://github.com/mairie360/BFF_Elearning/pull/212))
+- CI/CD : workflows de mairie360/CICD passés en v5.2.2 avec `ANTHROPIC_WORKSPACE_ID` transmis et test de cohérence des versions (MAIR-771, [#207](https://github.com/mairie360/BFF_Elearning/pull/207)) ; checklist RGPD sur les PR (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154)) ; test du marqueur RGPD dans les journaux (MAIR-290, [#150](https://github.com/mairie360/BFF_Elearning/pull/150)) ; stack d'intégration newman et collection Postman (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199)).
+- Images et dépendances : Node.js 24.22.1 dans les Dockerfiles et les jobs, conteneur de développement lancé en utilisateur `node` ([#200](https://github.com/mairie360/BFF_Elearning/pull/200)) ; images et actions épinglées par digest ou SHA et mises à jour Renovate ([#205](https://github.com/mairie360/BFF_Elearning/pull/205)) ; `zod` passe de 4.6.5 à 4.6.7 ([#154](https://github.com/mairie360/BFF_Elearning/pull/154)).
 
 ## Différence staging → prod (en staging, pas encore en prod)
 
@@ -34,6 +46,10 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-03 14:33 UTC | dev | — | `b7e6af7` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41654057766) |
+| 2026-11-03 14:11 UTC | dev | — | `b8280df` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41650561967) |
+| 2026-11-03 01:50 UTC | dev | — | `646b8ee` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41561843621) |
+| 2026-11-03 00:03 UTC | dev | — | `6a8d418` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41548510179) |
 | 2026-11-01 12:13 UTC | dev | — | `efcf9f0` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41305216964) |
 | 2026-11-01 11:43 UTC | dev | — | `2c9a493` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41302827810) |
 | 2026-10-23 13:26 UTC | dev | — | `90805ae` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/39960669113) |
