@@ -66,7 +66,7 @@ services:
   # core:
   #   profiles: ["legacy-api"]
   #   container_name: core-elearning-bff-developpement
-  #   image: ghcr.io/mairie360/core-api:dev-3b40c2a
+  #   image: ghcr.io/mairie360/core-api:dev-156a9b9
   #   ports:
   #     - "3000:3000"
   #   networks:
@@ -102,7 +102,7 @@ services:
       
   elearning-api:
     container_name: elearning-api-bff-elearning-developpement
-    image: ghcr.io/mairie360/elearning-api:dev-82404ec
+    image: ghcr.io/mairie360/elearning-api:dev-7f790d5
     ports:
       - "3006:3006"
     networks:
