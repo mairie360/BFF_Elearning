@@ -1,49 +1,54 @@
 # Journal des releases — BFF_Elearning
 
-<!-- release-journal-state {"dev": "936ba8c7586e1b8264e19f7fec3a3a5fc05b063a", "prod": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "prod_tag": "v1.1.0", "staging": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "updated": {"dev": "2026-11-05 03:40 UTC", "prod": "2026-10-21 10:10 UTC", "staging": "2026-10-21 09:55 UTC"}} -->
+<!-- release-journal-state {"dev": "248e4b8bfd748f59a03af97a39202acd13ca49e4", "prod": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "prod_tag": "v1.1.0", "staging": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "updated": {"dev": "2026-11-12 13:18 UTC", "prod": "2026-10-21 10:10 UTC", "staging": "2026-10-21 09:55 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v1.1.0 | `95dccba` | 2026-10-21 10:10 UTC |
 | staging | — | `95dccba` | 2026-10-21 09:55 UTC |
-| dev | — | `936ba8c` | 2026-11-05 03:40 UTC |
+| dev | — | `248e4b8` | 2026-11-12 13:18 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v1.1.0)
 
-#### Changements de comportement
-- Les routes protégées du BFF n'acceptent plus un jeton HS256 signé avec le secret partagé. La session est vérifiée avec la clé publique Ed25519 de Core (`JWT_PUBLIC_KEY`, EdDSA sous le `kid` de Core, contrôle de `iss` et `aud`) via `@mairie360/bffs-lib` 2.7.0. Un jeton HS256 reçoit 401 sans aucun appel amont. HS256 reste accepté uniquement tant que `JWT_SECRET` est défini (transition). (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211))
-- Le BFF refuse de démarrer sans `JWT_PUBLIC_KEY` ou si la clé est mal formée (`assertStartupConfiguration()`). Les déploiements doivent fournir la clé publique de Core. (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211))
-
-#### Technique
-- Épinglage par digest des images et actions (Node 24.22.1, postgres, redis, curl, k6, newman, ZAP, actions/checkout, actions/setup-node). Le runtime Node passe en 24.22.1 après les correctifs de sécurité d'octobre 2026, sans npm, npx, corepack ni yarn ; l'image de développement tourne en utilisateur `node`. Mise à jour de zod en 4.6.7. (MAIR-771, [#214](https://github.com/mairie360/BFF_Elearning/pull/214), [#205](https://github.com/mairie360/BFF_Elearning/pull/205), [#200](https://github.com/mairie360/BFF_Elearning/pull/200))
-- Les workflows CI et de promotion appellent mairie360/CICD v5.2.2 au lieu de v4.5.0, et transmettent `ANTHROPIC_WORKSPACE_ID` ; une garde jest vérifie la version de CICD des workflows. (MAIR-771, [#207](https://github.com/mairie360/BFF_Elearning/pull/207))
-- Contrôles RGPD : simulation d'usage (MAIR-497, [#210](https://github.com/mairie360/BFF_Elearning/pull/210)), test du marqueur dans les journaux (MAIR-290, [#150](https://github.com/mairie360/BFF_Elearning/pull/150)), checklist RGPD sur les PR avec `gdpr-pr.yml` (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154)).
-- Tests d'intégration newman sur la stack réelle, avec collection Postman et rapport junit (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199)).
-- Scripts de stack : la paire de clés JWT doit être une paire Ed25519 valide, et `performance_test.sh` s'arrête si `mktemp -d` échoue (MAIR-680, [#212](https://github.com/mairie360/BFF_Elearning/pull/212)).
+- fix(deps): MAIR-816 Release dev: align internal versions and deploy (#218) ([#218](https://github.com/mairie360/BFF_Elearning/pull/218))
+- chore(deps): pin node.js to c86ecea (#214) ([#214](https://github.com/mairie360/BFF_Elearning/pull/214))
+- feat: MAIR-497 GDPR - Usage simulation and AI review of logs and database before prod ([#210](https://github.com/mairie360/BFF_Elearning/pull/210))
+- fix: MAIR-680 [Audit 23/10] Toutes les APIs et BFFs : remplacer le secret JWT HS256 partagé par 12 services (A1) ([#212](https://github.com/mairie360/BFF_Elearning/pull/212))
+- fix: MAIR-680 [Audit 23/10] Toutes les APIs et BFFs : remplacer le secret JWT HS256 partagé par 12 services (A1) ([#211](https://github.com/mairie360/BFF_Elearning/pull/211))
+- chore(deps): pin dependencies (#205) ([#205](https://github.com/mairie360/BFF_Elearning/pull/205))
+- ci: MAIR-771 APIs, BFFs, Database : monter CICD en v5.2.2 pour activer les contrôles RGPD (#207) ([#207](https://github.com/mairie360/BFF_Elearning/pull/207))
+- fix: MAIR-290 Détecter les données personnelles dans les journaux avec un test du marqueur (#150) ([#150](https://github.com/mairie360/BFF_Elearning/pull/150))
+- ci: MAIR-295 Ajouter une checklist RGPD aux PR et des rappels d'échéances automatiques (#154) ([#154](https://github.com/mairie360/BFF_Elearning/pull/154))
+- fix(security): patch Node.js runtime and toolchain (#200) ([#200](https://github.com/mairie360/BFF_Elearning/pull/200))
+- feat: MAIR-262 Tests d'intégration - Tests de fonctionnement des APIs, tests métier des BFFs et tests de régression (#199) ([#199](https://github.com/mairie360/BFF_Elearning/pull/199))
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
-#### Changements de comportement
-- Les routes protégées du BFF n'acceptent plus un jeton HS256 signé avec le secret partagé. La session est vérifiée avec la clé publique Ed25519 de Core (`JWT_PUBLIC_KEY`, EdDSA sous le `kid` de Core, contrôle de `iss` et `aud`) via `@mairie360/bffs-lib` 2.7.0. Un jeton HS256 reçoit 401 sans aucun appel amont. HS256 reste accepté uniquement tant que `JWT_SECRET` est défini (transition). (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211))
-- Le BFF refuse de démarrer sans `JWT_PUBLIC_KEY` ou si la clé est mal formée (`assertStartupConfiguration()`). Les déploiements doivent fournir la clé publique de Core. (MAIR-680, [#211](https://github.com/mairie360/BFF_Elearning/pull/211))
-
-#### Technique
-- Épinglage par digest des images et actions (Node 24.22.1, postgres, redis, curl, k6, newman, ZAP, actions/checkout, actions/setup-node). Le runtime Node passe en 24.22.1 après les correctifs de sécurité d'octobre 2026, sans npm, npx, corepack ni yarn ; l'image de développement tourne en utilisateur `node`. Mise à jour de zod en 4.6.7. (MAIR-771, [#214](https://github.com/mairie360/BFF_Elearning/pull/214), [#205](https://github.com/mairie360/BFF_Elearning/pull/205), [#200](https://github.com/mairie360/BFF_Elearning/pull/200))
-- Les workflows CI et de promotion appellent mairie360/CICD v5.2.2 au lieu de v4.5.0, et transmettent `ANTHROPIC_WORKSPACE_ID` ; une garde jest vérifie la version de CICD des workflows. (MAIR-771, [#207](https://github.com/mairie360/BFF_Elearning/pull/207))
-- Contrôles RGPD : simulation d'usage (MAIR-497, [#210](https://github.com/mairie360/BFF_Elearning/pull/210)), test du marqueur dans les journaux (MAIR-290, [#150](https://github.com/mairie360/BFF_Elearning/pull/150)), checklist RGPD sur les PR avec `gdpr-pr.yml` (MAIR-295, [#154](https://github.com/mairie360/BFF_Elearning/pull/154)).
-- Tests d'intégration newman sur la stack réelle, avec collection Postman et rapport junit (MAIR-262, [#199](https://github.com/mairie360/BFF_Elearning/pull/199)).
-- Scripts de stack : la paire de clés JWT doit être une paire Ed25519 valide, et `performance_test.sh` s'arrête si `mktemp -d` échoue (MAIR-680, [#212](https://github.com/mairie360/BFF_Elearning/pull/212)).
+- fix(deps): MAIR-816 Release dev: align internal versions and deploy (#218) ([#218](https://github.com/mairie360/BFF_Elearning/pull/218))
+- chore(deps): pin node.js to c86ecea (#214) ([#214](https://github.com/mairie360/BFF_Elearning/pull/214))
+- feat: MAIR-497 GDPR - Usage simulation and AI review of logs and database before prod ([#210](https://github.com/mairie360/BFF_Elearning/pull/210))
+- fix: MAIR-680 [Audit 23/10] Toutes les APIs et BFFs : remplacer le secret JWT HS256 partagé par 12 services (A1) ([#212](https://github.com/mairie360/BFF_Elearning/pull/212))
+- fix: MAIR-680 [Audit 23/10] Toutes les APIs et BFFs : remplacer le secret JWT HS256 partagé par 12 services (A1) ([#211](https://github.com/mairie360/BFF_Elearning/pull/211))
+- chore(deps): pin dependencies (#205) ([#205](https://github.com/mairie360/BFF_Elearning/pull/205))
+- ci: MAIR-771 APIs, BFFs, Database : monter CICD en v5.2.2 pour activer les contrôles RGPD (#207) ([#207](https://github.com/mairie360/BFF_Elearning/pull/207))
+- fix: MAIR-290 Détecter les données personnelles dans les journaux avec un test du marqueur (#150) ([#150](https://github.com/mairie360/BFF_Elearning/pull/150))
+- ci: MAIR-295 Ajouter une checklist RGPD aux PR et des rappels d'échéances automatiques (#154) ([#154](https://github.com/mairie360/BFF_Elearning/pull/154))
+- fix(security): patch Node.js runtime and toolchain (#200) ([#200](https://github.com/mairie360/BFF_Elearning/pull/200))
+- feat: MAIR-262 Tests d'intégration - Tests de fonctionnement des APIs, tests métier des BFFs et tests de régression (#199) ([#199](https://github.com/mairie360/BFF_Elearning/pull/199))
 
 ## Différence staging → prod (en staging, pas encore en prod)
 
 _Rien._
+
+> Résumé Claude indisponible pour ce passage : listes brutes des commits.
 
 ## Historique des passages
 
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-12 13:18 UTC | dev | — | `248e4b8` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43225215938) |
 | 2026-11-05 03:40 UTC | dev | — | `936ba8c` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41962495403) |
 | 2026-11-04 18:13 UTC | dev | — | `d4becc7` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41882714601) |
 | 2026-11-03 14:33 UTC | dev | — | `b7e6af7` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/41654057766) |
