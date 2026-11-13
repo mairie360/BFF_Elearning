@@ -1,31 +1,34 @@
 # Journal des releases — BFF_Elearning
 
-<!-- release-journal-state {"dev": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod_tag": "v1.2.0", "staging": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "updated": {"dev": "2026-11-13 00:20 UTC", "prod": "2026-11-13 00:45 UTC", "staging": "2026-11-13 00:28 UTC"}} -->
+<!-- release-journal-state {"dev": "40bd339a02a7f56112efae89e933efa462e375d4", "prod": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod_tag": "v1.2.0", "staging": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "updated": {"dev": "2026-11-13 06:16 UTC", "prod": "2026-11-13 00:45 UTC", "staging": "2026-11-13 00:28 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v1.2.0 | `a454ccc` | 2026-11-13 00:45 UTC |
 | staging | — | `a454ccc` | 2026-11-13 00:28 UTC |
-| dev | — | `a454ccc` | 2026-11-13 00:20 UTC |
+| dev | — | `40bd339` | 2026-11-13 06:16 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v1.2.0)
 
-_Rien._
+- chore(deps): update mairie360 database schema to v3.4.0 (#224) ([#224](https://github.com/mairie360/BFF_Elearning/pull/224))
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
-_Rien._
+- chore(deps): update mairie360 database schema to v3.4.0 (#224) ([#224](https://github.com/mairie360/BFF_Elearning/pull/224))
 
 ## Différence staging → prod (en staging, pas encore en prod)
 
 _Rien._
+
+> Résumé Claude indisponible pour ce passage : listes brutes des commits.
 
 ## Historique des passages
 
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-13 06:16 UTC | dev | — | `40bd339` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43377218581) |
 | 2026-11-13 00:45 UTC | prod | v1.2.0 | `a454ccc` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43337460086) |
 | 2026-11-13 00:28 UTC | staging | — | `a454ccc` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43336348880) |
 | 2026-11-13 00:20 UTC | dev | — | `a454ccc` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43335006078) |
