@@ -1,12 +1,12 @@
 # Journal des releases — BFF_Elearning
 
-<!-- release-journal-state {"dev": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "prod_tag": "v1.1.0", "staging": "248e4b8bfd748f59a03af97a39202acd13ca49e4", "updated": {"dev": "2026-11-13 00:20 UTC", "prod": "2026-10-21 10:10 UTC", "staging": "2026-11-12 18:59 UTC"}} -->
+<!-- release-journal-state {"dev": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod": "95dccbab07beecd9880bb4c05bd41fd07b87a9aa", "prod_tag": "v1.1.0", "staging": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "updated": {"dev": "2026-11-13 00:20 UTC", "prod": "2026-10-21 10:10 UTC", "staging": "2026-11-13 00:28 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v1.1.0 | `95dccba` | 2026-10-21 10:10 UTC |
-| staging | — | `248e4b8` | 2026-11-12 18:59 UTC |
+| staging | — | `a454ccc` | 2026-11-13 00:28 UTC |
 | dev | — | `a454ccc` | 2026-11-13 00:20 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v1.1.0)
@@ -26,10 +26,11 @@
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
-- fix(deps): MAIR-1003 Release prod: align internal versions and deploy ([#223](https://github.com/mairie360/BFF_Elearning/pull/223))
+_Rien._
 
 ## Différence staging → prod (en staging, pas encore en prod)
 
+- fix(deps): MAIR-1003 Release prod: align internal versions and deploy ([#223](https://github.com/mairie360/BFF_Elearning/pull/223))
 - fix(deps): MAIR-816 Release dev: align internal versions and deploy (#218) ([#218](https://github.com/mairie360/BFF_Elearning/pull/218))
 - chore(deps): pin node.js to c86ecea (#214) ([#214](https://github.com/mairie360/BFF_Elearning/pull/214))
 - feat: MAIR-497 GDPR - Usage simulation and AI review of logs and database before prod ([#210](https://github.com/mairie360/BFF_Elearning/pull/210))
@@ -49,6 +50,7 @@
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-13 00:28 UTC | staging | — | `a454ccc` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43336348880) |
 | 2026-11-13 00:20 UTC | dev | — | `a454ccc` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43335006078) |
 | 2026-11-12 18:59 UTC | staging | — | `248e4b8` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43284388996) |
 | 2026-11-12 13:18 UTC | dev | — | `248e4b8` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43225215938) |
