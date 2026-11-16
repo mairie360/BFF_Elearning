@@ -21,12 +21,12 @@ export const bearerAuth = registry.registerComponent('securitySchemes', 'bearerA
 // =====================
 
 export const CourseStatus = z.enum(['not-started', 'in-progress', 'completed']).openapi({
-  description: 'Statut de progression de la formation pour l’utilisateur connecté',
+  description: 'Progress status of the formation for the signed-in user',
   example: 'in-progress',
 });
 
 export const CatalogStatusFilter = z.enum(['all', 'not-started', 'in-progress', 'completed']).openapi({
-  description: 'Filtre de statut disponible dans le catalogue',
+  description: 'Status filter available in the catalogue',
   example: 'all',
 });
 
@@ -42,14 +42,14 @@ export const BadgeVariant = z
     'notStarted',
   ])
   .openapi({
-    description: 'Variante visuelle utilisée par les badges de formation',
+    description: 'Visual variant used by the formation badges',
     example: 'mandatory',
   });
 
 export const ContentType = z
   .enum(['video', 'pdf', 'document', 'link', 'quiz', 'audio', 'other'])
   .openapi({
-    description: 'Type de contenu pédagogique',
+    description: 'Type of learning content',
     example: 'video',
   });
 
@@ -71,7 +71,7 @@ export const RatingDistribution = z
     '5': z.number().min(0).optional(),
   })
   .openapi({
-    description: 'Répartition des notes par valeur, de 1 à 5',
+    description: 'Distribution of the ratings by value, from 1 to 5',
     example: { '1': 0, '2': 1, '3': 4, '4': 35, '5': 88 },
   });
 
@@ -97,7 +97,7 @@ export const FilterOption = z
     disabled: z.boolean().optional(),
   })
   .openapi({
-    description: 'Option de filtre prête à afficher dans le frontend',
+    description: 'Filter option ready to display in the front',
   });
 
 export const StatCard = z
@@ -107,7 +107,7 @@ export const StatCard = z
     iconColor: z.string().optional().openapi({ example: '#2563eb' }),
   })
   .openapi({
-    description: 'Statistique synthétique affichable dans le catalogue',
+    description: 'Summary statistic to display in the catalogue',
   });
 
 export const CourseBadge = z
@@ -116,7 +116,7 @@ export const CourseBadge = z
     variant: BadgeVariant.optional(),
   })
   .openapi({
-    description: 'Badge associé à une formation',
+    description: 'Badge of a formation',
   });
 
 export const FooterLink = z
@@ -125,7 +125,7 @@ export const FooterLink = z
     href: z.string().openapi({ example: '/support' }),
   })
   .openapi({
-    description: 'Lien affiché dans le footer',
+    description: 'Link shown in the footer',
   });
 
 export const FooterConfig = z
@@ -155,7 +155,7 @@ export const CurrentUser = z
     lastConnection: z.string().optional().openapi({ example: '3 juillet 2026 à 09:15' }),
   })
   .openapi({
-    description: 'Utilisateur connecté tel qu’attendu par les écrans E-learning',
+    description: 'Signed-in user, as the E-learning screens expect it',
   });
 
 export const NotificationSummary = z
@@ -163,7 +163,7 @@ export const NotificationSummary = z
     unreadCount: z.number().min(0).openapi({ example: 3 }),
   })
   .openapi({
-    description: 'Résumé des notifications de l’utilisateur connecté',
+    description: 'Summary of the notifications of the signed-in user',
   });
 
 registry.register('RatingDistribution', RatingDistribution);
@@ -193,7 +193,7 @@ export const CourseContent = z
     required: z.boolean().optional(),
   })
   .openapi({
-    description: 'Contenu pédagogique d’un chapitre',
+    description: 'Learning content of a chapter',
   });
 
 export const CourseChapter = z
@@ -207,7 +207,7 @@ export const CourseChapter = z
     contents: z.array(CourseContent).optional(),
   })
   .openapi({
-    description: 'Chapitre d’une formation',
+    description: 'Chapter of a formation',
   });
 
 export const ElearningCourseDetails = z
@@ -226,7 +226,7 @@ export const ElearningCourseDetails = z
     chapters: z.array(CourseChapter),
   })
   .openapi({
-    description: 'Détail complet affiché dans la modale de formation',
+    description: 'Full detail shown in the formation modal',
   });
 
 export const ElearningCourse = z
@@ -250,7 +250,7 @@ export const ElearningCourse = z
     details: ElearningCourseDetails.optional(),
   })
   .openapi({
-    description: 'Formation affichée dans le catalogue',
+    description: 'Formation shown in the catalogue',
   });
 
 registry.register('CourseContent', CourseContent);
@@ -262,7 +262,7 @@ registry.register('ElearningCourse', ElearningCourse);
 // formation). Built from the shape (not .extend()) so it is published as a plain object, not an allOf.
 export const AdminCourseCreateBody = z
   .object({ ...ElearningCourse.shape, id: z.string().openapi({ example: 'scan-course' }) })
-  .openapi('AdminCourseCreateBody', { description: 'Formation à créer' });
+  .openapi('AdminCourseCreateBody', { description: 'Formation to create' });
 
 registry.register('AdminCourseCreateBody', AdminCourseCreateBody);
 
@@ -300,7 +300,7 @@ export const ElearningCatalogView = z
     courses: z.array(ElearningCourse),
   })
   .openapi({
-    description: 'Modèle complet du catalogue E-learning',
+    description: 'Full model of the E-learning catalogue',
   });
 
 export const ElearningCatalogResponse = z
@@ -311,7 +311,7 @@ export const ElearningCatalogResponse = z
     footer: FooterConfig.optional(),
   })
   .openapi({
-    description: 'Réponse de chargement du catalogue E-learning',
+    description: 'Response loading the E-learning catalogue',
   });
 
 registry.register('ElearningCatalogQuery', ElearningCatalogQuery);
@@ -323,7 +323,7 @@ export const AdminCourseResponse = z
     course: ElearningCourse,
   })
   .openapi({
-    description: 'Formation créée ou mise à jour par un administrateur',
+    description: 'Formation created or updated by an administrator',
   });
 
 export const AdminCourseDeleteResponse = z
@@ -348,7 +348,7 @@ export const ElearningProfileResponse = z
     footer: FooterConfig.optional(),
   })
   .openapi({
-    description: 'Réponse de chargement de la page profil',
+    description: 'Response loading the profile page',
   });
 
 export const UpdateProfileBody = z
@@ -361,7 +361,7 @@ export const UpdateProfileBody = z
     city: z.string().optional().openapi({ example: 'Paris' }),
   })
   .openapi({
-    description: 'Champs éditables du profil utilisateur',
+    description: 'Editable fields of the user profile',
   });
 
 export const ProfileUpdateResponse = z
@@ -369,7 +369,7 @@ export const ProfileUpdateResponse = z
     user: CurrentUser,
   })
   .openapi({
-    description: 'Profil mis à jour',
+    description: 'Profile updated',
   });
 
 registry.register('ElearningProfileResponse', ElearningProfileResponse);
@@ -419,7 +419,7 @@ export const ContentCompleteResponse = z
     content: CourseContent,
   })
   .openapi({
-    description: 'Progression mise à jour après complétion d’un contenu',
+    description: 'Progress updated after a content is completed',
   });
 
 export const SubmitRatingBody = z
@@ -427,7 +427,7 @@ export const SubmitRatingBody = z
     rating: z.number().int().min(1).max(5).openapi({ example: 5 }),
   })
   .openapi({
-    description: 'Note envoyée par l’utilisateur',
+    description: 'Rating sent by the user',
   });
 
 export const RatingSubmitResponse = z
@@ -438,7 +438,7 @@ export const RatingSubmitResponse = z
     submitted: z.boolean(),
   })
   .openapi({
-    description: 'Résumé de notation après envoi',
+    description: 'Rating summary after sending',
   });
 
 export const StartCourseBody = z
@@ -446,7 +446,7 @@ export const StartCourseBody = z
     source: z.string().optional().openapi({ example: 'catalog' }),
   })
   .openapi({
-    description: 'Contexte de démarrage ou reprise d’une formation',
+    description: 'Context to start or resume a formation',
   });
 
 export const CourseActionResponse = z
@@ -456,7 +456,7 @@ export const CourseActionResponse = z
     redirectUrl: z.string().optional(),
   })
   .openapi({
-    description: 'Réponse de démarrage ou reprise d’une formation',
+    description: 'Response to start or resume a formation',
   });
 
 registry.register('CourseIdParams', CourseIdParams);

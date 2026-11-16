@@ -25,7 +25,7 @@
           "in-progress",
           "completed"
         ],
-        "description": "Statut de progression de la formation pour l’utilisateur connecté",
+        "description": "Progress status of the formation for the signed-in user",
         "example": "in-progress"
       },
       "CatalogStatusFilter": {
@@ -36,7 +36,7 @@
           "in-progress",
           "completed"
         ],
-        "description": "Filtre de statut disponible dans le catalogue",
+        "description": "Status filter available in the catalogue",
         "example": "all"
       },
       "BadgeVariant": {
@@ -51,7 +51,7 @@
           "mandatory",
           "notStarted"
         ],
-        "description": "Variante visuelle utilisée par les badges de formation",
+        "description": "Visual variant used by the formation badges",
         "example": "mandatory"
       },
       "ContentType": {
@@ -65,7 +65,7 @@
           "audio",
           "other"
         ],
-        "description": "Type de contenu pédagogique",
+        "description": "Type of learning content",
         "example": "video"
       },
       "RatingDistribution": {
@@ -92,7 +92,7 @@
             "minimum": 0
           }
         },
-        "description": "Répartition des notes par valeur, de 1 à 5",
+        "description": "Distribution of the ratings by value, from 1 to 5",
         "example": {
           "1": 0,
           "2": 1,
@@ -153,7 +153,7 @@
           "label",
           "value"
         ],
-        "description": "Option de filtre prête à afficher dans le frontend"
+        "description": "Filter option ready to display in the front"
       },
       "StatCard": {
         "type": "object",
@@ -182,7 +182,7 @@
           "label",
           "value"
         ],
-        "description": "Statistique synthétique affichable dans le catalogue"
+        "description": "Summary statistic to display in the catalogue"
       },
       "CourseBadge": {
         "type": "object",
@@ -203,14 +203,14 @@
               "mandatory",
               "notStarted"
             ],
-            "description": "Variante visuelle utilisée par les badges de formation",
+            "description": "Visual variant used by the formation badges",
             "example": "mandatory"
           }
         },
         "required": [
           "label"
         ],
-        "description": "Badge associé à une formation"
+        "description": "Badge of a formation"
       },
       "FooterLink": {
         "type": "object",
@@ -228,7 +228,7 @@
           "label",
           "href"
         ],
-        "description": "Lien affiché dans le footer"
+        "description": "Link shown in the footer"
       },
       "FooterConfig": {
         "type": "object",
@@ -259,7 +259,7 @@
                 "label",
                 "href"
               ],
-              "description": "Lien affiché dans le footer"
+              "description": "Link shown in the footer"
             }
           }
         },
@@ -334,7 +334,7 @@
           "initials",
           "isAdmin"
         ],
-        "description": "Utilisateur connecté tel qu’attendu par les écrans E-learning"
+        "description": "Signed-in user, as the E-learning screens expect it"
       },
       "NotificationSummary": {
         "type": "object",
@@ -348,7 +348,7 @@
         "required": [
           "unreadCount"
         ],
-        "description": "Résumé des notifications de l’utilisateur connecté"
+        "description": "Summary of the notifications of the signed-in user"
       },
       "CourseContent": {
         "type": "object",
@@ -372,7 +372,7 @@
               "audio",
               "other"
             ],
-            "description": "Type de contenu pédagogique",
+            "description": "Type of learning content",
             "example": "video"
           },
           "description": {
@@ -402,7 +402,7 @@
           "title",
           "type"
         ],
-        "description": "Contenu pédagogique d’un chapitre"
+        "description": "Learning content of a chapter"
       },
       "CourseChapter": {
         "type": "object",
@@ -452,7 +452,7 @@
                     "audio",
                     "other"
                   ],
-                  "description": "Type de contenu pédagogique",
+                  "description": "Type of learning content",
                   "example": "video"
                 },
                 "description": {
@@ -482,7 +482,7 @@
                 "title",
                 "type"
               ],
-              "description": "Contenu pédagogique d’un chapitre"
+              "description": "Learning content of a chapter"
             }
           }
         },
@@ -490,7 +490,7 @@
           "id",
           "title"
         ],
-        "description": "Chapitre d’une formation"
+        "description": "Chapter of a formation"
       },
       "ElearningCourseDetails": {
         "type": "object",
@@ -547,7 +547,7 @@
                 "minimum": 0
               }
             },
-            "description": "Répartition des notes par valeur, de 1 à 5",
+            "description": "Distribution of the ratings by value, from 1 to 5",
             "example": {
               "1": 0,
               "2": 1,
@@ -647,7 +647,7 @@
                           "audio",
                           "other"
                         ],
-                        "description": "Type de contenu pédagogique",
+                        "description": "Type of learning content",
                         "example": "video"
                       },
                       "description": {
@@ -677,7 +677,7 @@
                       "title",
                       "type"
                     ],
-                    "description": "Contenu pédagogique d’un chapitre"
+                    "description": "Learning content of a chapter"
                   }
                 }
               },
@@ -685,7 +685,7 @@
                 "id",
                 "title"
               ],
-              "description": "Chapitre d’une formation"
+              "description": "Chapter of a formation"
             }
           }
         },
@@ -694,7 +694,7 @@
           "description",
           "chapters"
         ],
-        "description": "Détail complet affiché dans la modale de formation"
+        "description": "Full detail shown in the formation modal"
       },
       "ElearningCourse": {
         "type": "object",
@@ -761,7 +761,7 @@
               "in-progress",
               "completed"
             ],
-            "description": "Statut de progression de la formation pour l’utilisateur connecté",
+            "description": "Progress status of the formation for the signed-in user",
             "example": "in-progress"
           },
           "titleBadge": {
@@ -783,14 +783,14 @@
                   "mandatory",
                   "notStarted"
                 ],
-                "description": "Variante visuelle utilisée par les badges de formation",
+                "description": "Visual variant used by the formation badges",
                 "example": "mandatory"
               }
             },
             "required": [
               "label"
             ],
-            "description": "Badge associé à une formation"
+            "description": "Badge of a formation"
           },
           "levelBadge": {
             "type": "object",
@@ -811,14 +811,14 @@
                   "mandatory",
                   "notStarted"
                 ],
-                "description": "Variante visuelle utilisée par les badges de formation",
+                "description": "Visual variant used by the formation badges",
                 "example": "mandatory"
               }
             },
             "required": [
               "label"
             ],
-            "description": "Badge associé à une formation"
+            "description": "Badge of a formation"
           },
           "statusBadge": {
             "type": "object",
@@ -839,14 +839,14 @@
                   "mandatory",
                   "notStarted"
                 ],
-                "description": "Variante visuelle utilisée par les badges de formation",
+                "description": "Visual variant used by the formation badges",
                 "example": "mandatory"
               }
             },
             "required": [
               "label"
             ],
-            "description": "Badge associé à une formation"
+            "description": "Badge of a formation"
           },
           "progress": {
             "type": "number",
@@ -881,7 +881,7 @@
                 "minimum": 0
               }
             },
-            "description": "Répartition des notes par valeur, de 1 à 5",
+            "description": "Distribution of the ratings by value, from 1 to 5",
             "example": {
               "1": 0,
               "2": 1,
@@ -945,7 +945,7 @@
                     "minimum": 0
                   }
                 },
-                "description": "Répartition des notes par valeur, de 1 à 5",
+                "description": "Distribution of the ratings by value, from 1 to 5",
                 "example": {
                   "1": 0,
                   "2": 1,
@@ -1045,7 +1045,7 @@
                               "audio",
                               "other"
                             ],
-                            "description": "Type de contenu pédagogique",
+                            "description": "Type of learning content",
                             "example": "video"
                           },
                           "description": {
@@ -1075,7 +1075,7 @@
                           "title",
                           "type"
                         ],
-                        "description": "Contenu pédagogique d’un chapitre"
+                        "description": "Learning content of a chapter"
                       }
                     }
                   },
@@ -1083,7 +1083,7 @@
                     "id",
                     "title"
                   ],
-                  "description": "Chapitre d’une formation"
+                  "description": "Chapter of a formation"
                 }
               }
             },
@@ -1092,7 +1092,7 @@
               "description",
               "chapters"
             ],
-            "description": "Détail complet affiché dans la modale de formation"
+            "description": "Full detail shown in the formation modal"
           }
         },
         "required": [
@@ -1100,7 +1100,7 @@
           "title",
           "description"
         ],
-        "description": "Formation affichée dans le catalogue"
+        "description": "Formation shown in the catalogue"
       },
       "AdminCourseCreateBody": {
         "type": "object",
@@ -1167,7 +1167,7 @@
               "in-progress",
               "completed"
             ],
-            "description": "Statut de progression de la formation pour l’utilisateur connecté",
+            "description": "Progress status of the formation for the signed-in user",
             "example": "in-progress"
           },
           "titleBadge": {
@@ -1189,14 +1189,14 @@
                   "mandatory",
                   "notStarted"
                 ],
-                "description": "Variante visuelle utilisée par les badges de formation",
+                "description": "Visual variant used by the formation badges",
                 "example": "mandatory"
               }
             },
             "required": [
               "label"
             ],
-            "description": "Badge associé à une formation"
+            "description": "Badge of a formation"
           },
           "levelBadge": {
             "type": "object",
@@ -1217,14 +1217,14 @@
                   "mandatory",
                   "notStarted"
                 ],
-                "description": "Variante visuelle utilisée par les badges de formation",
+                "description": "Visual variant used by the formation badges",
                 "example": "mandatory"
               }
             },
             "required": [
               "label"
             ],
-            "description": "Badge associé à une formation"
+            "description": "Badge of a formation"
           },
           "statusBadge": {
             "type": "object",
@@ -1245,14 +1245,14 @@
                   "mandatory",
                   "notStarted"
                 ],
-                "description": "Variante visuelle utilisée par les badges de formation",
+                "description": "Visual variant used by the formation badges",
                 "example": "mandatory"
               }
             },
             "required": [
               "label"
             ],
-            "description": "Badge associé à une formation"
+            "description": "Badge of a formation"
           },
           "progress": {
             "type": "number",
@@ -1287,7 +1287,7 @@
                 "minimum": 0
               }
             },
-            "description": "Répartition des notes par valeur, de 1 à 5",
+            "description": "Distribution of the ratings by value, from 1 to 5",
             "example": {
               "1": 0,
               "2": 1,
@@ -1351,7 +1351,7 @@
                     "minimum": 0
                   }
                 },
-                "description": "Répartition des notes par valeur, de 1 à 5",
+                "description": "Distribution of the ratings by value, from 1 to 5",
                 "example": {
                   "1": 0,
                   "2": 1,
@@ -1451,7 +1451,7 @@
                               "audio",
                               "other"
                             ],
-                            "description": "Type de contenu pédagogique",
+                            "description": "Type of learning content",
                             "example": "video"
                           },
                           "description": {
@@ -1481,7 +1481,7 @@
                           "title",
                           "type"
                         ],
-                        "description": "Contenu pédagogique d’un chapitre"
+                        "description": "Learning content of a chapter"
                       }
                     }
                   },
@@ -1489,7 +1489,7 @@
                     "id",
                     "title"
                   ],
-                  "description": "Chapitre d’une formation"
+                  "description": "Chapter of a formation"
                 }
               }
             },
@@ -1498,7 +1498,7 @@
               "description",
               "chapters"
             ],
-            "description": "Détail complet affiché dans la modale de formation"
+            "description": "Full detail shown in the formation modal"
           }
         },
         "required": [
@@ -1506,7 +1506,7 @@
           "title",
           "description"
         ],
-        "description": "Formation à créer"
+        "description": "Formation to create"
       },
       "ElearningCatalogQuery": {
         "type": "object",
@@ -1527,7 +1527,7 @@
               "in-progress",
               "completed"
             ],
-            "description": "Filtre de statut disponible dans le catalogue",
+            "description": "Status filter available in the catalogue",
             "example": "all"
           },
           "page": {
@@ -1584,7 +1584,7 @@
                 "label",
                 "value"
               ],
-              "description": "Option de filtre prête à afficher dans le frontend"
+              "description": "Filter option ready to display in the front"
             }
           },
           "categories": {
@@ -1608,7 +1608,7 @@
                 "label",
                 "value"
               ],
-              "description": "Option de filtre prête à afficher dans le frontend"
+              "description": "Filter option ready to display in the front"
             }
           },
           "stats": {
@@ -1640,7 +1640,7 @@
                 "label",
                 "value"
               ],
-              "description": "Statistique synthétique affichable dans le catalogue"
+              "description": "Summary statistic to display in the catalogue"
             }
           },
           "adminStats": {
@@ -1749,7 +1749,7 @@
                     "in-progress",
                     "completed"
                   ],
-                  "description": "Statut de progression de la formation pour l’utilisateur connecté",
+                  "description": "Progress status of the formation for the signed-in user",
                   "example": "in-progress"
                 },
                 "titleBadge": {
@@ -1771,14 +1771,14 @@
                         "mandatory",
                         "notStarted"
                       ],
-                      "description": "Variante visuelle utilisée par les badges de formation",
+                      "description": "Visual variant used by the formation badges",
                       "example": "mandatory"
                     }
                   },
                   "required": [
                     "label"
                   ],
-                  "description": "Badge associé à une formation"
+                  "description": "Badge of a formation"
                 },
                 "levelBadge": {
                   "type": "object",
@@ -1799,14 +1799,14 @@
                         "mandatory",
                         "notStarted"
                       ],
-                      "description": "Variante visuelle utilisée par les badges de formation",
+                      "description": "Visual variant used by the formation badges",
                       "example": "mandatory"
                     }
                   },
                   "required": [
                     "label"
                   ],
-                  "description": "Badge associé à une formation"
+                  "description": "Badge of a formation"
                 },
                 "statusBadge": {
                   "type": "object",
@@ -1827,14 +1827,14 @@
                         "mandatory",
                         "notStarted"
                       ],
-                      "description": "Variante visuelle utilisée par les badges de formation",
+                      "description": "Visual variant used by the formation badges",
                       "example": "mandatory"
                     }
                   },
                   "required": [
                     "label"
                   ],
-                  "description": "Badge associé à une formation"
+                  "description": "Badge of a formation"
                 },
                 "progress": {
                   "type": "number",
@@ -1869,7 +1869,7 @@
                       "minimum": 0
                     }
                   },
-                  "description": "Répartition des notes par valeur, de 1 à 5",
+                  "description": "Distribution of the ratings by value, from 1 to 5",
                   "example": {
                     "1": 0,
                     "2": 1,
@@ -1933,7 +1933,7 @@
                           "minimum": 0
                         }
                       },
-                      "description": "Répartition des notes par valeur, de 1 à 5",
+                      "description": "Distribution of the ratings by value, from 1 to 5",
                       "example": {
                         "1": 0,
                         "2": 1,
@@ -2033,7 +2033,7 @@
                                     "audio",
                                     "other"
                                   ],
-                                  "description": "Type de contenu pédagogique",
+                                  "description": "Type of learning content",
                                   "example": "video"
                                 },
                                 "description": {
@@ -2063,7 +2063,7 @@
                                 "title",
                                 "type"
                               ],
-                              "description": "Contenu pédagogique d’un chapitre"
+                              "description": "Learning content of a chapter"
                             }
                           }
                         },
@@ -2071,7 +2071,7 @@
                           "id",
                           "title"
                         ],
-                        "description": "Chapitre d’une formation"
+                        "description": "Chapter of a formation"
                       }
                     }
                   },
@@ -2080,7 +2080,7 @@
                     "description",
                     "chapters"
                   ],
-                  "description": "Détail complet affiché dans la modale de formation"
+                  "description": "Full detail shown in the formation modal"
                 }
               },
               "required": [
@@ -2088,7 +2088,7 @@
                 "title",
                 "description"
               ],
-              "description": "Formation affichée dans le catalogue"
+              "description": "Formation shown in the catalogue"
             }
           }
         },
@@ -2099,7 +2099,7 @@
           "statuses",
           "courses"
         ],
-        "description": "Modèle complet du catalogue E-learning"
+        "description": "Full model of the E-learning catalogue"
       },
       "ElearningCatalogResponse": {
         "type": "object",
@@ -2168,7 +2168,7 @@
               "initials",
               "isAdmin"
             ],
-            "description": "Utilisateur connecté tel qu’attendu par les écrans E-learning"
+            "description": "Signed-in user, as the E-learning screens expect it"
           },
           "notifications": {
             "type": "object",
@@ -2182,7 +2182,7 @@
             "required": [
               "unreadCount"
             ],
-            "description": "Résumé des notifications de l’utilisateur connecté"
+            "description": "Summary of the notifications of the signed-in user"
           },
           "catalog": {
             "type": "object",
@@ -2225,7 +2225,7 @@
                     "label",
                     "value"
                   ],
-                  "description": "Option de filtre prête à afficher dans le frontend"
+                  "description": "Filter option ready to display in the front"
                 }
               },
               "categories": {
@@ -2249,7 +2249,7 @@
                     "label",
                     "value"
                   ],
-                  "description": "Option de filtre prête à afficher dans le frontend"
+                  "description": "Filter option ready to display in the front"
                 }
               },
               "stats": {
@@ -2281,7 +2281,7 @@
                     "label",
                     "value"
                   ],
-                  "description": "Statistique synthétique affichable dans le catalogue"
+                  "description": "Summary statistic to display in the catalogue"
                 }
               },
               "adminStats": {
@@ -2390,7 +2390,7 @@
                         "in-progress",
                         "completed"
                       ],
-                      "description": "Statut de progression de la formation pour l’utilisateur connecté",
+                      "description": "Progress status of the formation for the signed-in user",
                       "example": "in-progress"
                     },
                     "titleBadge": {
@@ -2412,14 +2412,14 @@
                             "mandatory",
                             "notStarted"
                           ],
-                          "description": "Variante visuelle utilisée par les badges de formation",
+                          "description": "Visual variant used by the formation badges",
                           "example": "mandatory"
                         }
                       },
                       "required": [
                         "label"
                       ],
-                      "description": "Badge associé à une formation"
+                      "description": "Badge of a formation"
                     },
                     "levelBadge": {
                       "type": "object",
@@ -2440,14 +2440,14 @@
                             "mandatory",
                             "notStarted"
                           ],
-                          "description": "Variante visuelle utilisée par les badges de formation",
+                          "description": "Visual variant used by the formation badges",
                           "example": "mandatory"
                         }
                       },
                       "required": [
                         "label"
                       ],
-                      "description": "Badge associé à une formation"
+                      "description": "Badge of a formation"
                     },
                     "statusBadge": {
                       "type": "object",
@@ -2468,14 +2468,14 @@
                             "mandatory",
                             "notStarted"
                           ],
-                          "description": "Variante visuelle utilisée par les badges de formation",
+                          "description": "Visual variant used by the formation badges",
                           "example": "mandatory"
                         }
                       },
                       "required": [
                         "label"
                       ],
-                      "description": "Badge associé à une formation"
+                      "description": "Badge of a formation"
                     },
                     "progress": {
                       "type": "number",
@@ -2510,7 +2510,7 @@
                           "minimum": 0
                         }
                       },
-                      "description": "Répartition des notes par valeur, de 1 à 5",
+                      "description": "Distribution of the ratings by value, from 1 to 5",
                       "example": {
                         "1": 0,
                         "2": 1,
@@ -2574,7 +2574,7 @@
                               "minimum": 0
                             }
                           },
-                          "description": "Répartition des notes par valeur, de 1 à 5",
+                          "description": "Distribution of the ratings by value, from 1 to 5",
                           "example": {
                             "1": 0,
                             "2": 1,
@@ -2674,7 +2674,7 @@
                                         "audio",
                                         "other"
                                       ],
-                                      "description": "Type de contenu pédagogique",
+                                      "description": "Type of learning content",
                                       "example": "video"
                                     },
                                     "description": {
@@ -2704,7 +2704,7 @@
                                     "title",
                                     "type"
                                   ],
-                                  "description": "Contenu pédagogique d’un chapitre"
+                                  "description": "Learning content of a chapter"
                                 }
                               }
                             },
@@ -2712,7 +2712,7 @@
                               "id",
                               "title"
                             ],
-                            "description": "Chapitre d’une formation"
+                            "description": "Chapter of a formation"
                           }
                         }
                       },
@@ -2721,7 +2721,7 @@
                         "description",
                         "chapters"
                       ],
-                      "description": "Détail complet affiché dans la modale de formation"
+                      "description": "Full detail shown in the formation modal"
                     }
                   },
                   "required": [
@@ -2729,7 +2729,7 @@
                     "title",
                     "description"
                   ],
-                  "description": "Formation affichée dans le catalogue"
+                  "description": "Formation shown in the catalogue"
                 }
               }
             },
@@ -2740,7 +2740,7 @@
               "statuses",
               "courses"
             ],
-            "description": "Modèle complet du catalogue E-learning"
+            "description": "Full model of the E-learning catalogue"
           },
           "footer": {
             "type": "object",
@@ -2771,7 +2771,7 @@
                     "label",
                     "href"
                   ],
-                  "description": "Lien affiché dans le footer"
+                  "description": "Link shown in the footer"
                 }
               }
             },
@@ -2788,7 +2788,7 @@
           "notifications",
           "catalog"
         ],
-        "description": "Réponse de chargement du catalogue E-learning"
+        "description": "Response loading the E-learning catalogue"
       },
       "AdminCourseResponse": {
         "type": "object",
@@ -2858,7 +2858,7 @@
                   "in-progress",
                   "completed"
                 ],
-                "description": "Statut de progression de la formation pour l’utilisateur connecté",
+                "description": "Progress status of the formation for the signed-in user",
                 "example": "in-progress"
               },
               "titleBadge": {
@@ -2880,14 +2880,14 @@
                       "mandatory",
                       "notStarted"
                     ],
-                    "description": "Variante visuelle utilisée par les badges de formation",
+                    "description": "Visual variant used by the formation badges",
                     "example": "mandatory"
                   }
                 },
                 "required": [
                   "label"
                 ],
-                "description": "Badge associé à une formation"
+                "description": "Badge of a formation"
               },
               "levelBadge": {
                 "type": "object",
@@ -2908,14 +2908,14 @@
                       "mandatory",
                       "notStarted"
                     ],
-                    "description": "Variante visuelle utilisée par les badges de formation",
+                    "description": "Visual variant used by the formation badges",
                     "example": "mandatory"
                   }
                 },
                 "required": [
                   "label"
                 ],
-                "description": "Badge associé à une formation"
+                "description": "Badge of a formation"
               },
               "statusBadge": {
                 "type": "object",
@@ -2936,14 +2936,14 @@
                       "mandatory",
                       "notStarted"
                     ],
-                    "description": "Variante visuelle utilisée par les badges de formation",
+                    "description": "Visual variant used by the formation badges",
                     "example": "mandatory"
                   }
                 },
                 "required": [
                   "label"
                 ],
-                "description": "Badge associé à une formation"
+                "description": "Badge of a formation"
               },
               "progress": {
                 "type": "number",
@@ -2978,7 +2978,7 @@
                     "minimum": 0
                   }
                 },
-                "description": "Répartition des notes par valeur, de 1 à 5",
+                "description": "Distribution of the ratings by value, from 1 to 5",
                 "example": {
                   "1": 0,
                   "2": 1,
@@ -3042,7 +3042,7 @@
                         "minimum": 0
                       }
                     },
-                    "description": "Répartition des notes par valeur, de 1 à 5",
+                    "description": "Distribution of the ratings by value, from 1 to 5",
                     "example": {
                       "1": 0,
                       "2": 1,
@@ -3142,7 +3142,7 @@
                                   "audio",
                                   "other"
                                 ],
-                                "description": "Type de contenu pédagogique",
+                                "description": "Type of learning content",
                                 "example": "video"
                               },
                               "description": {
@@ -3172,7 +3172,7 @@
                               "title",
                               "type"
                             ],
-                            "description": "Contenu pédagogique d’un chapitre"
+                            "description": "Learning content of a chapter"
                           }
                         }
                       },
@@ -3180,7 +3180,7 @@
                         "id",
                         "title"
                       ],
-                      "description": "Chapitre d’une formation"
+                      "description": "Chapter of a formation"
                     }
                   }
                 },
@@ -3189,7 +3189,7 @@
                   "description",
                   "chapters"
                 ],
-                "description": "Détail complet affiché dans la modale de formation"
+                "description": "Full detail shown in the formation modal"
               }
             },
             "required": [
@@ -3197,13 +3197,13 @@
               "title",
               "description"
             ],
-            "description": "Formation affichée dans le catalogue"
+            "description": "Formation shown in the catalogue"
           }
         },
         "required": [
           "course"
         ],
-        "description": "Formation créée ou mise à jour par un administrateur"
+        "description": "Formation created or updated by an administrator"
       },
       "AdminCourseDeleteResponse": {
         "type": "object",
@@ -3288,7 +3288,7 @@
               "initials",
               "isAdmin"
             ],
-            "description": "Utilisateur connecté tel qu’attendu par les écrans E-learning"
+            "description": "Signed-in user, as the E-learning screens expect it"
           },
           "footer": {
             "type": "object",
@@ -3319,7 +3319,7 @@
                     "label",
                     "href"
                   ],
-                  "description": "Lien affiché dans le footer"
+                  "description": "Link shown in the footer"
                 }
               }
             },
@@ -3334,7 +3334,7 @@
         "required": [
           "user"
         ],
-        "description": "Réponse de chargement de la page profil"
+        "description": "Response loading the profile page"
       },
       "UpdateProfileBody": {
         "type": "object",
@@ -3358,7 +3358,7 @@
             "example": "Paris"
           }
         },
-        "description": "Champs éditables du profil utilisateur"
+        "description": "Editable fields of the user profile"
       },
       "ProfileUpdateResponse": {
         "type": "object",
@@ -3427,13 +3427,13 @@
               "initials",
               "isAdmin"
             ],
-            "description": "Utilisateur connecté tel qu’attendu par les écrans E-learning"
+            "description": "Signed-in user, as the E-learning screens expect it"
           }
         },
         "required": [
           "user"
         ],
-        "description": "Profil mis à jour"
+        "description": "Profile updated"
       },
       "CourseIdParams": {
         "type": "object",
@@ -3568,7 +3568,7 @@
                           "audio",
                           "other"
                         ],
-                        "description": "Type de contenu pédagogique",
+                        "description": "Type of learning content",
                         "example": "video"
                       },
                       "description": {
@@ -3598,7 +3598,7 @@
                       "title",
                       "type"
                     ],
-                    "description": "Contenu pédagogique d’un chapitre"
+                    "description": "Learning content of a chapter"
                   }
                 }
               },
@@ -3606,7 +3606,7 @@
                 "id",
                 "title"
               ],
-              "description": "Chapitre d’une formation"
+              "description": "Chapter of a formation"
             }
           },
           "chapter": {
@@ -3657,7 +3657,7 @@
                         "audio",
                         "other"
                       ],
-                      "description": "Type de contenu pédagogique",
+                      "description": "Type of learning content",
                       "example": "video"
                     },
                     "description": {
@@ -3687,7 +3687,7 @@
                     "title",
                     "type"
                   ],
-                  "description": "Contenu pédagogique d’un chapitre"
+                  "description": "Learning content of a chapter"
                 }
               }
             },
@@ -3695,7 +3695,7 @@
               "id",
               "title"
             ],
-            "description": "Chapitre d’une formation"
+            "description": "Chapter of a formation"
           },
           "content": {
             "type": "object",
@@ -3719,7 +3719,7 @@
                   "audio",
                   "other"
                 ],
-                "description": "Type de contenu pédagogique",
+                "description": "Type of learning content",
                 "example": "video"
               },
               "description": {
@@ -3749,7 +3749,7 @@
               "title",
               "type"
             ],
-            "description": "Contenu pédagogique d’un chapitre"
+            "description": "Learning content of a chapter"
           }
         },
         "required": [
@@ -3763,7 +3763,7 @@
           "chapter",
           "content"
         ],
-        "description": "Progression mise à jour après complétion d’un contenu"
+        "description": "Progress updated after a content is completed"
       },
       "SubmitRatingBody": {
         "type": "object",
@@ -3778,7 +3778,7 @@
         "required": [
           "rating"
         ],
-        "description": "Note envoyée par l’utilisateur"
+        "description": "Rating sent by the user"
       },
       "RatingSubmitResponse": {
         "type": "object",
@@ -3816,7 +3816,7 @@
                 "minimum": 0
               }
             },
-            "description": "Répartition des notes par valeur, de 1 à 5",
+            "description": "Distribution of the ratings by value, from 1 to 5",
             "example": {
               "1": 0,
               "2": 1,
@@ -3835,7 +3835,7 @@
           "ratingDistribution",
           "submitted"
         ],
-        "description": "Résumé de notation après envoi"
+        "description": "Rating summary after sending"
       },
       "StartCourseBody": {
         "type": "object",
@@ -3845,7 +3845,7 @@
             "example": "catalog"
           }
         },
-        "description": "Contexte de démarrage ou reprise d’une formation"
+        "description": "Context to start or resume a formation"
       },
       "CourseActionResponse": {
         "type": "object",
@@ -3915,7 +3915,7 @@
                   "in-progress",
                   "completed"
                 ],
-                "description": "Statut de progression de la formation pour l’utilisateur connecté",
+                "description": "Progress status of the formation for the signed-in user",
                 "example": "in-progress"
               },
               "titleBadge": {
@@ -3937,14 +3937,14 @@
                       "mandatory",
                       "notStarted"
                     ],
-                    "description": "Variante visuelle utilisée par les badges de formation",
+                    "description": "Visual variant used by the formation badges",
                     "example": "mandatory"
                   }
                 },
                 "required": [
                   "label"
                 ],
-                "description": "Badge associé à une formation"
+                "description": "Badge of a formation"
               },
               "levelBadge": {
                 "type": "object",
@@ -3965,14 +3965,14 @@
                       "mandatory",
                       "notStarted"
                     ],
-                    "description": "Variante visuelle utilisée par les badges de formation",
+                    "description": "Visual variant used by the formation badges",
                     "example": "mandatory"
                   }
                 },
                 "required": [
                   "label"
                 ],
-                "description": "Badge associé à une formation"
+                "description": "Badge of a formation"
               },
               "statusBadge": {
                 "type": "object",
@@ -3993,14 +3993,14 @@
                       "mandatory",
                       "notStarted"
                     ],
-                    "description": "Variante visuelle utilisée par les badges de formation",
+                    "description": "Visual variant used by the formation badges",
                     "example": "mandatory"
                   }
                 },
                 "required": [
                   "label"
                 ],
-                "description": "Badge associé à une formation"
+                "description": "Badge of a formation"
               },
               "progress": {
                 "type": "number",
@@ -4035,7 +4035,7 @@
                     "minimum": 0
                   }
                 },
-                "description": "Répartition des notes par valeur, de 1 à 5",
+                "description": "Distribution of the ratings by value, from 1 to 5",
                 "example": {
                   "1": 0,
                   "2": 1,
@@ -4099,7 +4099,7 @@
                         "minimum": 0
                       }
                     },
-                    "description": "Répartition des notes par valeur, de 1 à 5",
+                    "description": "Distribution of the ratings by value, from 1 to 5",
                     "example": {
                       "1": 0,
                       "2": 1,
@@ -4199,7 +4199,7 @@
                                   "audio",
                                   "other"
                                 ],
-                                "description": "Type de contenu pédagogique",
+                                "description": "Type of learning content",
                                 "example": "video"
                               },
                               "description": {
@@ -4229,7 +4229,7 @@
                               "title",
                               "type"
                             ],
-                            "description": "Contenu pédagogique d’un chapitre"
+                            "description": "Learning content of a chapter"
                           }
                         }
                       },
@@ -4237,7 +4237,7 @@
                         "id",
                         "title"
                       ],
-                      "description": "Chapitre d’une formation"
+                      "description": "Chapter of a formation"
                     }
                   }
                 },
@@ -4246,7 +4246,7 @@
                   "description",
                   "chapters"
                 ],
-                "description": "Détail complet affiché dans la modale de formation"
+                "description": "Full detail shown in the formation modal"
               }
             },
             "required": [
@@ -4254,7 +4254,7 @@
               "title",
               "description"
             ],
-            "description": "Formation affichée dans le catalogue"
+            "description": "Formation shown in the catalogue"
           },
           "nextContentId": {
             "type": "string"
@@ -4266,7 +4266,7 @@
         "required": [
           "course"
         ],
-        "description": "Réponse de démarrage ou reprise d’une formation"
+        "description": "Response to start or resume a formation"
       },
       "ErrorResponse": {
         "type": "object",
@@ -4364,7 +4364,7 @@
         "tags": [
           "Connectivity"
         ],
-        "summary": "Vérifie la santé du BFF",
+        "summary": "Check the health of the BFF",
         "responses": {
           "200": {
             "description": "OK"
@@ -4492,7 +4492,7 @@
                             "in-progress",
                             "completed"
                           ],
-                          "description": "Statut de progression de la formation pour l’utilisateur connecté",
+                          "description": "Progress status of the formation for the signed-in user",
                           "example": "in-progress"
                         },
                         "titleBadge": {
@@ -4514,14 +4514,14 @@
                                 "mandatory",
                                 "notStarted"
                               ],
-                              "description": "Variante visuelle utilisée par les badges de formation",
+                              "description": "Visual variant used by the formation badges",
                               "example": "mandatory"
                             }
                           },
                           "required": [
                             "label"
                           ],
-                          "description": "Badge associé à une formation"
+                          "description": "Badge of a formation"
                         },
                         "levelBadge": {
                           "type": "object",
@@ -4542,14 +4542,14 @@
                                 "mandatory",
                                 "notStarted"
                               ],
-                              "description": "Variante visuelle utilisée par les badges de formation",
+                              "description": "Visual variant used by the formation badges",
                               "example": "mandatory"
                             }
                           },
                           "required": [
                             "label"
                           ],
-                          "description": "Badge associé à une formation"
+                          "description": "Badge of a formation"
                         },
                         "statusBadge": {
                           "type": "object",
@@ -4570,14 +4570,14 @@
                                 "mandatory",
                                 "notStarted"
                               ],
-                              "description": "Variante visuelle utilisée par les badges de formation",
+                              "description": "Visual variant used by the formation badges",
                               "example": "mandatory"
                             }
                           },
                           "required": [
                             "label"
                           ],
-                          "description": "Badge associé à une formation"
+                          "description": "Badge of a formation"
                         },
                         "progress": {
                           "type": "number",
@@ -4612,7 +4612,7 @@
                               "minimum": 0
                             }
                           },
-                          "description": "Répartition des notes par valeur, de 1 à 5",
+                          "description": "Distribution of the ratings by value, from 1 to 5",
                           "example": {
                             "1": 0,
                             "2": 1,
@@ -4676,7 +4676,7 @@
                                   "minimum": 0
                                 }
                               },
-                              "description": "Répartition des notes par valeur, de 1 à 5",
+                              "description": "Distribution of the ratings by value, from 1 to 5",
                               "example": {
                                 "1": 0,
                                 "2": 1,
@@ -4776,7 +4776,7 @@
                                             "audio",
                                             "other"
                                           ],
-                                          "description": "Type de contenu pédagogique",
+                                          "description": "Type of learning content",
                                           "example": "video"
                                         },
                                         "description": {
@@ -4806,7 +4806,7 @@
                                         "title",
                                         "type"
                                       ],
-                                      "description": "Contenu pédagogique d’un chapitre"
+                                      "description": "Learning content of a chapter"
                                     }
                                   }
                                 },
@@ -4814,7 +4814,7 @@
                                   "id",
                                   "title"
                                 ],
-                                "description": "Chapitre d’une formation"
+                                "description": "Chapter of a formation"
                               }
                             }
                           },
@@ -4823,7 +4823,7 @@
                             "description",
                             "chapters"
                           ],
-                          "description": "Détail complet affiché dans la modale de formation"
+                          "description": "Full detail shown in the formation modal"
                         }
                       },
                       "required": [
@@ -4831,13 +4831,13 @@
                         "title",
                         "description"
                       ],
-                      "description": "Formation affichée dans le catalogue"
+                      "description": "Formation shown in the catalogue"
                     }
                   },
                   "required": [
                     "course"
                   ],
-                  "description": "Formation créée ou mise à jour par un administrateur"
+                  "description": "Formation created or updated by an administrator"
                 }
               }
             }
@@ -5014,7 +5014,7 @@
                       "in-progress",
                       "completed"
                     ],
-                    "description": "Statut de progression de la formation pour l’utilisateur connecté",
+                    "description": "Progress status of the formation for the signed-in user",
                     "example": "in-progress"
                   },
                   "titleBadge": {
@@ -5036,14 +5036,14 @@
                           "mandatory",
                           "notStarted"
                         ],
-                        "description": "Variante visuelle utilisée par les badges de formation",
+                        "description": "Visual variant used by the formation badges",
                         "example": "mandatory"
                       }
                     },
                     "required": [
                       "label"
                     ],
-                    "description": "Badge associé à une formation"
+                    "description": "Badge of a formation"
                   },
                   "levelBadge": {
                     "type": "object",
@@ -5064,14 +5064,14 @@
                           "mandatory",
                           "notStarted"
                         ],
-                        "description": "Variante visuelle utilisée par les badges de formation",
+                        "description": "Visual variant used by the formation badges",
                         "example": "mandatory"
                       }
                     },
                     "required": [
                       "label"
                     ],
-                    "description": "Badge associé à une formation"
+                    "description": "Badge of a formation"
                   },
                   "statusBadge": {
                     "type": "object",
@@ -5092,14 +5092,14 @@
                           "mandatory",
                           "notStarted"
                         ],
-                        "description": "Variante visuelle utilisée par les badges de formation",
+                        "description": "Visual variant used by the formation badges",
                         "example": "mandatory"
                       }
                     },
                     "required": [
                       "label"
                     ],
-                    "description": "Badge associé à une formation"
+                    "description": "Badge of a formation"
                   },
                   "progress": {
                     "type": "number",
@@ -5134,7 +5134,7 @@
                         "minimum": 0
                       }
                     },
-                    "description": "Répartition des notes par valeur, de 1 à 5",
+                    "description": "Distribution of the ratings by value, from 1 to 5",
                     "example": {
                       "1": 0,
                       "2": 1,
@@ -5198,7 +5198,7 @@
                             "minimum": 0
                           }
                         },
-                        "description": "Répartition des notes par valeur, de 1 à 5",
+                        "description": "Distribution of the ratings by value, from 1 to 5",
                         "example": {
                           "1": 0,
                           "2": 1,
@@ -5298,7 +5298,7 @@
                                       "audio",
                                       "other"
                                     ],
-                                    "description": "Type de contenu pédagogique",
+                                    "description": "Type of learning content",
                                     "example": "video"
                                   },
                                   "description": {
@@ -5328,7 +5328,7 @@
                                   "title",
                                   "type"
                                 ],
-                                "description": "Contenu pédagogique d’un chapitre"
+                                "description": "Learning content of a chapter"
                               }
                             }
                           },
@@ -5336,7 +5336,7 @@
                             "id",
                             "title"
                           ],
-                          "description": "Chapitre d’une formation"
+                          "description": "Chapter of a formation"
                         }
                       }
                     },
@@ -5345,7 +5345,7 @@
                       "description",
                       "chapters"
                     ],
-                    "description": "Détail complet affiché dans la modale de formation"
+                    "description": "Full detail shown in the formation modal"
                   }
                 },
                 "required": [
@@ -5353,7 +5353,7 @@
                   "title",
                   "description"
                 ],
-                "description": "Formation affichée dans le catalogue"
+                "description": "Formation shown in the catalogue"
               }
             }
           }
@@ -5431,7 +5431,7 @@
                             "in-progress",
                             "completed"
                           ],
-                          "description": "Statut de progression de la formation pour l’utilisateur connecté",
+                          "description": "Progress status of the formation for the signed-in user",
                           "example": "in-progress"
                         },
                         "titleBadge": {
@@ -5453,14 +5453,14 @@
                                 "mandatory",
                                 "notStarted"
                               ],
-                              "description": "Variante visuelle utilisée par les badges de formation",
+                              "description": "Visual variant used by the formation badges",
                               "example": "mandatory"
                             }
                           },
                           "required": [
                             "label"
                           ],
-                          "description": "Badge associé à une formation"
+                          "description": "Badge of a formation"
                         },
                         "levelBadge": {
                           "type": "object",
@@ -5481,14 +5481,14 @@
                                 "mandatory",
                                 "notStarted"
                               ],
-                              "description": "Variante visuelle utilisée par les badges de formation",
+                              "description": "Visual variant used by the formation badges",
                               "example": "mandatory"
                             }
                           },
                           "required": [
                             "label"
                           ],
-                          "description": "Badge associé à une formation"
+                          "description": "Badge of a formation"
                         },
                         "statusBadge": {
                           "type": "object",
@@ -5509,14 +5509,14 @@
                                 "mandatory",
                                 "notStarted"
                               ],
-                              "description": "Variante visuelle utilisée par les badges de formation",
+                              "description": "Visual variant used by the formation badges",
                               "example": "mandatory"
                             }
                           },
                           "required": [
                             "label"
                           ],
-                          "description": "Badge associé à une formation"
+                          "description": "Badge of a formation"
                         },
                         "progress": {
                           "type": "number",
@@ -5551,7 +5551,7 @@
                               "minimum": 0
                             }
                           },
-                          "description": "Répartition des notes par valeur, de 1 à 5",
+                          "description": "Distribution of the ratings by value, from 1 to 5",
                           "example": {
                             "1": 0,
                             "2": 1,
@@ -5615,7 +5615,7 @@
                                   "minimum": 0
                                 }
                               },
-                              "description": "Répartition des notes par valeur, de 1 à 5",
+                              "description": "Distribution of the ratings by value, from 1 to 5",
                               "example": {
                                 "1": 0,
                                 "2": 1,
@@ -5715,7 +5715,7 @@
                                             "audio",
                                             "other"
                                           ],
-                                          "description": "Type de contenu pédagogique",
+                                          "description": "Type of learning content",
                                           "example": "video"
                                         },
                                         "description": {
@@ -5745,7 +5745,7 @@
                                         "title",
                                         "type"
                                       ],
-                                      "description": "Contenu pédagogique d’un chapitre"
+                                      "description": "Learning content of a chapter"
                                     }
                                   }
                                 },
@@ -5753,7 +5753,7 @@
                                   "id",
                                   "title"
                                 ],
-                                "description": "Chapitre d’une formation"
+                                "description": "Chapter of a formation"
                               }
                             }
                           },
@@ -5762,7 +5762,7 @@
                             "description",
                             "chapters"
                           ],
-                          "description": "Détail complet affiché dans la modale de formation"
+                          "description": "Full detail shown in the formation modal"
                         }
                       },
                       "required": [
@@ -5770,13 +5770,13 @@
                         "title",
                         "description"
                       ],
-                      "description": "Formation affichée dans le catalogue"
+                      "description": "Formation shown in the catalogue"
                     }
                   },
                   "required": [
                     "course"
                   ],
-                  "description": "Formation créée ou mise à jour par un administrateur"
+                  "description": "Formation created or updated by an administrator"
                 }
               }
             }
@@ -6014,11 +6014,11 @@
                 "in-progress",
                 "completed"
               ],
-              "description": "Filtre de statut disponible dans le catalogue",
+              "description": "Status filter available in the catalogue",
               "example": "all"
             },
             "required": false,
-            "description": "Filtre de statut disponible dans le catalogue",
+            "description": "Status filter available in the catalogue",
             "name": "status",
             "in": "query"
           },
@@ -6116,7 +6116,7 @@
                         "initials",
                         "isAdmin"
                       ],
-                      "description": "Utilisateur connecté tel qu’attendu par les écrans E-learning"
+                      "description": "Signed-in user, as the E-learning screens expect it"
                     },
                     "notifications": {
                       "type": "object",
@@ -6130,7 +6130,7 @@
                       "required": [
                         "unreadCount"
                       ],
-                      "description": "Résumé des notifications de l’utilisateur connecté"
+                      "description": "Summary of the notifications of the signed-in user"
                     },
                     "catalog": {
                       "type": "object",
@@ -6173,7 +6173,7 @@
                               "label",
                               "value"
                             ],
-                            "description": "Option de filtre prête à afficher dans le frontend"
+                            "description": "Filter option ready to display in the front"
                           }
                         },
                         "categories": {
@@ -6197,7 +6197,7 @@
                               "label",
                               "value"
                             ],
-                            "description": "Option de filtre prête à afficher dans le frontend"
+                            "description": "Filter option ready to display in the front"
                           }
                         },
                         "stats": {
@@ -6229,7 +6229,7 @@
                               "label",
                               "value"
                             ],
-                            "description": "Statistique synthétique affichable dans le catalogue"
+                            "description": "Summary statistic to display in the catalogue"
                           }
                         },
                         "adminStats": {
@@ -6338,7 +6338,7 @@
                                   "in-progress",
                                   "completed"
                                 ],
-                                "description": "Statut de progression de la formation pour l’utilisateur connecté",
+                                "description": "Progress status of the formation for the signed-in user",
                                 "example": "in-progress"
                               },
                               "titleBadge": {
@@ -6360,14 +6360,14 @@
                                       "mandatory",
                                       "notStarted"
                                     ],
-                                    "description": "Variante visuelle utilisée par les badges de formation",
+                                    "description": "Visual variant used by the formation badges",
                                     "example": "mandatory"
                                   }
                                 },
                                 "required": [
                                   "label"
                                 ],
-                                "description": "Badge associé à une formation"
+                                "description": "Badge of a formation"
                               },
                               "levelBadge": {
                                 "type": "object",
@@ -6388,14 +6388,14 @@
                                       "mandatory",
                                       "notStarted"
                                     ],
-                                    "description": "Variante visuelle utilisée par les badges de formation",
+                                    "description": "Visual variant used by the formation badges",
                                     "example": "mandatory"
                                   }
                                 },
                                 "required": [
                                   "label"
                                 ],
-                                "description": "Badge associé à une formation"
+                                "description": "Badge of a formation"
                               },
                               "statusBadge": {
                                 "type": "object",
@@ -6416,14 +6416,14 @@
                                       "mandatory",
                                       "notStarted"
                                     ],
-                                    "description": "Variante visuelle utilisée par les badges de formation",
+                                    "description": "Visual variant used by the formation badges",
                                     "example": "mandatory"
                                   }
                                 },
                                 "required": [
                                   "label"
                                 ],
-                                "description": "Badge associé à une formation"
+                                "description": "Badge of a formation"
                               },
                               "progress": {
                                 "type": "number",
@@ -6458,7 +6458,7 @@
                                     "minimum": 0
                                   }
                                 },
-                                "description": "Répartition des notes par valeur, de 1 à 5",
+                                "description": "Distribution of the ratings by value, from 1 to 5",
                                 "example": {
                                   "1": 0,
                                   "2": 1,
@@ -6522,7 +6522,7 @@
                                         "minimum": 0
                                       }
                                     },
-                                    "description": "Répartition des notes par valeur, de 1 à 5",
+                                    "description": "Distribution of the ratings by value, from 1 to 5",
                                     "example": {
                                       "1": 0,
                                       "2": 1,
@@ -6622,7 +6622,7 @@
                                                   "audio",
                                                   "other"
                                                 ],
-                                                "description": "Type de contenu pédagogique",
+                                                "description": "Type of learning content",
                                                 "example": "video"
                                               },
                                               "description": {
@@ -6652,7 +6652,7 @@
                                               "title",
                                               "type"
                                             ],
-                                            "description": "Contenu pédagogique d’un chapitre"
+                                            "description": "Learning content of a chapter"
                                           }
                                         }
                                       },
@@ -6660,7 +6660,7 @@
                                         "id",
                                         "title"
                                       ],
-                                      "description": "Chapitre d’une formation"
+                                      "description": "Chapter of a formation"
                                     }
                                   }
                                 },
@@ -6669,7 +6669,7 @@
                                   "description",
                                   "chapters"
                                 ],
-                                "description": "Détail complet affiché dans la modale de formation"
+                                "description": "Full detail shown in the formation modal"
                               }
                             },
                             "required": [
@@ -6677,7 +6677,7 @@
                               "title",
                               "description"
                             ],
-                            "description": "Formation affichée dans le catalogue"
+                            "description": "Formation shown in the catalogue"
                           }
                         }
                       },
@@ -6688,7 +6688,7 @@
                         "statuses",
                         "courses"
                       ],
-                      "description": "Modèle complet du catalogue E-learning"
+                      "description": "Full model of the E-learning catalogue"
                     },
                     "footer": {
                       "type": "object",
@@ -6719,7 +6719,7 @@
                               "label",
                               "href"
                             ],
-                            "description": "Lien affiché dans le footer"
+                            "description": "Link shown in the footer"
                           }
                         }
                       },
@@ -6736,7 +6736,7 @@
                     "notifications",
                     "catalog"
                   ],
-                  "description": "Réponse de chargement du catalogue E-learning"
+                  "description": "Response loading the E-learning catalogue"
                 }
               }
             }
@@ -6947,7 +6947,7 @@
                                     "audio",
                                     "other"
                                   ],
-                                  "description": "Type de contenu pédagogique",
+                                  "description": "Type of learning content",
                                   "example": "video"
                                 },
                                 "description": {
@@ -6977,7 +6977,7 @@
                                 "title",
                                 "type"
                               ],
-                              "description": "Contenu pédagogique d’un chapitre"
+                              "description": "Learning content of a chapter"
                             }
                           }
                         },
@@ -6985,7 +6985,7 @@
                           "id",
                           "title"
                         ],
-                        "description": "Chapitre d’une formation"
+                        "description": "Chapter of a formation"
                       }
                     },
                     "chapter": {
@@ -7036,7 +7036,7 @@
                                   "audio",
                                   "other"
                                 ],
-                                "description": "Type de contenu pédagogique",
+                                "description": "Type of learning content",
                                 "example": "video"
                               },
                               "description": {
@@ -7066,7 +7066,7 @@
                               "title",
                               "type"
                             ],
-                            "description": "Contenu pédagogique d’un chapitre"
+                            "description": "Learning content of a chapter"
                           }
                         }
                       },
@@ -7074,7 +7074,7 @@
                         "id",
                         "title"
                       ],
-                      "description": "Chapitre d’une formation"
+                      "description": "Chapter of a formation"
                     },
                     "content": {
                       "type": "object",
@@ -7098,7 +7098,7 @@
                             "audio",
                             "other"
                           ],
-                          "description": "Type de contenu pédagogique",
+                          "description": "Type of learning content",
                           "example": "video"
                         },
                         "description": {
@@ -7128,7 +7128,7 @@
                         "title",
                         "type"
                       ],
-                      "description": "Contenu pédagogique d’un chapitre"
+                      "description": "Learning content of a chapter"
                     }
                   },
                   "required": [
@@ -7142,7 +7142,7 @@
                     "chapter",
                     "content"
                   ],
-                  "description": "Progression mise à jour après complétion d’un contenu"
+                  "description": "Progress updated after a content is completed"
                 }
               }
             }
@@ -7309,7 +7309,7 @@
                         "initials",
                         "isAdmin"
                       ],
-                      "description": "Utilisateur connecté tel qu’attendu par les écrans E-learning"
+                      "description": "Signed-in user, as the E-learning screens expect it"
                     },
                     "footer": {
                       "type": "object",
@@ -7340,7 +7340,7 @@
                               "label",
                               "href"
                             ],
-                            "description": "Lien affiché dans le footer"
+                            "description": "Link shown in the footer"
                           }
                         }
                       },
@@ -7355,7 +7355,7 @@
                   "required": [
                     "user"
                   ],
-                  "description": "Réponse de chargement de la page profil"
+                  "description": "Response loading the profile page"
                 }
               }
             }
@@ -7444,7 +7444,7 @@
                     "example": "Paris"
                   }
                 },
-                "description": "Champs éditables du profil utilisateur"
+                "description": "Editable fields of the user profile"
               }
             }
           }
@@ -7521,13 +7521,13 @@
                         "initials",
                         "isAdmin"
                       ],
-                      "description": "Utilisateur connecté tel qu’attendu par les écrans E-learning"
+                      "description": "Signed-in user, as the E-learning screens expect it"
                     }
                   },
                   "required": [
                     "user"
                   ],
-                  "description": "Profil mis à jour"
+                  "description": "Profile updated"
                 }
               }
             }
@@ -7653,7 +7653,7 @@
                 "required": [
                   "rating"
                 ],
-                "description": "Note envoyée par l’utilisateur"
+                "description": "Rating sent by the user"
               }
             }
           }
@@ -7699,7 +7699,7 @@
                           "minimum": 0
                         }
                       },
-                      "description": "Répartition des notes par valeur, de 1 à 5",
+                      "description": "Distribution of the ratings by value, from 1 to 5",
                       "example": {
                         "1": 0,
                         "2": 1,
@@ -7718,7 +7718,7 @@
                     "ratingDistribution",
                     "submitted"
                   ],
-                  "description": "Résumé de notation après envoi"
+                  "description": "Rating summary after sending"
                 }
               }
             }
@@ -7829,7 +7829,7 @@
                     "example": "catalog"
                   }
                 },
-                "description": "Contexte de démarrage ou reprise d’une formation"
+                "description": "Context to start or resume a formation"
               }
             }
           }
@@ -7907,7 +7907,7 @@
                             "in-progress",
                             "completed"
                           ],
-                          "description": "Statut de progression de la formation pour l’utilisateur connecté",
+                          "description": "Progress status of the formation for the signed-in user",
                           "example": "in-progress"
                         },
                         "titleBadge": {
@@ -7929,14 +7929,14 @@
                                 "mandatory",
                                 "notStarted"
                               ],
-                              "description": "Variante visuelle utilisée par les badges de formation",
+                              "description": "Visual variant used by the formation badges",
                               "example": "mandatory"
                             }
                           },
                           "required": [
                             "label"
                           ],
-                          "description": "Badge associé à une formation"
+                          "description": "Badge of a formation"
                         },
                         "levelBadge": {
                           "type": "object",
@@ -7957,14 +7957,14 @@
                                 "mandatory",
                                 "notStarted"
                               ],
-                              "description": "Variante visuelle utilisée par les badges de formation",
+                              "description": "Visual variant used by the formation badges",
                               "example": "mandatory"
                             }
                           },
                           "required": [
                             "label"
                           ],
-                          "description": "Badge associé à une formation"
+                          "description": "Badge of a formation"
                         },
                         "statusBadge": {
                           "type": "object",
@@ -7985,14 +7985,14 @@
                                 "mandatory",
                                 "notStarted"
                               ],
-                              "description": "Variante visuelle utilisée par les badges de formation",
+                              "description": "Visual variant used by the formation badges",
                               "example": "mandatory"
                             }
                           },
                           "required": [
                             "label"
                           ],
-                          "description": "Badge associé à une formation"
+                          "description": "Badge of a formation"
                         },
                         "progress": {
                           "type": "number",
@@ -8027,7 +8027,7 @@
                               "minimum": 0
                             }
                           },
-                          "description": "Répartition des notes par valeur, de 1 à 5",
+                          "description": "Distribution of the ratings by value, from 1 to 5",
                           "example": {
                             "1": 0,
                             "2": 1,
@@ -8091,7 +8091,7 @@
                                   "minimum": 0
                                 }
                               },
-                              "description": "Répartition des notes par valeur, de 1 à 5",
+                              "description": "Distribution of the ratings by value, from 1 to 5",
                               "example": {
                                 "1": 0,
                                 "2": 1,
@@ -8191,7 +8191,7 @@
                                             "audio",
                                             "other"
                                           ],
-                                          "description": "Type de contenu pédagogique",
+                                          "description": "Type of learning content",
                                           "example": "video"
                                         },
                                         "description": {
@@ -8221,7 +8221,7 @@
                                         "title",
                                         "type"
                                       ],
-                                      "description": "Contenu pédagogique d’un chapitre"
+                                      "description": "Learning content of a chapter"
                                     }
                                   }
                                 },
@@ -8229,7 +8229,7 @@
                                   "id",
                                   "title"
                                 ],
-                                "description": "Chapitre d’une formation"
+                                "description": "Chapter of a formation"
                               }
                             }
                           },
@@ -8238,7 +8238,7 @@
                             "description",
                             "chapters"
                           ],
-                          "description": "Détail complet affiché dans la modale de formation"
+                          "description": "Full detail shown in the formation modal"
                         }
                       },
                       "required": [
@@ -8246,7 +8246,7 @@
                         "title",
                         "description"
                       ],
-                      "description": "Formation affichée dans le catalogue"
+                      "description": "Formation shown in the catalogue"
                     },
                     "nextContentId": {
                       "type": "string"
@@ -8258,7 +8258,7 @@
                   "required": [
                     "course"
                   ],
-                  "description": "Réponse de démarrage ou reprise d’une formation"
+                  "description": "Response to start or resume a formation"
                 }
               }
             }
