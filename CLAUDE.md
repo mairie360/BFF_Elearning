@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `BFF_Elearning` is the Backend-for-Frontend for the Mairie360 E-learning module. It serves ready-to-render payloads (catalogue, course player, profile, course administration) to the E-learning web service, shaping data so the frontend needs little client-side logic. It is one of several sibling BFFs in the `mairie360` org; its associated web service is **Elearning_Web_Service**.
 
-Express 5 + TypeScript, run directly with `ts-node` (no dev watcher configured in npm scripts; the dev Docker image uses `ts-node-dev`).
+Express 5 + TypeScript, run in development with `tsx watch` (`npm run start`, also what the dev Docker image runs) and built with esbuild for production.
 
 Human-facing docs live in `README.md`, `CONTRACT.md`, and `docs/{en,fr}/{module,technical}.md` (bilingual). `docs/**/technical.md` covers local setup, routes, data model and CI in prose — read it alongside this file for onboarding.
 
@@ -154,7 +154,7 @@ before opening the PR; skip one of the three only when that layer cannot observe
 ## CI / Docker
 
 - `contracts.yml`: Node 24.22.1, `npm ci`, `npm run contracts:check`, `npm test -- --runInBand`.
-- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v5.2.2` (`node_version: "24.22.1"`).
+- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v5.3.1` (`node_version: "24.22.1"`).
 - Everything targets **Node 24.22.1**; `Dockerfile` and `development.Dockerfile` pin `node:24.22.1-alpine@sha256:06d7adf3…` by digest; the production image runs `CMD ["node", "dist/index.js"]` with a 180 MB heap cap.
 - `docker-compose.yml` is the local dev stack (redis + `elearning-api` + this BFF via `development.Dockerfile`, with `develop.watch` sync on `./src`). GitHub Packages secrets are passed as build secrets (`npmrc`, `node_auth_token`).
 
