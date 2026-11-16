@@ -87,7 +87,7 @@ export const CompletionRating = z
     submittedLabel: z.string().optional(),
   })
   .openapi({
-    description: 'Configuration du composant de notation de fin de formation',
+    description: 'Configuration of the end-of-course rating component',
   });
 
 export const FilterOption = z
@@ -135,7 +135,7 @@ export const FooterConfig = z
     links: z.array(FooterLink),
   })
   .openapi({
-    description: 'Configuration du footer',
+    description: 'Configuration of the footer',
   });
 
 export const CurrentUser = z
@@ -332,7 +332,7 @@ export const AdminCourseDeleteResponse = z
     courseId: z.string(),
   })
   .openapi({
-    description: 'Confirmation de suppression de la formation',
+    description: 'Confirmation that the course was deleted',
   });
 
 registry.register('AdminCourseResponse', AdminCourseResponse);

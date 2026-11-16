@@ -218,7 +218,7 @@ export interface paths {
                                     };
                                     progress?: number;
                                     completed?: boolean;
-                                    /** @description Configuration du composant de notation de fin de formation */
+                                    /** @description Configuration of the end-of-course rating component */
                                     completionRating?: {
                                         initialValue?: number;
                                         max?: number;
@@ -565,7 +565,7 @@ export interface paths {
                             };
                             progress?: number;
                             completed?: boolean;
-                            /** @description Configuration du composant de notation de fin de formation */
+                            /** @description Configuration of the end-of-course rating component */
                             completionRating?: {
                                 initialValue?: number;
                                 max?: number;
@@ -725,7 +725,7 @@ export interface paths {
                                     };
                                     progress?: number;
                                     completed?: boolean;
-                                    /** @description Configuration du composant de notation de fin de formation */
+                                    /** @description Configuration of the end-of-course rating component */
                                     completionRating?: {
                                         initialValue?: number;
                                         max?: number;
@@ -1067,7 +1067,7 @@ export interface paths {
                                         };
                                         progress?: number;
                                         completed?: boolean;
-                                        /** @description Configuration du composant de notation de fin de formation */
+                                        /** @description Configuration of the end-of-course rating component */
                                         completionRating?: {
                                             initialValue?: number;
                                             max?: number;
@@ -1113,7 +1113,7 @@ export interface paths {
                                     };
                                 }[];
                             };
-                            /** @description Configuration du footer */
+                            /** @description Configuration of the footer */
                             footer?: {
                                 /** @example Mairie360 */
                                 productName: string;
@@ -1480,7 +1480,7 @@ export interface paths {
                                 /** @example 3 juillet 2026 à 09:15 */
                                 lastConnection?: string;
                             };
-                            /** @description Configuration du footer */
+                            /** @description Configuration of the footer */
                             footer?: {
                                 /** @example Mairie360 */
                                 productName: string;
@@ -1978,7 +1978,7 @@ export interface paths {
                                     };
                                     progress?: number;
                                     completed?: boolean;
-                                    /** @description Configuration du composant de notation de fin de formation */
+                                    /** @description Configuration of the end-of-course rating component */
                                     completionRating?: {
                                         initialValue?: number;
                                         max?: number;
@@ -2144,7 +2144,7 @@ export interface components {
             4?: number;
             5?: number;
         };
-        /** @description Configuration du composant de notation de fin de formation */
+        /** @description Configuration of the end-of-course rating component */
         CompletionRating: {
             initialValue?: number;
             max?: number;
@@ -2190,7 +2190,7 @@ export interface components {
             /** @example /support */
             href: string;
         };
-        /** @description Configuration du footer */
+        /** @description Configuration of the footer */
         FooterConfig: {
             /** @example Mairie360 */
             productName: string;
@@ -2326,7 +2326,7 @@ export interface components {
             };
             progress?: number;
             completed?: boolean;
-            /** @description Configuration du composant de notation de fin de formation */
+            /** @description Configuration of the end-of-course rating component */
             completionRating?: {
                 initialValue?: number;
                 max?: number;
@@ -2475,7 +2475,7 @@ export interface components {
                 };
                 progress?: number;
                 completed?: boolean;
-                /** @description Configuration du composant de notation de fin de formation */
+                /** @description Configuration of the end-of-course rating component */
                 completionRating?: {
                     initialValue?: number;
                     max?: number;
@@ -2625,7 +2625,7 @@ export interface components {
                 };
                 progress?: number;
                 completed?: boolean;
-                /** @description Configuration du composant de notation de fin de formation */
+                /** @description Configuration of the end-of-course rating component */
                 completionRating?: {
                     initialValue?: number;
                     max?: number;
@@ -2830,7 +2830,7 @@ export interface components {
                     };
                     progress?: number;
                     completed?: boolean;
-                    /** @description Configuration du composant de notation de fin de formation */
+                    /** @description Configuration of the end-of-course rating component */
                     completionRating?: {
                         initialValue?: number;
                         max?: number;
@@ -3062,7 +3062,7 @@ export interface components {
                         };
                         progress?: number;
                         completed?: boolean;
-                        /** @description Configuration du composant de notation de fin de formation */
+                        /** @description Configuration of the end-of-course rating component */
                         completionRating?: {
                             initialValue?: number;
                             max?: number;
@@ -3108,7 +3108,7 @@ export interface components {
                     };
                 }[];
             };
-            /** @description Configuration du footer */
+            /** @description Configuration of the footer */
             footer?: {
                 /** @example Mairie360 */
                 productName: string;
@@ -3229,7 +3229,7 @@ export interface components {
                     };
                     progress?: number;
                     completed?: boolean;
-                    /** @description Configuration du composant de notation de fin de formation */
+                    /** @description Configuration of the end-of-course rating component */
                     completionRating?: {
                         initialValue?: number;
                         max?: number;
@@ -3275,7 +3275,7 @@ export interface components {
                 };
             };
         };
-        /** @description Confirmation de suppression de la formation */
+        /** @description Confirmation that the course was deleted */
         AdminCourseDeleteResponse: {
             deleted: boolean;
             courseId: string;
@@ -3317,7 +3317,7 @@ export interface components {
                 /** @example 3 juillet 2026 à 09:15 */
                 lastConnection?: string;
             };
-            /** @description Configuration du footer */
+            /** @description Configuration of the footer */
             footer?: {
                 /** @example Mairie360 */
                 productName: string;
@@ -3654,7 +3654,7 @@ export interface components {
                     };
                     progress?: number;
                     completed?: boolean;
-                    /** @description Configuration du composant de notation de fin de formation */
+                    /** @description Configuration of the end-of-course rating component */
                     completionRating?: {
                         initialValue?: number;
                         max?: number;
