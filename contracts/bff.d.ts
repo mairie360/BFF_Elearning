@@ -11,7 +11,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Vérifie la santé du BFF */
+        /** Check the health of the BFF */
         get: {
             parameters: {
                 query?: never;
@@ -113,7 +113,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description Formation affichée dans le catalogue */
+                            /** @description Formation shown in the catalogue */
                             course: {
                                 /** @example accueil-agents */
                                 id: string;
@@ -132,39 +132,39 @@ export interface paths {
                                 /** @example Integration */
                                 category?: string;
                                 /**
-                                 * @description Statut de progression de la formation pour l’utilisateur connecté
+                                 * @description Progress status of the formation for the signed-in user
                                  * @example in-progress
                                  * @enum {string}
                                  */
                                 statusValue?: "not-started" | "in-progress" | "completed";
-                                /** @description Badge associé à une formation */
+                                /** @description Badge of a formation */
                                 titleBadge?: {
                                     /** @example Obligatoire */
                                     label: string;
                                     /**
-                                     * @description Variante visuelle utilisée par les badges de formation
+                                     * @description Visual variant used by the formation badges
                                      * @example mandatory
                                      * @enum {string}
                                      */
                                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                 };
-                                /** @description Badge associé à une formation */
+                                /** @description Badge of a formation */
                                 levelBadge?: {
                                     /** @example Obligatoire */
                                     label: string;
                                     /**
-                                     * @description Variante visuelle utilisée par les badges de formation
+                                     * @description Visual variant used by the formation badges
                                      * @example mandatory
                                      * @enum {string}
                                      */
                                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                 };
-                                /** @description Badge associé à une formation */
+                                /** @description Badge of a formation */
                                 statusBadge?: {
                                     /** @example Obligatoire */
                                     label: string;
                                     /**
-                                     * @description Variante visuelle utilisée par les badges de formation
+                                     * @description Visual variant used by the formation badges
                                      * @example mandatory
                                      * @enum {string}
                                      */
@@ -174,7 +174,7 @@ export interface paths {
                                 /** @example 30 juin 2026 */
                                 deadline?: string;
                                 /**
-                                 * @description Répartition des notes par valeur, de 1 à 5
+                                 * @description Distribution of the ratings by value, from 1 to 5
                                  * @example {
                                  *       "1": 0,
                                  *       "2": 1,
@@ -190,7 +190,7 @@ export interface paths {
                                     4?: number;
                                     5?: number;
                                 };
-                                /** @description Détail complet affiché dans la modale de formation */
+                                /** @description Full detail shown in the formation modal */
                                 details?: {
                                     title: string;
                                     subtitle?: string;
@@ -200,7 +200,7 @@ export interface paths {
                                     rating?: number | string;
                                     ratingLabel?: string;
                                     /**
-                                     * @description Répartition des notes par valeur, de 1 à 5
+                                     * @description Distribution of the ratings by value, from 1 to 5
                                      * @example {
                                      *       "1": 0,
                                      *       "2": 1,
@@ -218,7 +218,7 @@ export interface paths {
                                     };
                                     progress?: number;
                                     completed?: boolean;
-                                    /** @description Configuration du composant de notation de fin de formation */
+                                    /** @description Configuration of the end-of-course rating component */
                                     completionRating?: {
                                         initialValue?: number;
                                         max?: number;
@@ -245,7 +245,7 @@ export interface paths {
                                             /** @example Présentation des directions et services */
                                             title: string;
                                             /**
-                                             * @description Type de contenu pédagogique
+                                             * @description Type of learning content
                                              * @example video
                                              * @enum {string}
                                              */
@@ -479,39 +479,39 @@ export interface paths {
                         /** @example Integration */
                         category?: string;
                         /**
-                         * @description Statut de progression de la formation pour l’utilisateur connecté
+                         * @description Progress status of the formation for the signed-in user
                          * @example in-progress
                          * @enum {string}
                          */
                         statusValue?: "not-started" | "in-progress" | "completed";
-                        /** @description Badge associé à une formation */
+                        /** @description Badge of a formation */
                         titleBadge?: {
                             /** @example Obligatoire */
                             label: string;
                             /**
-                             * @description Variante visuelle utilisée par les badges de formation
+                             * @description Visual variant used by the formation badges
                              * @example mandatory
                              * @enum {string}
                              */
                             variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                         };
-                        /** @description Badge associé à une formation */
+                        /** @description Badge of a formation */
                         levelBadge?: {
                             /** @example Obligatoire */
                             label: string;
                             /**
-                             * @description Variante visuelle utilisée par les badges de formation
+                             * @description Visual variant used by the formation badges
                              * @example mandatory
                              * @enum {string}
                              */
                             variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                         };
-                        /** @description Badge associé à une formation */
+                        /** @description Badge of a formation */
                         statusBadge?: {
                             /** @example Obligatoire */
                             label: string;
                             /**
-                             * @description Variante visuelle utilisée par les badges de formation
+                             * @description Visual variant used by the formation badges
                              * @example mandatory
                              * @enum {string}
                              */
@@ -521,7 +521,7 @@ export interface paths {
                         /** @example 30 juin 2026 */
                         deadline?: string;
                         /**
-                         * @description Répartition des notes par valeur, de 1 à 5
+                         * @description Distribution of the ratings by value, from 1 to 5
                          * @example {
                          *       "1": 0,
                          *       "2": 1,
@@ -537,7 +537,7 @@ export interface paths {
                             4?: number;
                             5?: number;
                         };
-                        /** @description Détail complet affiché dans la modale de formation */
+                        /** @description Full detail shown in the formation modal */
                         details?: {
                             title: string;
                             subtitle?: string;
@@ -547,7 +547,7 @@ export interface paths {
                             rating?: number | string;
                             ratingLabel?: string;
                             /**
-                             * @description Répartition des notes par valeur, de 1 à 5
+                             * @description Distribution of the ratings by value, from 1 to 5
                              * @example {
                              *       "1": 0,
                              *       "2": 1,
@@ -565,7 +565,7 @@ export interface paths {
                             };
                             progress?: number;
                             completed?: boolean;
-                            /** @description Configuration du composant de notation de fin de formation */
+                            /** @description Configuration of the end-of-course rating component */
                             completionRating?: {
                                 initialValue?: number;
                                 max?: number;
@@ -592,7 +592,7 @@ export interface paths {
                                     /** @example Présentation des directions et services */
                                     title: string;
                                     /**
-                                     * @description Type de contenu pédagogique
+                                     * @description Type of learning content
                                      * @example video
                                      * @enum {string}
                                      */
@@ -620,7 +620,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description Formation affichée dans le catalogue */
+                            /** @description Formation shown in the catalogue */
                             course: {
                                 /** @example accueil-agents */
                                 id: string;
@@ -639,39 +639,39 @@ export interface paths {
                                 /** @example Integration */
                                 category?: string;
                                 /**
-                                 * @description Statut de progression de la formation pour l’utilisateur connecté
+                                 * @description Progress status of the formation for the signed-in user
                                  * @example in-progress
                                  * @enum {string}
                                  */
                                 statusValue?: "not-started" | "in-progress" | "completed";
-                                /** @description Badge associé à une formation */
+                                /** @description Badge of a formation */
                                 titleBadge?: {
                                     /** @example Obligatoire */
                                     label: string;
                                     /**
-                                     * @description Variante visuelle utilisée par les badges de formation
+                                     * @description Visual variant used by the formation badges
                                      * @example mandatory
                                      * @enum {string}
                                      */
                                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                 };
-                                /** @description Badge associé à une formation */
+                                /** @description Badge of a formation */
                                 levelBadge?: {
                                     /** @example Obligatoire */
                                     label: string;
                                     /**
-                                     * @description Variante visuelle utilisée par les badges de formation
+                                     * @description Visual variant used by the formation badges
                                      * @example mandatory
                                      * @enum {string}
                                      */
                                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                 };
-                                /** @description Badge associé à une formation */
+                                /** @description Badge of a formation */
                                 statusBadge?: {
                                     /** @example Obligatoire */
                                     label: string;
                                     /**
-                                     * @description Variante visuelle utilisée par les badges de formation
+                                     * @description Visual variant used by the formation badges
                                      * @example mandatory
                                      * @enum {string}
                                      */
@@ -681,7 +681,7 @@ export interface paths {
                                 /** @example 30 juin 2026 */
                                 deadline?: string;
                                 /**
-                                 * @description Répartition des notes par valeur, de 1 à 5
+                                 * @description Distribution of the ratings by value, from 1 to 5
                                  * @example {
                                  *       "1": 0,
                                  *       "2": 1,
@@ -697,7 +697,7 @@ export interface paths {
                                     4?: number;
                                     5?: number;
                                 };
-                                /** @description Détail complet affiché dans la modale de formation */
+                                /** @description Full detail shown in the formation modal */
                                 details?: {
                                     title: string;
                                     subtitle?: string;
@@ -707,7 +707,7 @@ export interface paths {
                                     rating?: number | string;
                                     ratingLabel?: string;
                                     /**
-                                     * @description Répartition des notes par valeur, de 1 à 5
+                                     * @description Distribution of the ratings by value, from 1 to 5
                                      * @example {
                                      *       "1": 0,
                                      *       "2": 1,
@@ -725,7 +725,7 @@ export interface paths {
                                     };
                                     progress?: number;
                                     completed?: boolean;
-                                    /** @description Configuration du composant de notation de fin de formation */
+                                    /** @description Configuration of the end-of-course rating component */
                                     completionRating?: {
                                         initialValue?: number;
                                         max?: number;
@@ -752,7 +752,7 @@ export interface paths {
                                             /** @example Présentation des directions et services */
                                             title: string;
                                             /**
-                                             * @description Type de contenu pédagogique
+                                             * @description Type of learning content
                                              * @example video
                                              * @enum {string}
                                              */
@@ -865,7 +865,7 @@ export interface paths {
                 query?: {
                     search?: string;
                     category?: string;
-                    /** @description Filtre de statut disponible dans le catalogue */
+                    /** @description Status filter available in the catalogue */
                     status?: "all" | "not-started" | "in-progress" | "completed";
                     page?: number;
                     pageSize?: number;
@@ -883,7 +883,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description Utilisateur connecté tel qu’attendu par les écrans E-learning */
+                            /** @description Signed-in user, as the E-learning screens expect it */
                             user: {
                                 /** @example user-123 */
                                 id: string;
@@ -918,12 +918,12 @@ export interface paths {
                                 /** @example 3 juillet 2026 à 09:15 */
                                 lastConnection?: string;
                             };
-                            /** @description Résumé des notifications de l’utilisateur connecté */
+                            /** @description Summary of the notifications of the signed-in user */
                             notifications: {
                                 /** @example 3 */
                                 unreadCount: number;
                             };
-                            /** @description Modèle complet du catalogue E-learning */
+                            /** @description Full model of the E-learning catalogue */
                             catalog: {
                                 /** @example Centre de Formation */
                                 title: string;
@@ -981,39 +981,39 @@ export interface paths {
                                     /** @example Integration */
                                     category?: string;
                                     /**
-                                     * @description Statut de progression de la formation pour l’utilisateur connecté
+                                     * @description Progress status of the formation for the signed-in user
                                      * @example in-progress
                                      * @enum {string}
                                      */
                                     statusValue?: "not-started" | "in-progress" | "completed";
-                                    /** @description Badge associé à une formation */
+                                    /** @description Badge of a formation */
                                     titleBadge?: {
                                         /** @example Obligatoire */
                                         label: string;
                                         /**
-                                         * @description Variante visuelle utilisée par les badges de formation
+                                         * @description Visual variant used by the formation badges
                                          * @example mandatory
                                          * @enum {string}
                                          */
                                         variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                     };
-                                    /** @description Badge associé à une formation */
+                                    /** @description Badge of a formation */
                                     levelBadge?: {
                                         /** @example Obligatoire */
                                         label: string;
                                         /**
-                                         * @description Variante visuelle utilisée par les badges de formation
+                                         * @description Visual variant used by the formation badges
                                          * @example mandatory
                                          * @enum {string}
                                          */
                                         variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                     };
-                                    /** @description Badge associé à une formation */
+                                    /** @description Badge of a formation */
                                     statusBadge?: {
                                         /** @example Obligatoire */
                                         label: string;
                                         /**
-                                         * @description Variante visuelle utilisée par les badges de formation
+                                         * @description Visual variant used by the formation badges
                                          * @example mandatory
                                          * @enum {string}
                                          */
@@ -1023,7 +1023,7 @@ export interface paths {
                                     /** @example 30 juin 2026 */
                                     deadline?: string;
                                     /**
-                                     * @description Répartition des notes par valeur, de 1 à 5
+                                     * @description Distribution of the ratings by value, from 1 to 5
                                      * @example {
                                      *       "1": 0,
                                      *       "2": 1,
@@ -1039,7 +1039,7 @@ export interface paths {
                                         4?: number;
                                         5?: number;
                                     };
-                                    /** @description Détail complet affiché dans la modale de formation */
+                                    /** @description Full detail shown in the formation modal */
                                     details?: {
                                         title: string;
                                         subtitle?: string;
@@ -1049,7 +1049,7 @@ export interface paths {
                                         rating?: number | string;
                                         ratingLabel?: string;
                                         /**
-                                         * @description Répartition des notes par valeur, de 1 à 5
+                                         * @description Distribution of the ratings by value, from 1 to 5
                                          * @example {
                                          *       "1": 0,
                                          *       "2": 1,
@@ -1067,7 +1067,7 @@ export interface paths {
                                         };
                                         progress?: number;
                                         completed?: boolean;
-                                        /** @description Configuration du composant de notation de fin de formation */
+                                        /** @description Configuration of the end-of-course rating component */
                                         completionRating?: {
                                             initialValue?: number;
                                             max?: number;
@@ -1094,7 +1094,7 @@ export interface paths {
                                                 /** @example Présentation des directions et services */
                                                 title: string;
                                                 /**
-                                                 * @description Type de contenu pédagogique
+                                                 * @description Type of learning content
                                                  * @example video
                                                  * @enum {string}
                                                  */
@@ -1113,7 +1113,7 @@ export interface paths {
                                     };
                                 }[];
                             };
-                            /** @description Configuration du footer */
+                            /** @description Configuration of the footer */
                             footer?: {
                                 /** @example Mairie360 */
                                 productName: string;
@@ -1264,7 +1264,7 @@ export interface paths {
                                     /** @example Présentation des directions et services */
                                     title: string;
                                     /**
-                                     * @description Type de contenu pédagogique
+                                     * @description Type of learning content
                                      * @example video
                                      * @enum {string}
                                      */
@@ -1280,7 +1280,7 @@ export interface paths {
                                     required?: boolean;
                                 }[];
                             }[];
-                            /** @description Chapitre d’une formation */
+                            /** @description Chapter of a formation */
                             chapter: {
                                 /** @example accueil-1 */
                                 id: string;
@@ -1297,7 +1297,7 @@ export interface paths {
                                     /** @example Présentation des directions et services */
                                     title: string;
                                     /**
-                                     * @description Type de contenu pédagogique
+                                     * @description Type of learning content
                                      * @example video
                                      * @enum {string}
                                      */
@@ -1313,14 +1313,14 @@ export interface paths {
                                     required?: boolean;
                                 }[];
                             };
-                            /** @description Contenu pédagogique d’un chapitre */
+                            /** @description Learning content of a chapter */
                             content: {
                                 /** @example accueil-1-video */
                                 id: string;
                                 /** @example Présentation des directions et services */
                                 title: string;
                                 /**
-                                 * @description Type de contenu pédagogique
+                                 * @description Type of learning content
                                  * @example video
                                  * @enum {string}
                                  */
@@ -1445,7 +1445,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description Utilisateur connecté tel qu’attendu par les écrans E-learning */
+                            /** @description Signed-in user, as the E-learning screens expect it */
                             user: {
                                 /** @example user-123 */
                                 id: string;
@@ -1480,7 +1480,7 @@ export interface paths {
                                 /** @example 3 juillet 2026 à 09:15 */
                                 lastConnection?: string;
                             };
-                            /** @description Configuration du footer */
+                            /** @description Configuration of the footer */
                             footer?: {
                                 /** @example Mairie360 */
                                 productName: string;
@@ -1587,7 +1587,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description Utilisateur connecté tel qu’attendu par les écrans E-learning */
+                            /** @description Signed-in user, as the E-learning screens expect it */
                             user: {
                                 /** @example user-123 */
                                 id: string;
@@ -1711,7 +1711,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Rates a course
+         * Rates a course (not available yet: 501)
          * @description Not available yet: the E-learning API does not store ratings, so a valid request from an authenticated caller answers 501. The 200 answer is the contract the route will keep once ratings are persisted upstream.
          */
         post: {
@@ -1743,7 +1743,7 @@ export interface paths {
                             rating: number;
                             ratingCount: number;
                             /**
-                             * @description Répartition des notes par valeur, de 1 à 5
+                             * @description Distribution of the ratings by value, from 1 to 5
                              * @example {
                              *       "1": 0,
                              *       "2": 1,
@@ -1873,7 +1873,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            /** @description Formation affichée dans le catalogue */
+                            /** @description Formation shown in the catalogue */
                             course: {
                                 /** @example accueil-agents */
                                 id: string;
@@ -1892,39 +1892,39 @@ export interface paths {
                                 /** @example Integration */
                                 category?: string;
                                 /**
-                                 * @description Statut de progression de la formation pour l’utilisateur connecté
+                                 * @description Progress status of the formation for the signed-in user
                                  * @example in-progress
                                  * @enum {string}
                                  */
                                 statusValue?: "not-started" | "in-progress" | "completed";
-                                /** @description Badge associé à une formation */
+                                /** @description Badge of a formation */
                                 titleBadge?: {
                                     /** @example Obligatoire */
                                     label: string;
                                     /**
-                                     * @description Variante visuelle utilisée par les badges de formation
+                                     * @description Visual variant used by the formation badges
                                      * @example mandatory
                                      * @enum {string}
                                      */
                                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                 };
-                                /** @description Badge associé à une formation */
+                                /** @description Badge of a formation */
                                 levelBadge?: {
                                     /** @example Obligatoire */
                                     label: string;
                                     /**
-                                     * @description Variante visuelle utilisée par les badges de formation
+                                     * @description Visual variant used by the formation badges
                                      * @example mandatory
                                      * @enum {string}
                                      */
                                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                 };
-                                /** @description Badge associé à une formation */
+                                /** @description Badge of a formation */
                                 statusBadge?: {
                                     /** @example Obligatoire */
                                     label: string;
                                     /**
-                                     * @description Variante visuelle utilisée par les badges de formation
+                                     * @description Visual variant used by the formation badges
                                      * @example mandatory
                                      * @enum {string}
                                      */
@@ -1934,7 +1934,7 @@ export interface paths {
                                 /** @example 30 juin 2026 */
                                 deadline?: string;
                                 /**
-                                 * @description Répartition des notes par valeur, de 1 à 5
+                                 * @description Distribution of the ratings by value, from 1 to 5
                                  * @example {
                                  *       "1": 0,
                                  *       "2": 1,
@@ -1950,7 +1950,7 @@ export interface paths {
                                     4?: number;
                                     5?: number;
                                 };
-                                /** @description Détail complet affiché dans la modale de formation */
+                                /** @description Full detail shown in the formation modal */
                                 details?: {
                                     title: string;
                                     subtitle?: string;
@@ -1960,7 +1960,7 @@ export interface paths {
                                     rating?: number | string;
                                     ratingLabel?: string;
                                     /**
-                                     * @description Répartition des notes par valeur, de 1 à 5
+                                     * @description Distribution of the ratings by value, from 1 to 5
                                      * @example {
                                      *       "1": 0,
                                      *       "2": 1,
@@ -1978,7 +1978,7 @@ export interface paths {
                                     };
                                     progress?: number;
                                     completed?: boolean;
-                                    /** @description Configuration du composant de notation de fin de formation */
+                                    /** @description Configuration of the end-of-course rating component */
                                     completionRating?: {
                                         initialValue?: number;
                                         max?: number;
@@ -2005,7 +2005,7 @@ export interface paths {
                                             /** @example Présentation des directions et services */
                                             title: string;
                                             /**
-                                             * @description Type de contenu pédagogique
+                                             * @description Type of learning content
                                              * @example video
                                              * @enum {string}
                                              */
@@ -2104,31 +2104,31 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
-         * @description Statut de progression de la formation pour l’utilisateur connecté
+         * @description Progress status of the formation for the signed-in user
          * @example in-progress
          * @enum {string}
          */
         CourseStatus: "not-started" | "in-progress" | "completed";
         /**
-         * @description Filtre de statut disponible dans le catalogue
+         * @description Status filter available in the catalogue
          * @example all
          * @enum {string}
          */
         CatalogStatusFilter: "all" | "not-started" | "in-progress" | "completed";
         /**
-         * @description Variante visuelle utilisée par les badges de formation
+         * @description Visual variant used by the formation badges
          * @example mandatory
          * @enum {string}
          */
         BadgeVariant: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
         /**
-         * @description Type de contenu pédagogique
+         * @description Type of learning content
          * @example video
          * @enum {string}
          */
         ContentType: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
         /**
-         * @description Répartition des notes par valeur, de 1 à 5
+         * @description Distribution of the ratings by value, from 1 to 5
          * @example {
          *       "1": 0,
          *       "2": 1,
@@ -2144,7 +2144,7 @@ export interface components {
             4?: number;
             5?: number;
         };
-        /** @description Configuration du composant de notation de fin de formation */
+        /** @description Configuration of the end-of-course rating component */
         CompletionRating: {
             initialValue?: number;
             max?: number;
@@ -2155,7 +2155,7 @@ export interface components {
             submitLabel?: string;
             submittedLabel?: string;
         };
-        /** @description Option de filtre prête à afficher dans le frontend */
+        /** @description Filter option ready to display in the front */
         FilterOption: {
             /** @example En cours */
             label: string;
@@ -2163,7 +2163,7 @@ export interface components {
             value: string;
             disabled?: boolean;
         };
-        /** @description Statistique synthétique affichable dans le catalogue */
+        /** @description Summary statistic to display in the catalogue */
         StatCard: {
             /** @example Formations en cours */
             label: string;
@@ -2172,25 +2172,25 @@ export interface components {
             /** @example #2563eb */
             iconColor?: string;
         };
-        /** @description Badge associé à une formation */
+        /** @description Badge of a formation */
         CourseBadge: {
             /** @example Obligatoire */
             label: string;
             /**
-             * @description Variante visuelle utilisée par les badges de formation
+             * @description Visual variant used by the formation badges
              * @example mandatory
              * @enum {string}
              */
             variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
         };
-        /** @description Lien affiché dans le footer */
+        /** @description Link shown in the footer */
         FooterLink: {
             /** @example Support technique */
             label: string;
             /** @example /support */
             href: string;
         };
-        /** @description Configuration du footer */
+        /** @description Configuration of the footer */
         FooterConfig: {
             /** @example Mairie360 */
             productName: string;
@@ -2203,7 +2203,7 @@ export interface components {
                 href: string;
             }[];
         };
-        /** @description Utilisateur connecté tel qu’attendu par les écrans E-learning */
+        /** @description Signed-in user, as the E-learning screens expect it */
         CurrentUser: {
             /** @example user-123 */
             id: string;
@@ -2238,19 +2238,19 @@ export interface components {
             /** @example 3 juillet 2026 à 09:15 */
             lastConnection?: string;
         };
-        /** @description Résumé des notifications de l’utilisateur connecté */
+        /** @description Summary of the notifications of the signed-in user */
         NotificationSummary: {
             /** @example 3 */
             unreadCount: number;
         };
-        /** @description Contenu pédagogique d’un chapitre */
+        /** @description Learning content of a chapter */
         CourseContent: {
             /** @example accueil-1-video */
             id: string;
             /** @example Présentation des directions et services */
             title: string;
             /**
-             * @description Type de contenu pédagogique
+             * @description Type of learning content
              * @example video
              * @enum {string}
              */
@@ -2265,7 +2265,7 @@ export interface components {
             completed?: boolean;
             required?: boolean;
         };
-        /** @description Chapitre d’une formation */
+        /** @description Chapter of a formation */
         CourseChapter: {
             /** @example accueil-1 */
             id: string;
@@ -2282,7 +2282,7 @@ export interface components {
                 /** @example Présentation des directions et services */
                 title: string;
                 /**
-                 * @description Type de contenu pédagogique
+                 * @description Type of learning content
                  * @example video
                  * @enum {string}
                  */
@@ -2298,7 +2298,7 @@ export interface components {
                 required?: boolean;
             }[];
         };
-        /** @description Détail complet affiché dans la modale de formation */
+        /** @description Full detail shown in the formation modal */
         ElearningCourseDetails: {
             title: string;
             subtitle?: string;
@@ -2308,7 +2308,7 @@ export interface components {
             rating?: number | string;
             ratingLabel?: string;
             /**
-             * @description Répartition des notes par valeur, de 1 à 5
+             * @description Distribution of the ratings by value, from 1 to 5
              * @example {
              *       "1": 0,
              *       "2": 1,
@@ -2326,7 +2326,7 @@ export interface components {
             };
             progress?: number;
             completed?: boolean;
-            /** @description Configuration du composant de notation de fin de formation */
+            /** @description Configuration of the end-of-course rating component */
             completionRating?: {
                 initialValue?: number;
                 max?: number;
@@ -2353,7 +2353,7 @@ export interface components {
                     /** @example Présentation des directions et services */
                     title: string;
                     /**
-                     * @description Type de contenu pédagogique
+                     * @description Type of learning content
                      * @example video
                      * @enum {string}
                      */
@@ -2370,7 +2370,7 @@ export interface components {
                 }[];
             }[];
         };
-        /** @description Formation affichée dans le catalogue */
+        /** @description Formation shown in the catalogue */
         ElearningCourse: {
             /** @example accueil-agents */
             id: string;
@@ -2389,39 +2389,39 @@ export interface components {
             /** @example Integration */
             category?: string;
             /**
-             * @description Statut de progression de la formation pour l’utilisateur connecté
+             * @description Progress status of the formation for the signed-in user
              * @example in-progress
              * @enum {string}
              */
             statusValue?: "not-started" | "in-progress" | "completed";
-            /** @description Badge associé à une formation */
+            /** @description Badge of a formation */
             titleBadge?: {
                 /** @example Obligatoire */
                 label: string;
                 /**
-                 * @description Variante visuelle utilisée par les badges de formation
+                 * @description Visual variant used by the formation badges
                  * @example mandatory
                  * @enum {string}
                  */
                 variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
             };
-            /** @description Badge associé à une formation */
+            /** @description Badge of a formation */
             levelBadge?: {
                 /** @example Obligatoire */
                 label: string;
                 /**
-                 * @description Variante visuelle utilisée par les badges de formation
+                 * @description Visual variant used by the formation badges
                  * @example mandatory
                  * @enum {string}
                  */
                 variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
             };
-            /** @description Badge associé à une formation */
+            /** @description Badge of a formation */
             statusBadge?: {
                 /** @example Obligatoire */
                 label: string;
                 /**
-                 * @description Variante visuelle utilisée par les badges de formation
+                 * @description Visual variant used by the formation badges
                  * @example mandatory
                  * @enum {string}
                  */
@@ -2431,7 +2431,7 @@ export interface components {
             /** @example 30 juin 2026 */
             deadline?: string;
             /**
-             * @description Répartition des notes par valeur, de 1 à 5
+             * @description Distribution of the ratings by value, from 1 to 5
              * @example {
              *       "1": 0,
              *       "2": 1,
@@ -2447,7 +2447,7 @@ export interface components {
                 4?: number;
                 5?: number;
             };
-            /** @description Détail complet affiché dans la modale de formation */
+            /** @description Full detail shown in the formation modal */
             details?: {
                 title: string;
                 subtitle?: string;
@@ -2457,7 +2457,7 @@ export interface components {
                 rating?: number | string;
                 ratingLabel?: string;
                 /**
-                 * @description Répartition des notes par valeur, de 1 à 5
+                 * @description Distribution of the ratings by value, from 1 to 5
                  * @example {
                  *       "1": 0,
                  *       "2": 1,
@@ -2475,7 +2475,7 @@ export interface components {
                 };
                 progress?: number;
                 completed?: boolean;
-                /** @description Configuration du composant de notation de fin de formation */
+                /** @description Configuration of the end-of-course rating component */
                 completionRating?: {
                     initialValue?: number;
                     max?: number;
@@ -2502,7 +2502,7 @@ export interface components {
                         /** @example Présentation des directions et services */
                         title: string;
                         /**
-                         * @description Type de contenu pédagogique
+                         * @description Type of learning content
                          * @example video
                          * @enum {string}
                          */
@@ -2520,7 +2520,7 @@ export interface components {
                 }[];
             };
         };
-        /** @description Formation à créer */
+        /** @description Formation to create */
         AdminCourseCreateBody: {
             /** @example scan-course */
             id: string;
@@ -2539,39 +2539,39 @@ export interface components {
             /** @example Integration */
             category?: string;
             /**
-             * @description Statut de progression de la formation pour l’utilisateur connecté
+             * @description Progress status of the formation for the signed-in user
              * @example in-progress
              * @enum {string}
              */
             statusValue?: "not-started" | "in-progress" | "completed";
-            /** @description Badge associé à une formation */
+            /** @description Badge of a formation */
             titleBadge?: {
                 /** @example Obligatoire */
                 label: string;
                 /**
-                 * @description Variante visuelle utilisée par les badges de formation
+                 * @description Visual variant used by the formation badges
                  * @example mandatory
                  * @enum {string}
                  */
                 variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
             };
-            /** @description Badge associé à une formation */
+            /** @description Badge of a formation */
             levelBadge?: {
                 /** @example Obligatoire */
                 label: string;
                 /**
-                 * @description Variante visuelle utilisée par les badges de formation
+                 * @description Visual variant used by the formation badges
                  * @example mandatory
                  * @enum {string}
                  */
                 variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
             };
-            /** @description Badge associé à une formation */
+            /** @description Badge of a formation */
             statusBadge?: {
                 /** @example Obligatoire */
                 label: string;
                 /**
-                 * @description Variante visuelle utilisée par les badges de formation
+                 * @description Visual variant used by the formation badges
                  * @example mandatory
                  * @enum {string}
                  */
@@ -2581,7 +2581,7 @@ export interface components {
             /** @example 30 juin 2026 */
             deadline?: string;
             /**
-             * @description Répartition des notes par valeur, de 1 à 5
+             * @description Distribution of the ratings by value, from 1 to 5
              * @example {
              *       "1": 0,
              *       "2": 1,
@@ -2597,7 +2597,7 @@ export interface components {
                 4?: number;
                 5?: number;
             };
-            /** @description Détail complet affiché dans la modale de formation */
+            /** @description Full detail shown in the formation modal */
             details?: {
                 title: string;
                 subtitle?: string;
@@ -2607,7 +2607,7 @@ export interface components {
                 rating?: number | string;
                 ratingLabel?: string;
                 /**
-                 * @description Répartition des notes par valeur, de 1 à 5
+                 * @description Distribution of the ratings by value, from 1 to 5
                  * @example {
                  *       "1": 0,
                  *       "2": 1,
@@ -2625,7 +2625,7 @@ export interface components {
                 };
                 progress?: number;
                 completed?: boolean;
-                /** @description Configuration du composant de notation de fin de formation */
+                /** @description Configuration of the end-of-course rating component */
                 completionRating?: {
                     initialValue?: number;
                     max?: number;
@@ -2652,7 +2652,7 @@ export interface components {
                         /** @example Présentation des directions et services */
                         title: string;
                         /**
-                         * @description Type de contenu pédagogique
+                         * @description Type of learning content
                          * @example video
                          * @enum {string}
                          */
@@ -2676,7 +2676,7 @@ export interface components {
             /** @example Integration */
             category?: string;
             /**
-             * @description Filtre de statut disponible dans le catalogue
+             * @description Status filter available in the catalogue
              * @example all
              * @enum {string}
              */
@@ -2686,7 +2686,7 @@ export interface components {
             /** @example 10 */
             pageSize?: number;
         };
-        /** @description Modèle complet du catalogue E-learning */
+        /** @description Full model of the E-learning catalogue */
         ElearningCatalogView: {
             /** @example Centre de Formation */
             title: string;
@@ -2744,39 +2744,39 @@ export interface components {
                 /** @example Integration */
                 category?: string;
                 /**
-                 * @description Statut de progression de la formation pour l’utilisateur connecté
+                 * @description Progress status of the formation for the signed-in user
                  * @example in-progress
                  * @enum {string}
                  */
                 statusValue?: "not-started" | "in-progress" | "completed";
-                /** @description Badge associé à une formation */
+                /** @description Badge of a formation */
                 titleBadge?: {
                     /** @example Obligatoire */
                     label: string;
                     /**
-                     * @description Variante visuelle utilisée par les badges de formation
+                     * @description Visual variant used by the formation badges
                      * @example mandatory
                      * @enum {string}
                      */
                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                 };
-                /** @description Badge associé à une formation */
+                /** @description Badge of a formation */
                 levelBadge?: {
                     /** @example Obligatoire */
                     label: string;
                     /**
-                     * @description Variante visuelle utilisée par les badges de formation
+                     * @description Visual variant used by the formation badges
                      * @example mandatory
                      * @enum {string}
                      */
                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                 };
-                /** @description Badge associé à une formation */
+                /** @description Badge of a formation */
                 statusBadge?: {
                     /** @example Obligatoire */
                     label: string;
                     /**
-                     * @description Variante visuelle utilisée par les badges de formation
+                     * @description Visual variant used by the formation badges
                      * @example mandatory
                      * @enum {string}
                      */
@@ -2786,7 +2786,7 @@ export interface components {
                 /** @example 30 juin 2026 */
                 deadline?: string;
                 /**
-                 * @description Répartition des notes par valeur, de 1 à 5
+                 * @description Distribution of the ratings by value, from 1 to 5
                  * @example {
                  *       "1": 0,
                  *       "2": 1,
@@ -2802,7 +2802,7 @@ export interface components {
                     4?: number;
                     5?: number;
                 };
-                /** @description Détail complet affiché dans la modale de formation */
+                /** @description Full detail shown in the formation modal */
                 details?: {
                     title: string;
                     subtitle?: string;
@@ -2812,7 +2812,7 @@ export interface components {
                     rating?: number | string;
                     ratingLabel?: string;
                     /**
-                     * @description Répartition des notes par valeur, de 1 à 5
+                     * @description Distribution of the ratings by value, from 1 to 5
                      * @example {
                      *       "1": 0,
                      *       "2": 1,
@@ -2830,7 +2830,7 @@ export interface components {
                     };
                     progress?: number;
                     completed?: boolean;
-                    /** @description Configuration du composant de notation de fin de formation */
+                    /** @description Configuration of the end-of-course rating component */
                     completionRating?: {
                         initialValue?: number;
                         max?: number;
@@ -2857,7 +2857,7 @@ export interface components {
                             /** @example Présentation des directions et services */
                             title: string;
                             /**
-                             * @description Type de contenu pédagogique
+                             * @description Type of learning content
                              * @example video
                              * @enum {string}
                              */
@@ -2876,9 +2876,9 @@ export interface components {
                 };
             }[];
         };
-        /** @description Réponse de chargement du catalogue E-learning */
+        /** @description Response loading the E-learning catalogue */
         ElearningCatalogResponse: {
-            /** @description Utilisateur connecté tel qu’attendu par les écrans E-learning */
+            /** @description Signed-in user, as the E-learning screens expect it */
             user: {
                 /** @example user-123 */
                 id: string;
@@ -2913,12 +2913,12 @@ export interface components {
                 /** @example 3 juillet 2026 à 09:15 */
                 lastConnection?: string;
             };
-            /** @description Résumé des notifications de l’utilisateur connecté */
+            /** @description Summary of the notifications of the signed-in user */
             notifications: {
                 /** @example 3 */
                 unreadCount: number;
             };
-            /** @description Modèle complet du catalogue E-learning */
+            /** @description Full model of the E-learning catalogue */
             catalog: {
                 /** @example Centre de Formation */
                 title: string;
@@ -2976,39 +2976,39 @@ export interface components {
                     /** @example Integration */
                     category?: string;
                     /**
-                     * @description Statut de progression de la formation pour l’utilisateur connecté
+                     * @description Progress status of the formation for the signed-in user
                      * @example in-progress
                      * @enum {string}
                      */
                     statusValue?: "not-started" | "in-progress" | "completed";
-                    /** @description Badge associé à une formation */
+                    /** @description Badge of a formation */
                     titleBadge?: {
                         /** @example Obligatoire */
                         label: string;
                         /**
-                         * @description Variante visuelle utilisée par les badges de formation
+                         * @description Visual variant used by the formation badges
                          * @example mandatory
                          * @enum {string}
                          */
                         variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                     };
-                    /** @description Badge associé à une formation */
+                    /** @description Badge of a formation */
                     levelBadge?: {
                         /** @example Obligatoire */
                         label: string;
                         /**
-                         * @description Variante visuelle utilisée par les badges de formation
+                         * @description Visual variant used by the formation badges
                          * @example mandatory
                          * @enum {string}
                          */
                         variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                     };
-                    /** @description Badge associé à une formation */
+                    /** @description Badge of a formation */
                     statusBadge?: {
                         /** @example Obligatoire */
                         label: string;
                         /**
-                         * @description Variante visuelle utilisée par les badges de formation
+                         * @description Visual variant used by the formation badges
                          * @example mandatory
                          * @enum {string}
                          */
@@ -3018,7 +3018,7 @@ export interface components {
                     /** @example 30 juin 2026 */
                     deadline?: string;
                     /**
-                     * @description Répartition des notes par valeur, de 1 à 5
+                     * @description Distribution of the ratings by value, from 1 to 5
                      * @example {
                      *       "1": 0,
                      *       "2": 1,
@@ -3034,7 +3034,7 @@ export interface components {
                         4?: number;
                         5?: number;
                     };
-                    /** @description Détail complet affiché dans la modale de formation */
+                    /** @description Full detail shown in the formation modal */
                     details?: {
                         title: string;
                         subtitle?: string;
@@ -3044,7 +3044,7 @@ export interface components {
                         rating?: number | string;
                         ratingLabel?: string;
                         /**
-                         * @description Répartition des notes par valeur, de 1 à 5
+                         * @description Distribution of the ratings by value, from 1 to 5
                          * @example {
                          *       "1": 0,
                          *       "2": 1,
@@ -3062,7 +3062,7 @@ export interface components {
                         };
                         progress?: number;
                         completed?: boolean;
-                        /** @description Configuration du composant de notation de fin de formation */
+                        /** @description Configuration of the end-of-course rating component */
                         completionRating?: {
                             initialValue?: number;
                             max?: number;
@@ -3089,7 +3089,7 @@ export interface components {
                                 /** @example Présentation des directions et services */
                                 title: string;
                                 /**
-                                 * @description Type de contenu pédagogique
+                                 * @description Type of learning content
                                  * @example video
                                  * @enum {string}
                                  */
@@ -3108,7 +3108,7 @@ export interface components {
                     };
                 }[];
             };
-            /** @description Configuration du footer */
+            /** @description Configuration of the footer */
             footer?: {
                 /** @example Mairie360 */
                 productName: string;
@@ -3122,9 +3122,9 @@ export interface components {
                 }[];
             };
         };
-        /** @description Formation créée ou mise à jour par un administrateur */
+        /** @description Formation created or updated by an administrator */
         AdminCourseResponse: {
-            /** @description Formation affichée dans le catalogue */
+            /** @description Formation shown in the catalogue */
             course: {
                 /** @example accueil-agents */
                 id: string;
@@ -3143,39 +3143,39 @@ export interface components {
                 /** @example Integration */
                 category?: string;
                 /**
-                 * @description Statut de progression de la formation pour l’utilisateur connecté
+                 * @description Progress status of the formation for the signed-in user
                  * @example in-progress
                  * @enum {string}
                  */
                 statusValue?: "not-started" | "in-progress" | "completed";
-                /** @description Badge associé à une formation */
+                /** @description Badge of a formation */
                 titleBadge?: {
                     /** @example Obligatoire */
                     label: string;
                     /**
-                     * @description Variante visuelle utilisée par les badges de formation
+                     * @description Visual variant used by the formation badges
                      * @example mandatory
                      * @enum {string}
                      */
                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                 };
-                /** @description Badge associé à une formation */
+                /** @description Badge of a formation */
                 levelBadge?: {
                     /** @example Obligatoire */
                     label: string;
                     /**
-                     * @description Variante visuelle utilisée par les badges de formation
+                     * @description Visual variant used by the formation badges
                      * @example mandatory
                      * @enum {string}
                      */
                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                 };
-                /** @description Badge associé à une formation */
+                /** @description Badge of a formation */
                 statusBadge?: {
                     /** @example Obligatoire */
                     label: string;
                     /**
-                     * @description Variante visuelle utilisée par les badges de formation
+                     * @description Visual variant used by the formation badges
                      * @example mandatory
                      * @enum {string}
                      */
@@ -3185,7 +3185,7 @@ export interface components {
                 /** @example 30 juin 2026 */
                 deadline?: string;
                 /**
-                 * @description Répartition des notes par valeur, de 1 à 5
+                 * @description Distribution of the ratings by value, from 1 to 5
                  * @example {
                  *       "1": 0,
                  *       "2": 1,
@@ -3201,7 +3201,7 @@ export interface components {
                     4?: number;
                     5?: number;
                 };
-                /** @description Détail complet affiché dans la modale de formation */
+                /** @description Full detail shown in the formation modal */
                 details?: {
                     title: string;
                     subtitle?: string;
@@ -3211,7 +3211,7 @@ export interface components {
                     rating?: number | string;
                     ratingLabel?: string;
                     /**
-                     * @description Répartition des notes par valeur, de 1 à 5
+                     * @description Distribution of the ratings by value, from 1 to 5
                      * @example {
                      *       "1": 0,
                      *       "2": 1,
@@ -3229,7 +3229,7 @@ export interface components {
                     };
                     progress?: number;
                     completed?: boolean;
-                    /** @description Configuration du composant de notation de fin de formation */
+                    /** @description Configuration of the end-of-course rating component */
                     completionRating?: {
                         initialValue?: number;
                         max?: number;
@@ -3256,7 +3256,7 @@ export interface components {
                             /** @example Présentation des directions et services */
                             title: string;
                             /**
-                             * @description Type de contenu pédagogique
+                             * @description Type of learning content
                              * @example video
                              * @enum {string}
                              */
@@ -3275,14 +3275,14 @@ export interface components {
                 };
             };
         };
-        /** @description Confirmation de suppression de la formation */
+        /** @description Confirmation that the course was deleted */
         AdminCourseDeleteResponse: {
             deleted: boolean;
             courseId: string;
         };
-        /** @description Réponse de chargement de la page profil */
+        /** @description Response loading the profile page */
         ElearningProfileResponse: {
-            /** @description Utilisateur connecté tel qu’attendu par les écrans E-learning */
+            /** @description Signed-in user, as the E-learning screens expect it */
             user: {
                 /** @example user-123 */
                 id: string;
@@ -3317,7 +3317,7 @@ export interface components {
                 /** @example 3 juillet 2026 à 09:15 */
                 lastConnection?: string;
             };
-            /** @description Configuration du footer */
+            /** @description Configuration of the footer */
             footer?: {
                 /** @example Mairie360 */
                 productName: string;
@@ -3331,7 +3331,7 @@ export interface components {
                 }[];
             };
         };
-        /** @description Champs éditables du profil utilisateur */
+        /** @description Profile fields sent for an update: only `email` and `phone` are saved; `address` and `city` answer 501 (no upstream stores them) */
         UpdateProfileBody: {
             /**
              * Format: email
@@ -3348,9 +3348,9 @@ export interface components {
             /** @example Paris */
             city?: string;
         };
-        /** @description Profil mis à jour */
+        /** @description Profile updated */
         ProfileUpdateResponse: {
-            /** @description Utilisateur connecté tel qu’attendu par les écrans E-learning */
+            /** @description Signed-in user, as the E-learning screens expect it */
             user: {
                 /** @example user-123 */
                 id: string;
@@ -3418,7 +3418,7 @@ export interface components {
              */
             completed: boolean;
         };
-        /** @description Progression mise à jour après complétion d’un contenu */
+        /** @description Progress updated after a content is completed */
         ContentCompleteResponse: {
             progress: number;
             completedRequiredContents: number;
@@ -3442,7 +3442,7 @@ export interface components {
                     /** @example Présentation des directions et services */
                     title: string;
                     /**
-                     * @description Type de contenu pédagogique
+                     * @description Type of learning content
                      * @example video
                      * @enum {string}
                      */
@@ -3458,7 +3458,7 @@ export interface components {
                     required?: boolean;
                 }[];
             }[];
-            /** @description Chapitre d’une formation */
+            /** @description Chapter of a formation */
             chapter: {
                 /** @example accueil-1 */
                 id: string;
@@ -3475,7 +3475,7 @@ export interface components {
                     /** @example Présentation des directions et services */
                     title: string;
                     /**
-                     * @description Type de contenu pédagogique
+                     * @description Type of learning content
                      * @example video
                      * @enum {string}
                      */
@@ -3491,14 +3491,14 @@ export interface components {
                     required?: boolean;
                 }[];
             };
-            /** @description Contenu pédagogique d’un chapitre */
+            /** @description Learning content of a chapter */
             content: {
                 /** @example accueil-1-video */
                 id: string;
                 /** @example Présentation des directions et services */
                 title: string;
                 /**
-                 * @description Type de contenu pédagogique
+                 * @description Type of learning content
                  * @example video
                  * @enum {string}
                  */
@@ -3514,17 +3514,17 @@ export interface components {
                 required?: boolean;
             };
         };
-        /** @description Note envoyée par l’utilisateur */
+        /** @description Rating sent by the user */
         SubmitRatingBody: {
             /** @example 5 */
             rating: number;
         };
-        /** @description Résumé de notation après envoi */
+        /** @description Rating summary after sending */
         RatingSubmitResponse: {
             rating: number;
             ratingCount: number;
             /**
-             * @description Répartition des notes par valeur, de 1 à 5
+             * @description Distribution of the ratings by value, from 1 to 5
              * @example {
              *       "1": 0,
              *       "2": 1,
@@ -3542,14 +3542,14 @@ export interface components {
             };
             submitted: boolean;
         };
-        /** @description Contexte de démarrage ou reprise d’une formation */
+        /** @description Context to start or resume a formation */
         StartCourseBody: {
             /** @example catalog */
             source?: string;
         };
-        /** @description Réponse de démarrage ou reprise d’une formation */
+        /** @description Response to start or resume a formation */
         CourseActionResponse: {
-            /** @description Formation affichée dans le catalogue */
+            /** @description Formation shown in the catalogue */
             course: {
                 /** @example accueil-agents */
                 id: string;
@@ -3568,39 +3568,39 @@ export interface components {
                 /** @example Integration */
                 category?: string;
                 /**
-                 * @description Statut de progression de la formation pour l’utilisateur connecté
+                 * @description Progress status of the formation for the signed-in user
                  * @example in-progress
                  * @enum {string}
                  */
                 statusValue?: "not-started" | "in-progress" | "completed";
-                /** @description Badge associé à une formation */
+                /** @description Badge of a formation */
                 titleBadge?: {
                     /** @example Obligatoire */
                     label: string;
                     /**
-                     * @description Variante visuelle utilisée par les badges de formation
+                     * @description Visual variant used by the formation badges
                      * @example mandatory
                      * @enum {string}
                      */
                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                 };
-                /** @description Badge associé à une formation */
+                /** @description Badge of a formation */
                 levelBadge?: {
                     /** @example Obligatoire */
                     label: string;
                     /**
-                     * @description Variante visuelle utilisée par les badges de formation
+                     * @description Visual variant used by the formation badges
                      * @example mandatory
                      * @enum {string}
                      */
                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                 };
-                /** @description Badge associé à une formation */
+                /** @description Badge of a formation */
                 statusBadge?: {
                     /** @example Obligatoire */
                     label: string;
                     /**
-                     * @description Variante visuelle utilisée par les badges de formation
+                     * @description Visual variant used by the formation badges
                      * @example mandatory
                      * @enum {string}
                      */
@@ -3610,7 +3610,7 @@ export interface components {
                 /** @example 30 juin 2026 */
                 deadline?: string;
                 /**
-                 * @description Répartition des notes par valeur, de 1 à 5
+                 * @description Distribution of the ratings by value, from 1 to 5
                  * @example {
                  *       "1": 0,
                  *       "2": 1,
@@ -3626,7 +3626,7 @@ export interface components {
                     4?: number;
                     5?: number;
                 };
-                /** @description Détail complet affiché dans la modale de formation */
+                /** @description Full detail shown in the formation modal */
                 details?: {
                     title: string;
                     subtitle?: string;
@@ -3636,7 +3636,7 @@ export interface components {
                     rating?: number | string;
                     ratingLabel?: string;
                     /**
-                     * @description Répartition des notes par valeur, de 1 à 5
+                     * @description Distribution of the ratings by value, from 1 to 5
                      * @example {
                      *       "1": 0,
                      *       "2": 1,
@@ -3654,7 +3654,7 @@ export interface components {
                     };
                     progress?: number;
                     completed?: boolean;
-                    /** @description Configuration du composant de notation de fin de formation */
+                    /** @description Configuration of the end-of-course rating component */
                     completionRating?: {
                         initialValue?: number;
                         max?: number;
@@ -3681,7 +3681,7 @@ export interface components {
                             /** @example Présentation des directions et services */
                             title: string;
                             /**
-                             * @description Type de contenu pédagogique
+                             * @description Type of learning content
                              * @example video
                              * @enum {string}
                              */

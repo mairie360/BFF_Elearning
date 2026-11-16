@@ -17,7 +17,7 @@ registry.registerPath({
   method: 'post',
   path: '/elearning/courses/{courseId}/rating',
   tags: ['E-learning'],
-  summary: 'Rates a course',
+  summary: 'Rates a course (not available yet: 501)',
   description:
     'Not available yet: the E-learning API does not store ratings, so a valid request from an authenticated caller answers 501. The 200 answer is the contract the route will keep once ratings are persisted upstream.',
   request: {
