@@ -1711,7 +1711,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Rates a course
+         * Rates a course (not available yet: 501)
          * @description Not available yet: the E-learning API does not store ratings, so a valid request from an authenticated caller answers 501. The 200 answer is the contract the route will keep once ratings are persisted upstream.
          */
         post: {
@@ -3331,7 +3331,7 @@ export interface components {
                 }[];
             };
         };
-        /** @description Editable fields of the user profile */
+        /** @description Profile fields sent for an update: only `email` and `phone` are saved; `address` and `city` answer 501 (no upstream stores them) */
         UpdateProfileBody: {
             /**
              * Format: email

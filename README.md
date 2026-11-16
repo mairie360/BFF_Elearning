@@ -59,7 +59,7 @@ Generated contract: [`contracts/openapi.json`](contracts/openapi.json) (11 opera
 | `POST` | `/elearning/courses/{courseId}/contents/{contentId}/complete` | Marks a content as completed |
 | `GET` | `/elearning/profile` | Loads the E-learning profile |
 | `PATCH` | `/elearning/profile` | Updates the editable profile fields |
-| `POST` | `/elearning/courses/{courseId}/rating` | Rates a course |
+| `POST` | `/elearning/courses/{courseId}/rating` | Rates a course (not available yet: 501) |
 | `POST` | `/elearning/courses/{courseId}/start` | Starts or resumes a course |
 
 ## Upstream contracts

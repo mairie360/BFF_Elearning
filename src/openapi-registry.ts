@@ -361,7 +361,7 @@ export const UpdateProfileBody = z
     city: z.string().optional().openapi({ example: 'Paris' }),
   })
   .openapi({
-    description: 'Editable fields of the user profile',
+    description: 'Profile fields sent for an update: only `email` and `phone` are saved; `address` and `city` answer 501 (no upstream stores them)',
   });
 
 export const ProfileUpdateResponse = z
