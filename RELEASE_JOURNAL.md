@@ -1,22 +1,24 @@
 # Journal des releases — BFF_Elearning
 
-<!-- release-journal-state {"dev": "fe937c34f35c242406b9981dcfef63fed1a5fbae", "prod": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod_tag": "v1.2.0", "staging": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "updated": {"dev": "2026-11-16 16:20 UTC", "prod": "2026-11-13 00:45 UTC", "staging": "2026-11-13 00:28 UTC"}} -->
+<!-- release-journal-state {"dev": "83c075c0b4975335b3ddcf75dd38dce8eedfbe43", "prod": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod_tag": "v1.2.0", "staging": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "updated": {"dev": "2026-11-16 17:25 UTC", "prod": "2026-11-13 00:45 UTC", "staging": "2026-11-13 00:28 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v1.2.0 | `a454ccc` | 2026-11-13 00:45 UTC |
 | staging | — | `a454ccc` | 2026-11-13 00:28 UTC |
-| dev | — | `fe937c3` | 2026-11-16 16:20 UTC |
+| dev | — | `83c075c` | 2026-11-16 17:25 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v1.2.0)
 
+- fix: MAIR-248 Translate the BFFs' messages and the ansible documentation into English (#228) ([#228](https://github.com/mairie360/BFF_Elearning/pull/228))
 - docs: MAIR-246 Update the stale CLAUDE.md files (#226) ([#226](https://github.com/mairie360/BFF_Elearning/pull/226))
 - test: MAIR-241 Test the BFF_user admin routes and raise the BFFs coverage thresholds (#221) ([#221](https://github.com/mairie360/BFF_Elearning/pull/221))
 - chore(deps): update mairie360 database schema to v3.4.0 (#224) ([#224](https://github.com/mairie360/BFF_Elearning/pull/224))
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
+- fix: MAIR-248 Translate the BFFs' messages and the ansible documentation into English (#228) ([#228](https://github.com/mairie360/BFF_Elearning/pull/228))
 - docs: MAIR-246 Update the stale CLAUDE.md files (#226) ([#226](https://github.com/mairie360/BFF_Elearning/pull/226))
 - test: MAIR-241 Test the BFF_user admin routes and raise the BFFs coverage thresholds (#221) ([#221](https://github.com/mairie360/BFF_Elearning/pull/221))
 - chore(deps): update mairie360 database schema to v3.4.0 (#224) ([#224](https://github.com/mairie360/BFF_Elearning/pull/224))
@@ -32,6 +34,7 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-16 17:25 UTC | dev | — | `83c075c` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43916635213) |
 | 2026-11-16 16:20 UTC | dev | — | `fe937c3` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43905516289) |
 | 2026-11-16 14:21 UTC | dev | — | `598a120` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43883543912) |
 | 2026-11-13 06:16 UTC | dev | — | `40bd339` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43377218581) |
