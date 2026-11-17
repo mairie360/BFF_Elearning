@@ -1,13 +1,13 @@
 # Journal des releases — BFF_Elearning
 
-<!-- release-journal-state {"dev": "5d63e0d9888ea40d035f06a9bd77843f07bd5dd8", "prod": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod_tag": "v1.2.0", "staging": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "updated": {"dev": "2026-11-17 17:06 UTC", "prod": "2026-11-13 00:45 UTC", "staging": "2026-11-13 00:28 UTC"}} -->
+<!-- release-journal-state {"dev": "5d63e0d9888ea40d035f06a9bd77843f07bd5dd8", "prod": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod_tag": "v1.2.0", "staging": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "updated": {"dev": "2026-11-17 17:08 UTC", "prod": "2026-11-13 00:45 UTC", "staging": "2026-11-13 00:28 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v1.2.0 | `a454ccc` | 2026-11-13 00:45 UTC |
 | staging | — | `a454ccc` | 2026-11-13 00:28 UTC |
-| dev | — | `5d63e0d` | 2026-11-17 17:06 UTC |
+| dev | — | `5d63e0d` | 2026-11-17 17:08 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v1.2.0)
 
@@ -46,6 +46,7 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-17 17:08 UTC | dev | — | `4c87f14` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/44131572887) |
 | 2026-11-17 17:06 UTC | dev | — | `5d63e0d` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/44131584263) |
 | 2026-11-17 11:57 UTC | dev | — | `dc1853f` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/44077187569) |
 | 2026-11-17 11:54 UTC | dev | — | `4a6a21a` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/44076395859) |
