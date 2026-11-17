@@ -147,10 +147,6 @@ const handlers = {
       'profile is the learner': (r) => r.status === 200 && ((json(r) || {}).user || {}).id === String(learner.id),
     });
   },
-  'PATCH /elearning/profile': ({ request }) =>
-    check(request({ body: { phone: '+33612345678' } }), {
-      'patch profile 200': (r) => r.status === 200,
-    }),
   'POST /elearning/courses/{courseId}/rating': ({ request }) =>
     check(request({ path: { courseId: FIXTURE_COURSE_ID }, body: { rating: 5 }, params: NOT_IMPLEMENTED }), {
       'rating 501': (r) => r.status === 501,

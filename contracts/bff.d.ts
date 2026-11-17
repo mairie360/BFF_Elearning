@@ -1427,7 +1427,7 @@ export interface paths {
         };
         /**
          * Loads the E-learning profile
-         * @description The caller as read from Core API (`GET /api/v1/user/me/`), ready to render on the profile page.
+         * @description The caller as read from Core API (`GET /api/v1/user/me/`), ready to render on the profile page. Read-only: a user edits their own profile in Settings, never through this BFF.
          */
         get: {
             parameters: {
@@ -1548,157 +1548,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /**
-         * Updates the editable profile fields
-         * @description `email` and `phone` are saved by Core API (`PATCH /api/v1/user/me/`), then the profile is read again from Core API. `address` and `city` are stored by no upstream service: a body carrying them answers 501 and nothing is written. Non-editable fields (role, isAdmin, service, position, lastConnection) are ignored.
-         */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /**
-                         * Format: email
-                         * @example security-admin@mairie360.fr
-                         */
-                        email?: string;
-                        /**
-                         * @description Phone number in E.164 (`+33612345678`)
-                         * @example +33612345678
-                         */
-                        phone?: string;
-                        /** @example 1 place de la Mairie */
-                        address?: string;
-                        /** @example Paris */
-                        city?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Profile saved, then read again */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @description Signed-in user, as the E-learning screens expect it */
-                            user: {
-                                /** @example user-123 */
-                                id: string;
-                                /** @example Admin Système */
-                                name: string;
-                                /** @example AS */
-                                initials: string;
-                                /**
-                                 * Format: email
-                                 * @example admin@mairie360.fr
-                                 */
-                                email?: string;
-                                /** @example +262 692 00 00 00 */
-                                phone?: string;
-                                /** @example Administration */
-                                service?: string;
-                                /** @example Administrateur système */
-                                position?: string;
-                                /** @example admin */
-                                role?: string;
-                                /** @example true */
-                                isAdmin: boolean;
-                                /**
-                                 * Format: uri
-                                 * @example https://example.com/avatar.jpg
-                                 */
-                                avatarUrl?: string;
-                                /** @example 1 rue de la Mairie */
-                                address?: string;
-                                /** @example Saint-Denis */
-                                city?: string;
-                                /** @example 3 juillet 2026 à 09:15 */
-                                lastConnection?: string;
-                            };
-                        };
-                    };
-                };
-                /** @description Invalid request payload, or a value Core API refuses (e.g. a phone number that is not 10 to 15 digits) */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Missing, expired or invalid session */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description The e-mail address is already used by another account */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Unexpected server error */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not available: no upstream service stores this data yet */
-                501: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description An upstream API is unreachable, failed or answered an unusable body */
-                502: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-            };
-        };
+        patch?: never;
         trace?: never;
     };
     "/elearning/courses/{courseId}/rating": {
@@ -3329,61 +3179,6 @@ export interface components {
                     /** @example /support */
                     href: string;
                 }[];
-            };
-        };
-        /** @description Profile fields sent for an update: only `email` and `phone` are saved; `address` and `city` answer 501 (no upstream stores them) */
-        UpdateProfileBody: {
-            /**
-             * Format: email
-             * @example security-admin@mairie360.fr
-             */
-            email?: string;
-            /**
-             * @description Phone number in E.164 (`+33612345678`)
-             * @example +33612345678
-             */
-            phone?: string;
-            /** @example 1 place de la Mairie */
-            address?: string;
-            /** @example Paris */
-            city?: string;
-        };
-        /** @description Profile updated */
-        ProfileUpdateResponse: {
-            /** @description Signed-in user, as the E-learning screens expect it */
-            user: {
-                /** @example user-123 */
-                id: string;
-                /** @example Admin Système */
-                name: string;
-                /** @example AS */
-                initials: string;
-                /**
-                 * Format: email
-                 * @example admin@mairie360.fr
-                 */
-                email?: string;
-                /** @example +262 692 00 00 00 */
-                phone?: string;
-                /** @example Administration */
-                service?: string;
-                /** @example Administrateur système */
-                position?: string;
-                /** @example admin */
-                role?: string;
-                /** @example true */
-                isAdmin: boolean;
-                /**
-                 * Format: uri
-                 * @example https://example.com/avatar.jpg
-                 */
-                avatarUrl?: string;
-                /** @example 1 rue de la Mairie */
-                address?: string;
-                /** @example Saint-Denis */
-                city?: string;
-                /** @example 3 juillet 2026 à 09:15 */
-                lastConnection?: string;
             };
         };
         CourseIdParams: {

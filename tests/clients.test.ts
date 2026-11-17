@@ -63,7 +63,7 @@ describe('upstream configuration', () => {
 
   test('generated clients carry no base URL frozen at import time', () => {
     expect(elearningClient.getGetMyFormationsUrl()).not.toMatch(/localhost|^http/);
-    expect(coreClient.getPatchMeUrl()).not.toMatch(/localhost|^http/);
+    expect(coreClient.getGetMeUrl()).not.toMatch(/localhost|^http/);
   });
 });
 
@@ -74,6 +74,6 @@ describe('generated API clients', () => {
   });
 
   test('call Core API through the operations of its published contract', () => {
-    expect(coreClient.getPatchMeUrl()).toBe('/api/v1/user/me/');
+    expect(coreClient.getGetMeUrl()).toBe('/api/v1/user/me/');
   });
 });
