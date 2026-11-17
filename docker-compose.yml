@@ -103,6 +103,7 @@ services:
   elearning-api:
     container_name: elearning-api-bff-elearning-developpement
     image: ghcr.io/mairie360/elearning-api:${UPSTREAM_TAG:-dev}
+    pull_policy: always
     ports:
       - "3006:3006"
     networks:
