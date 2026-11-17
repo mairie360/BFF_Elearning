@@ -1,16 +1,17 @@
 # Journal des releases — BFF_Elearning
 
-<!-- release-journal-state {"dev": "20f6611ff9ea1f87e5d57f2acb3518f5a9390691", "prod": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod_tag": "v1.2.0", "staging": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "updated": {"dev": "2026-11-17 11:09 UTC", "prod": "2026-11-13 00:45 UTC", "staging": "2026-11-13 00:28 UTC"}} -->
+<!-- release-journal-state {"dev": "4a6a21a96a8b9181cbd12cab35f19b86aff83dbd", "prod": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod_tag": "v1.2.0", "staging": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "updated": {"dev": "2026-11-17 11:54 UTC", "prod": "2026-11-13 00:45 UTC", "staging": "2026-11-13 00:28 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v1.2.0 | `a454ccc` | 2026-11-13 00:45 UTC |
 | staging | — | `a454ccc` | 2026-11-13 00:28 UTC |
-| dev | — | `20f6611` | 2026-11-17 11:09 UTC |
+| dev | — | `4a6a21a` | 2026-11-17 11:54 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v1.2.0)
 
+- chore(deps): pin actions/checkout action to 3d3c42e (#234) ([#234](https://github.com/mairie360/BFF_Elearning/pull/234))
 - ci: MAIR-1008 Nightly rehearsal of the promotion gates (#230) ([#230](https://github.com/mairie360/BFF_Elearning/pull/230))
 - test: MAIR-248 Translate the BFFs' messages and the ansible documentation into English (#231) ([#231](https://github.com/mairie360/BFF_Elearning/pull/231))
 - fix: MAIR-248 Translate the BFFs' messages and the ansible documentation into English (#228) ([#228](https://github.com/mairie360/BFF_Elearning/pull/228))
@@ -20,6 +21,7 @@
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
+- chore(deps): pin actions/checkout action to 3d3c42e (#234) ([#234](https://github.com/mairie360/BFF_Elearning/pull/234))
 - ci: MAIR-1008 Nightly rehearsal of the promotion gates (#230) ([#230](https://github.com/mairie360/BFF_Elearning/pull/230))
 - test: MAIR-248 Translate the BFFs' messages and the ansible documentation into English (#231) ([#231](https://github.com/mairie360/BFF_Elearning/pull/231))
 - fix: MAIR-248 Translate the BFFs' messages and the ansible documentation into English (#228) ([#228](https://github.com/mairie360/BFF_Elearning/pull/228))
@@ -38,6 +40,7 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-17 11:54 UTC | dev | — | `4a6a21a` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/44076395859) |
 | 2026-11-17 11:09 UTC | dev | — | `20f6611` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/44069377441) |
 | 2026-11-16 17:58 UTC | dev | — | `f04f338` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43922994454) |
 | 2026-11-16 17:25 UTC | dev | — | `83c075c` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/43916635213) |
