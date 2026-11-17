@@ -600,6 +600,21 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(missing.body).toEqual({ error: { code: 'NOT_FOUND', message: 'Course not found.', details: [{ path: 'params.courseId', message: 'No course 77.' }] } });
     });
 
+    test.each([
+      ['the E-learning API', 500],
+      ['the E-learning API', 503],
+    ])('MAIR-537 POST .../start maps a %s %i to a documented 502 without its body', async (_api, status) => {
+      elearningApi.on('get', ELEARNING.catalog, { status, raw: 'Database error formations', contentType: 'text/plain', outOfContract: true });
+
+      const response = await withSession(request(app).post('/elearning/courses/4/start'), 'start-agent');
+
+      expect(response.status).toBe(502);
+      expectBffContract('post', '/elearning/courses/{courseId}/start', response);
+      expect(response.body.error.code).toBe('BAD_GATEWAY');
+      expect(JSON.stringify(response.body)).not.toContain('Database error');
+      expect(elearningApi.requests.every((call) => call.method === 'GET')).toBe(true);
+    });
+
     test('POST .../rating answers 501 instead of keeping the rating in memory, and validates first', async () => {
       captureLogs();
       const rated = await withSession(request(app).post('/elearning/courses/4/rating'), 'rating-agent').send({ rating: 5 });
@@ -789,6 +804,17 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
         expectBffContract(method, template, response);
         expect(response.body).toEqual({ error: { code: 'FORBIDDEN', message: 'This action is restricted to administrators.', details: [] } });
       }
+    });
+
+    test('MAIR-537 forbids a non-administrator on PATCH /elearning/admin/courses/:id', async () => {
+      coreApi.on('get', CORE.me, { body: coreMe({ role: 'Administrateur', roles: ['Administrateur'] }, [group(1, 'admin')]) });
+
+      const response = await withSession(request(app).patch('/elearning/admin/courses/4'), 'fake-admin').send(course);
+
+      expect(response.status).toBe(403);
+      expectBffContract('patch', '/elearning/admin/courses/{courseId}', response);
+      expect(response.body).toEqual({ error: { code: 'FORBIDDEN', message: 'This action is restricted to administrators.', details: [] } });
+      expect(elearningApi.requests).toHaveLength(0);
     });
 
     test('validates the request before resolving the session', async () => {
