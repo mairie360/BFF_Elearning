@@ -85,6 +85,8 @@ describe('MAIR-682 graceful shutdown of the BFF', () => {
     } finally {
       shutdown.dispose();
       process.env = saved;
+      // An assertion failed before the drain: the server must not keep Jest running.
+      if (server.listening) await new Promise<void>((resolve) => { server.close(() => resolve()); });
     }
     expect(process.listenerCount('SIGTERM')).toBe(before);
   });

@@ -200,4 +200,4 @@ for that commit. `cicd.yml`, `promote-staging.yml` and `promote-prod.yml` pin th
 
 ## Shutdown
 
-`src/index.ts` wraps the server in the bffs-lib `gracefulShutdown`. On SIGTERM it drains the running requests, ends the SSE streams, flushes the telemetry and exits 0; after 10 s it exits 1. The image runs `tini` as PID 1 (`ENTRYPOINT`) so the signal reaches Node. The pod's `preStop` (5 s) and grace period (30 s) live in `Devops/Deploiment`. `tests/mair-682-graceful-shutdown.test.ts` starts the real entry point and sends it SIGTERM.
+`src/index.ts` wraps the server in the bffs-lib `gracefulShutdown`. On SIGTERM it drains the running requests, ends the SSE streams, flushes the telemetry and exits 0. If the drain is not over after 10 s, the remaining connections are closed and it exits 1; the telemetry flush adds at most 5 s, so the process is gone within about 15 s, under the 30 s grace period. The image runs `tini` as PID 1 (`ENTRYPOINT`) so the signal reaches Node. The pod's `preStop` (5 s) and grace period (30 s) live in `Devops/Deploiment`. `tests/mair-682-graceful-shutdown.test.ts` starts the real entry point and sends it SIGTERM.
