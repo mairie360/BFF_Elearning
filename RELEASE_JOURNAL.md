@@ -1,16 +1,17 @@
 # Journal des releases — BFF_Elearning
 
-<!-- release-journal-state {"dev": "53288b10b5164d27c92dbe18fca1afafb8443425", "prod": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod_tag": "v1.2.0", "staging": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "updated": {"dev": "2026-11-18 00:25 UTC", "prod": "2026-11-13 00:45 UTC", "staging": "2026-11-13 00:28 UTC"}} -->
+<!-- release-journal-state {"dev": "4dd5736962025d5291174d1868abb43e6b1326a6", "prod": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "prod_tag": "v1.2.0", "staging": "a454cccc8d07fc8c2f31e963580f6c3e88aa5c55", "updated": {"dev": "2026-11-18 01:47 UTC", "prod": "2026-11-13 00:45 UTC", "staging": "2026-11-13 00:28 UTC"}} -->
 > Tenu à jour par la CI (`mairie360/CICD`, action `release/release-journal`) à chaque passage en dev, staging et prod. Ne pas modifier à la main : le fichier est réécrit au passage suivant.
 
 | Environnement | Version | Commit | Mis à jour |
 | --- | --- | --- | --- |
 | prod | v1.2.0 | `a454ccc` | 2026-11-13 00:45 UTC |
 | staging | — | `a454ccc` | 2026-11-13 00:28 UTC |
-| dev | — | `53288b1` | 2026-11-18 00:25 UTC |
+| dev | — | `4dd5736` | 2026-11-18 01:47 UTC |
 
 ## Ajouté sur main depuis la dernière release prod (v1.2.0)
 
+- fix: MAIR-682 [Audit 23/10] All BFFs: graceful shutdown on SIGTERM (B7) (#242) ([#242](https://github.com/mairie360/BFF_Elearning/pull/242))
 - fix!: MAIR-684 [Audit 23/10] BFF_Elearning: profile e-mail change fails with 502 (B10) (#240) ([#240](https://github.com/mairie360/BFF_Elearning/pull/240))
 - test: MAIR-537 Test upstream error mapping on every write route of the BFFs ([#238](https://github.com/mairie360/BFF_Elearning/pull/238))
 - test: MAIR-538 Add cross-cutting timeout, 413 and token-refusal tests to the BFFs and the template ([#236](https://github.com/mairie360/BFF_Elearning/pull/236))
@@ -25,6 +26,7 @@
 
 ## Différence dev → staging (en dev, pas encore en staging)
 
+- fix: MAIR-682 [Audit 23/10] All BFFs: graceful shutdown on SIGTERM (B7) (#242) ([#242](https://github.com/mairie360/BFF_Elearning/pull/242))
 - fix!: MAIR-684 [Audit 23/10] BFF_Elearning: profile e-mail change fails with 502 (B10) (#240) ([#240](https://github.com/mairie360/BFF_Elearning/pull/240))
 - test: MAIR-537 Test upstream error mapping on every write route of the BFFs ([#238](https://github.com/mairie360/BFF_Elearning/pull/238))
 - test: MAIR-538 Add cross-cutting timeout, 413 and token-refusal tests to the BFFs and the template ([#236](https://github.com/mairie360/BFF_Elearning/pull/236))
@@ -48,6 +50,7 @@ _Rien._
 <!-- release-journal-history:start -->
 | Date | Environnement | Version | Commit | Run |
 | --- | --- | --- | --- | --- |
+| 2026-11-18 01:47 UTC | dev | — | `4dd5736` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/44217882657) |
 | 2026-11-18 00:25 UTC | dev | — | `53288b1` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/44207246497) |
 | 2026-11-17 17:08 UTC | dev | — | `4c87f14` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/44131572887) |
 | 2026-11-17 17:06 UTC | dev | — | `5d63e0d` | [run](https://github.com/mairie360/BFF_Elearning/actions/runs/44131584263) |
