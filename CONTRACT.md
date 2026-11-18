@@ -27,4 +27,4 @@ Le générateur de types est fixé à `openapi-typescript@7.10.1`. Il est exécu
 
 ## Persistance
 
-Le BFF ne stocke rien en mémoire : formations, inscriptions et progression viennent de l’API E-learning, l’identité et les rôles de Core API (jamais d’un autre BFF, MAIR-525) et les modifications d’e-mail et de téléphone sont écrites dans Core API. Les identifiants (`courseId`, `contentId`, `chapterId`) sont ceux de l’API E-learning, en chaînes numériques. Les fonctions sans stockage amont (notation, adresse et ville, administration des formations) répondent 501.
+Le BFF ne stocke rien en mémoire : formations, inscriptions et progression viennent de l’API E-learning, l’identité et les rôles de Core API (jamais d’un autre BFF, MAIR-525) et le profil y est en lecture seule (il se modifie dans Paramètres). Les identifiants (`courseId`, `contentId`, `chapterId`) sont ceux de l’API E-learning, en chaînes numériques. Les fonctions sans stockage amont (notation, administration des formations) répondent 501.

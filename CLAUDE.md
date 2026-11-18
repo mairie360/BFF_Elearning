@@ -75,7 +75,7 @@ The in-memory mock (hard-coded catalogue, per-user Maps, admin CRUD on an array)
 - `POST .../complete`: `getModule` (checks the content belongs to the chapter) then `completeModule`, then the course is read again. Progress is per module upstream, so one content completes its whole chapter; `completed: false` → 501.
 - E-learning errors: 401 → 401, 403 (not enrolled) / 404 → 404 on course routes, anything else → 502; text/plain bodies are never relayed (relayed statuses carry the lib's generic message). GETs are retried once on a transient failure, `completeModule` (PATCH) never.
 - `/elearning/profile` is read-only: a user edits their own profile in Settings (BFF_Settings → Core API), so a `PATCH` falls through to the 404 of `notFoundHandler` and Core's `patchMe` is never called.
-- **501 (no upstream operation):** ratings, admin course create/update/delete (after validation + admin check), un-completing a chapter, address/city. `bffs-lib` has no `NOT_IMPLEMENTED` code, so the body code is `INTERNAL_ERROR` with an explicit message.
+- **501 (no upstream operation):** ratings, admin course create/update/delete (after validation + admin check), un-completing a chapter. `bffs-lib` has no `NOT_IMPLEMENTED` code, so the body code is `INTERNAL_ERROR` with an explicit message.
 - `getMyFormations` is typed by the published package as `AdminFormation` (upstream schema-name clash), but the API also returns `status`; `toCourse` reads it when present.
 
 `/check_apis` is only a connectivity diagnostic (lib `checkApis`: probes the `/health` operation of Core API and E-learning API independently with `withoutSession(...)`, keys `core_api` / `elearning_api`, schema `CheckApisResponse`; 502 with the per-upstream status if one fails or is not configured, never the network error); `/health` just reports the BFF process is up.
@@ -172,7 +172,7 @@ k6 mounts `coverage.js` and `contracts/openapi.json`: `load-test.js` has **one h
 operation**, and a new route without a handler makes k6 abort at init. Two scenarios: `crud` (2 VUs)
 runs every handler through `coverage.run()` and carries the gate; `reads` (ramp to 20 VUs) replays
 the GET handlers only, so GET handlers must not read `state`. Routes answering 501 (ratings, admin
-courses, address/city) declare it as an expected status (`http.expectedStatuses(501)`), so they do not
+courses) declare it as an expected status (`http.expectedStatuses(501)`), so they do not
 count in `http_req_failed`. The learner handlers use formation `4` / module `11` / attachment `27`, seeded
 by `init-test.sql` with users 1 and 2 enrolled. Every operation gets a `p(95)` threshold from its family
 (`budgetOf`).

@@ -15,7 +15,7 @@ import { createCoverage } from '/coverage.js';
 // - `crud` (2 VUs): `coverage.run()` calls every handler once per iteration, reads and writes, so
 //   it carries the coverage gate. Handlers run path by path in contract order and, for one path,
 //   in the order get, put, post, delete, options, head, patch, trace (so DELETE runs before PATCH).
-//   Ratings, course administration and address edits have no upstream storage yet: they answer 501,
+//   Ratings and course administration have no upstream storage yet: they answer 501,
 //   declared as the expected status of their request (`NOT_IMPLEMENTED`).
 // - `reads`: replays only the GET handlers, as random learners of init-perf.sql.
 // - `catalog_rush`: `GET /elearning/catalog` at a fixed arrival rate, failing on any dropped iteration.

@@ -15,7 +15,7 @@ Domaine fonctionnel: Formation en ligne.
 - Catalogue des formations auxquelles l’utilisateur est inscrit, avec filtres, informations de formation et progression lues dans l’API E-learning.
 - Démarrage ou reprise d’une formation et validation de ses contenus (progression enregistrée par chapitre par l’API E-learning).
 - Consultation du profil d’apprentissage (lecture seule : un utilisateur modifie son profil dans Paramètres).
-- Pas encore disponible (réponse 501) : notation des formations, modification de l’adresse et de la ville, création, modification et suppression de formations par un administrateur. Aucun service amont ne les stocke et le BFF ne simule pas leur enregistrement.
+- Pas encore disponible (réponse 501) : notation des formations, création, modification et suppression de formations par un administrateur. Aucun service amont ne les stocke et le BFF ne simule pas leur enregistrement.
 
 ## Parcours type
 
@@ -35,7 +35,7 @@ Le BFF ne conserve aucun état. Formations, chapitres (modules), contenus (pièc
 
 ## Périmètre et limites
 
-Seules les formations auxquelles l’utilisateur est inscrit sont listées, et l’inscription est faite par un administrateur dans l’API E-learning. La progression est suivie par chapitre, pas par contenu. Notation, adresse/ville et administration des formations répondent 501 tant qu’aucun service amont ne les prend en charge.
+Seules les formations auxquelles l’utilisateur est inscrit sont listées, et l’inscription est faite par un administrateur dans l’API E-learning. La progression est suivie par chapitre, pas par contenu. La notation et l’administration des formations répondent 501 tant qu’aucun service amont ne les prend en charge.
 
 ## Pour développer ou exploiter ce module
 

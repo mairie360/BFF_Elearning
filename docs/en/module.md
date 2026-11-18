@@ -15,7 +15,7 @@ Business domain: E-learning.
 - Catalogue of the courses the user is enrolled in, with filters, course details and progress read from the E-learning API.
 - Start or resume a course and complete its content (progress is saved per chapter by the E-learning API).
 - Read the learning profile (read-only: a user edits their own profile in Settings).
-- Not available yet (answer 501): course ratings, address and city edits, administrator course creation, editing and deletion. No upstream service stores them, and the BFF does not fake their persistence.
+- Not available yet (answer 501): course ratings, administrator course creation, editing and deletion. No upstream service stores them, and the BFF does not fake their persistence.
 
 ## Typical workflow
 
@@ -35,7 +35,7 @@ The BFF keeps no state. Courses (formations), chapters (modules), contents (atta
 
 ## Scope and limitations
 
-Only enrolled courses are listed, and enrolment is done by an administrator in the E-learning API. Progress is tracked per chapter, not per content. Ratings, address/city and course administration answer 501 until an upstream service supports them.
+Only enrolled courses are listed, and enrolment is done by an administrator in the E-learning API. Progress is tracked per chapter, not per content. Ratings and course administration answer 501 until an upstream service supports them.
 
 ## Developing or operating this module
 
