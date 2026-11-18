@@ -1762,10 +1762,54 @@
       "description": "The agent rates the completed course: ratings are not stored upstream yet (501)."
     },
     {
-      "name": "Profile update",
+      "name": "Profile is read-only (MAIR-684)",
+      "description": "A user edits their own profile in Settings only: this BFF reads the profile and refuses any edit, so Core API is never asked to change it.",
       "item": [
         {
-          "name": "Update the phone number",
+          "name": "MAIR-684 Read the agent profile before the edit attempts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "profile"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The profile carries the e-mail and the phone\", function () {",
+                  "    const user = pm.response.json().user;",
+                  "    pm.expect(user.email).to.be.a('string');",
+                  "    pm.collectionVariables.set('profile_email', user.email);",
+                  "    pm.collectionVariables.set('profile_phone', user.phone === undefined ? '' : user.phone);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "MAIR-684 A phone change is not served here",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1798,107 +1842,8 @@
                   "language": "json"
                 }
               }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test(\"Answer is not cacheable\", function () {",
-                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
-                  "});",
-                  "pm.test(\"The profile is read again from Core API with the new phone\", function () {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.user.id).to.eql(pm.environment.get('agent_user_id'));",
-                  "    pm.expect(body.user.email).to.eql('perf-tester@mairie360.fr');",
-                  "    pm.expect(String(body.user.phone)).to.match(/612345678$/);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "response": []
-        },
-        {
-          "name": "The new phone is on the profile",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_agent}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/elearning/profile",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "elearning",
-                "profile"
-              ]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "pm.test(\"Phone was saved\", function () {",
-                  "    pm.expect(String(pm.response.json().user.phone)).to.match(/612345678$/);",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "response": []
-        },
-        {
-          "name": "An empty update changes nothing",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_agent}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/elearning/profile",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "elearning",
-                "profile"
-              ]
             },
-            "body": {
-              "mode": "raw",
-              "raw": "{}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Profile edits go through Settings (BFF_Settings → Core API), never through this BFF."
           },
           "event": [
             {
@@ -1906,11 +1851,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
                   "});",
-                  "pm.test(\"The profile is returned as is\", function () {",
-                  "    pm.expect(pm.response.json().user.email).to.eql('perf-tester@mairie360.fr');",
+                  "pm.test(\"Body is the NOT_FOUND error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.eql({ error: { code: 'NOT_FOUND', message: 'Route not found', details: [] } });",
                   "});"
                 ]
               }
@@ -1919,7 +1865,7 @@
           "response": []
         },
         {
-          "name": "An e-mail change without the current password is refused by Core API",
+          "name": "MAIR-684 An e-mail change is not served here",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1953,7 +1899,7 @@
                 }
               }
             },
-            "description": "Core API (MAIR-390) requires current_password to change an e-mail; this route does not take it, so the change is refused."
+            "description": "Used to reach Core without the current password and end in a 502."
           },
           "event": [
             {
@@ -1961,14 +1907,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status is 400\", function () {",
-                  "    pm.response.to.have.status(400);",
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
                   "});",
-                  "pm.test(\"Body is the error envelope\", function () {",
+                  "pm.test(\"Body is the NOT_FOUND error envelope\", function () {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.error, 'error').to.be.an('object');",
-                  "    pm.expect(body.error.code).to.be.a('string');",
-                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "    pm.expect(body).to.eql({ error: { code: 'NOT_FOUND', message: 'Route not found', details: [] } });",
                   "});"
                 ]
               }
@@ -1977,64 +1921,7 @@
           "response": []
         },
         {
-          "name": "Address and city are not stored by any service",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_agent}}",
-                "type": "text"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/elearning/profile",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "elearning",
-                "profile"
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"address\": \"1 place de la Mairie\",\n  \"city\": \"Paris\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test(\"Status is 501\", function () {",
-                  "    pm.response.to.have.status(501);",
-                  "});",
-                  "pm.test(\"Body is the error envelope\", function () {",
-                  "    const body = pm.response.json();",
-                  "    pm.expect(body.error, 'error').to.be.an('object');",
-                  "    pm.expect(body.error.code).to.be.a('string');",
-                  "    pm.expect(body.error.message).to.be.a('string');",
-                  "});"
-                ]
-              }
-            }
-          ],
-          "response": []
-        },
-        {
-          "name": "The e-mail was not changed",
+          "name": "MAIR-684 The profile is unchanged",
           "request": {
             "method": "GET",
             "header": [
@@ -2064,8 +1951,10 @@
                   "pm.test(\"Status is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"The agent keeps its e-mail\", function () {",
-                  "    pm.expect(pm.response.json().user.email).to.eql('perf-tester@mairie360.fr');",
+                  "pm.test(\"The e-mail and the phone are the ones read before\", function () {",
+                  "    const user = pm.response.json().user;",
+                  "    pm.expect(user.email).to.eql(pm.collectionVariables.get('profile_email'));",
+                  "    pm.expect(user.phone === undefined ? '' : user.phone).to.eql(pm.collectionVariables.get('profile_phone'));",
                   "});"
                 ]
               }
@@ -2073,8 +1962,7 @@
           ],
           "response": []
         }
-      ],
-      "description": "The agent edits the fields Core API stores; address and city are not stored anywhere."
+      ]
     }
   ]
 }

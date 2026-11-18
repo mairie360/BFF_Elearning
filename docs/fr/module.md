@@ -14,8 +14,8 @@ Domaine fonctionnel: Formation en ligne.
 
 - Catalogue des formations auxquelles l’utilisateur est inscrit, avec filtres, informations de formation et progression lues dans l’API E-learning.
 - Démarrage ou reprise d’une formation et validation de ses contenus (progression enregistrée par chapitre par l’API E-learning).
-- Consultation du profil d’apprentissage et modification de l’e-mail et du téléphone (enregistrés par Core API).
-- Pas encore disponible (réponse 501) : notation des formations, modification de l’adresse et de la ville, création, modification et suppression de formations par un administrateur. Aucun service amont ne les stocke et le BFF ne simule pas leur enregistrement.
+- Consultation du profil d’apprentissage (lecture seule : un utilisateur modifie son profil dans Paramètres).
+- Pas encore disponible (réponse 501) : notation des formations, création, modification et suppression de formations par un administrateur. Aucun service amont ne les stocke et le BFF ne simule pas leur enregistrement.
 
 ## Parcours type
 
@@ -31,11 +31,11 @@ Ce dépôt contient le serveur BFF et son contrat. Les web services associés po
 
 ## Données et état actuel
 
-Le BFF ne conserve aucun état. Formations, chapitres (modules), contenus (pièces jointes), inscriptions et progression viennent de l’API E-learning ; l’identité et les rôles de Core API (jamais d’un autre BFF) ; les modifications de profil sont écrites dans Core API.
+Le BFF ne conserve aucun état. Formations, chapitres (modules), contenus (pièces jointes), inscriptions et progression viennent de l’API E-learning ; l’identité et les rôles de Core API (jamais d’un autre BFF). Il n’écrit aucun profil : un utilisateur modifie son profil dans Paramètres.
 
 ## Périmètre et limites
 
-Seules les formations auxquelles l’utilisateur est inscrit sont listées, et l’inscription est faite par un administrateur dans l’API E-learning. La progression est suivie par chapitre, pas par contenu. Notation, adresse/ville et administration des formations répondent 501 tant qu’aucun service amont ne les prend en charge.
+Seules les formations auxquelles l’utilisateur est inscrit sont listées, et l’inscription est faite par un administrateur dans l’API E-learning. La progression est suivie par chapitre, pas par contenu. La notation et l’administration des formations répondent 501 tant qu’aucun service amont ne les prend en charge.
 
 ## Pour développer ou exploiter ce module
 

@@ -19,7 +19,8 @@ const contract = JSON.parse(readFileSync(join(__dirname, '..', 'contracts', 'ope
 };
 
 // Routes the collection calls on the BFF that are not operations of the contract (served by the app anyway).
-const OUTSIDE_CONTRACT = ['GET /openapi.json', 'GET /newman/unknown-route'];
+// `PATCH /elearning/profile` is called to check that it answers 404: profile edits belong to Settings.
+const OUTSIDE_CONTRACT = ['GET /openapi.json', 'GET /newman/unknown-route', 'PATCH /elearning/profile'];
 
 type Flat = { name: string; folder: string; request: Request; tests: string[] };
 

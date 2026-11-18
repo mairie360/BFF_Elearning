@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import request from 'supertest';
 import app from '../src/app';
@@ -10,7 +11,7 @@ import {
 import { captureLogs } from './support/logs';
 
 // The whole app is tested with the real axios clients against real HTTP servers standing in for Core API (profile and
-// roles, profile writes, /check_apis) and E-learning API (courses, progress, /check_apis). No other BFF is called
+// roles, /check_apis) and E-learning API (courses, progress, /check_apis). No other BFF is called
 // (MAIR-525). Their
 // contracts are rebuilt from the installed @mairie360/*-openapi packages (versions pinned in package.json): each mock
 // rejects routes and parameters absent from the upstream contract and validates its success answers. Errors are not
@@ -237,7 +238,6 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     const SESSION_ROUTES = [
       ['get', '/elearning/catalog', '/elearning/catalog', undefined],
       ['get', '/elearning/profile', '/elearning/profile', undefined],
-      ['patch', '/elearning/profile', '/elearning/profile', { email: 'new@mairie.test' }],
       ['post', '/elearning/courses/4/start', '/elearning/courses/{courseId}/start', {}],
       ['post', '/elearning/courses/4/contents/27/complete', '/elearning/courses/{courseId}/contents/{contentId}/complete', { chapterId: '11', completed: true }],
       ['post', '/elearning/courses/4/rating', '/elearning/courses/{courseId}/rating', { rating: 5 }],
@@ -645,71 +645,37 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(coreApi.calls(CORE.me, 'patch')).toHaveLength(0);
     });
 
-    test('PATCH /elearning/profile saves e-mail and phone through Core, then reads the profile again', async () => {
-      let saved = false;
-      coreApi.on('get', CORE.me, () => ({ body: coreMe(saved ? { email: 'new@mairie.test', phone: '0262000000' } : {}) }));
-      coreApi.on('patch', CORE.me, () => { saved = true; return {}; });
-
-      const response = await withSession(request(app).patch('/elearning/profile'), 2)
-        .send({ email: 'new@mairie.test', phone: '0262000000', role: 'Admin', isAdmin: true });
-
-      expect(response.status).toBe(200);
-      expectBffContract('patch', '/elearning/profile', response);
-      expect(response.body.user).toMatchObject({ id: '2', email: 'new@mairie.test', phone: '0262000000', role: 'User', isAdmin: false });
-      const [patch] = coreApi.calls(CORE.me, 'patch');
-      expect(patch.url.pathname).toBe(coreApiUrls.getPatchMeUrl());
-      expect(patch.headers.authorization).toBe(bearer(2));
-      expect(patch.body).toEqual({ email: 'new@mairie.test', phone: '0262000000' });
-      expect(coreApi.calls(CORE.me, 'get')).toHaveLength(2);
-    });
-
-    test('PATCH /elearning/profile answers 501 for address or city and writes nothing', async () => {
-      captureLogs();
+    // A user edits their own profile in Settings only. This BFF used to relay e-mail and phone changes to
+    // Core without the current password, which Core refuses with a 403 the route did not declare: the agent got a 502.
+    test('MAIR-684 PATCH /elearning/profile is not served and never reaches Core', async () => {
       coreApi.on('get', CORE.me, { body: coreMe() });
 
-      const response = await withSession(request(app).patch('/elearning/profile'), 2)
-        .send({ phone: '0262000000', city: 'Saint-Paul' });
+      const response = await withSession(request(app).patch('/elearning/profile'), 2).send({ email: 'new@mairie.test', phone: '+33612345678' });
 
-      expect(response.status).toBe(501);
-      expectBffContract('patch', '/elearning/profile', response);
-      expect(response.body.error.message).toBe('Address and city are not stored by any service yet: nothing was saved.');
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: { code: 'NOT_FOUND', message: 'Route not found', details: [] } });
       expect(coreApi.calls(CORE.me, 'patch')).toHaveLength(0);
 
       const reloaded = await withSession(request(app).get('/elearning/profile'), 2);
-      expect(reloaded.body.user.city).toBeUndefined();
+      expect(reloaded.status).toBe(200);
+      expect(reloaded.body.user).toMatchObject({ email: 'alice.martin@mairie.test', phone: '+33123456789' });
     });
 
-    test('PATCH /elearning/profile with nothing to save does not call Core', async () => {
-      coreApi.on('get', CORE.me, { body: coreMe() });
+    test('MAIR-684 the contract declares the profile as read-only', () => {
+      const contract = JSON.parse(readFileSync(path.join(__dirname, '..', 'contracts', 'openapi.json'), 'utf8')) as {
+        paths: Record<string, Record<string, unknown>>;
+        components: { schemas: Record<string, unknown> };
+      };
 
-      const response = await withSession(request(app).patch('/elearning/profile'), 2).send({});
-
-      expect(response.status).toBe(200);
-      expectBffContract('patch', '/elearning/profile', response);
-      expect(coreApi.calls(CORE.me, 'patch')).toHaveLength(0);
-    });
-
-    test.each([
-      [400, 400, 'BAD_REQUEST', 'The core service refused the profile values.'],
-      [401, 401, 'UNAUTHORIZED', 'Authentication required'],
-      [409, 409, 'CONFLICT', 'This e-mail address is already used by another account.'],
-      [500, 502, 'BAD_GATEWAY', 'Upstream service error'],
-      [422, 502, 'BAD_GATEWAY', 'Upstream service error'],
-    ])('PATCH /elearning/profile maps a Core %i to %i without its body', async (coreStatus, status, code, message) => {
-      coreApi.on('get', CORE.me, { body: coreMe() });
-      coreApi.on('patch', CORE.me, { status: coreStatus, raw: 'core internal detail', contentType: 'text/plain', outOfContract: true });
-
-      const response = await withSession(request(app).patch('/elearning/profile'), 2).send({ email: 'taken@mairie.test' });
-
-      expect(response.status).toBe(status);
-      expectBffContract('patch', '/elearning/profile', response);
-      expect(response.body).toEqual({ error: { code, message, details: [] } });
+      expect(Object.keys(contract.paths['/elearning/profile'])).toEqual(['get']);
+      expect(contract.components.schemas).not.toHaveProperty('UpdateProfileBody');
+      expect(contract.components.schemas).not.toHaveProperty('ProfileUpdateResponse');
     });
 
     // MAIR-290: the cause of an upstream 502 is the axios error, which holds the caller's Bearer token and the
-    // request and response bodies. Whatever the BFF writes (JSON log lines on stdout, stderr, console) about the
-    // failure describes it by its type and status, never by these values.
-    test('MAIR-290 logs an upstream failure without the token, the profile values or the upstream body', async () => {
+    // response body. Whatever the BFF writes (JSON log lines on stdout, stderr, console) about the failure describes
+    // it by its type and status, never by these values.
+    test('MAIR-290 logs an upstream failure without the token or the upstream body', async () => {
       const stdout = captureLogs();
       const stderr: string[] = [];
       jest.spyOn(process.stderr, 'write').mockImplementation(((chunk: string | Uint8Array) => {
@@ -722,33 +688,17 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
         });
       }
       const authorization = bearer(2);
-      const email = 'jeanne.marker290@example.org';
-      const phone = '0612345678';
-      coreApi.on('get', CORE.me, { body: coreMe() });
-      coreApi.on('patch', CORE.me, { status: 500, raw: 'Update failed for Jeanne Marker-290', contentType: 'text/plain', outOfContract: true });
+      coreApi.on('get', CORE.me, { status: 500, raw: 'Lookup failed for Jeanne Marker-290', contentType: 'text/plain', outOfContract: true });
 
-      const response = await request(app).patch('/elearning/profile').set('Authorization', authorization).send({ email, phone });
+      const response = await request(app).get('/elearning/profile').set('Authorization', authorization);
 
       expect(response.status).toBe(502);
-      expectBffContract('patch', '/elearning/profile', response);
+      expectBffContract('get', '/elearning/profile', response);
       const written = [...stdout.map((line) => JSON.stringify(line)), ...stderr].join('\n');
       expect(written).toContain('502');
-      for (const value of [authorization.replace(/^Bearer /, ''), email, phone, 'Marker-290']) {
+      for (const value of [authorization.replace(/^Bearer /, ''), 'Marker-290']) {
         expect(written).not.toContain(value);
       }
-    });
-
-    test('PATCH /elearning/profile answers 503 when CORE_API_URL is not configured, and writes nothing', async () => {
-      captureLogs();
-      coreApi.on('get', CORE.me, { body: coreMe() });
-      delete process.env.CORE_API_URL;
-
-      const response = await withSession(request(app).patch('/elearning/profile'), 2).send({ email: 'new@mairie.test' });
-
-      expect(response.status).toBe(503);
-      expectBffContract('patch', '/elearning/profile', response);
-      expect(response.body.error).toEqual({ code: 'SERVICE_UNAVAILABLE', message: 'The CORE_API service is not configured.', details: [] });
-      expect(coreApi.requests).toHaveLength(0);
     });
 
     test('hides unexpected errors behind a generic 500', async () => {

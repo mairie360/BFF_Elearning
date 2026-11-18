@@ -15,11 +15,10 @@ const PACKAGES = [
 const coreApi = loadOrvalContract('@mairie360/core-api-openapi');
 const elearningApi = loadOrvalContract('@mairie360/elearning-api-openapi');
 
-// Upstream operations the BFF actually calls (src/routes/Elearning/auth.ts, elearning_upstream.ts, profile.ts,
+// Upstream operations the BFF actually calls (src/routes/Elearning/auth.ts, elearning_upstream.ts,
 // src/routes/check_apis.ts), addressed through the URL helpers of the generated clients.
 const CONSUMED = [
   { contract: coreApi, operationId: 'getMe', method: 'get', url: coreApiUrls.getGetMeUrl() },
-  { contract: coreApi, operationId: 'patchMe', method: 'patch', url: coreApiUrls.getPatchMeUrl() },
   { contract: coreApi, operationId: 'health', method: 'get', url: coreApiUrls.getHealthUrl() },
   { contract: elearningApi, operationId: 'getMyFormations', method: 'get', url: elearningApiUrls.getGetMyFormationsUrl() },
   { contract: elearningApi, operationId: 'getMyFormationById', method: 'get', url: elearningApiUrls.getGetMyFormationByIdUrl(4) },
