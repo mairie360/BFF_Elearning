@@ -744,7 +744,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('forbids non-administrators', async () => {
-      coreApi.on('get', CORE.me, { body: coreMe({ role: 'Administrateur', roles: ['Administrateur'] }, [group(1, 'admin')]) });
+      coreApi.on('get', CORE.me, { body: coreMe({ role: 'Stagiaire', roles: ['Stagiaire'] }, [group(1, 'admin')]) });
 
       const created = await withSession(request(app).post('/elearning/admin/courses'), 'fake-admin').send(course);
       const removed = await withSession(request(app).delete('/elearning/admin/courses/4'), 'fake-admin');
@@ -757,7 +757,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('MAIR-537 forbids a non-administrator on PATCH /elearning/admin/courses/:id', async () => {
-      coreApi.on('get', CORE.me, { body: coreMe({ role: 'Administrateur', roles: ['Administrateur'] }, [group(1, 'admin')]) });
+      coreApi.on('get', CORE.me, { body: coreMe({ role: 'Stagiaire', roles: ['Stagiaire'] }, [group(1, 'admin')]) });
 
       const response = await withSession(request(app).patch('/elearning/admin/courses/4'), 'fake-admin').send(course);
 

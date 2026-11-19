@@ -469,6 +469,128 @@
           "response": []
         },
         {
+          "name": "MAIR-689 The role Administrateur is an administrator: the course creation passes the check",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_administrateur}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"newman-course-{{run_id}}\",\n  \"title\": \"Newman course {{run_id}}\",\n  \"description\": \"Course created by the integration tests\",\n  \"category\": \"Integration\",\n  \"duration\": \"1 h\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 501 (not available yet, past the admin check)\", function () {",
+                  "    pm.response.to.have.status(501);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});",
+                  "pm.test(\"Answer is not cacheable\", function () {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "MAIR-689 A custom role is refused on the course administration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_custom_role}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"newman-course-{{run_id}}\",\n  \"title\": \"Newman course {{run_id}}\",\n  \"description\": \"Course created by the integration tests\",\n  \"category\": \"Integration\",\n  \"duration\": \"1 h\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403 (restricted to administrators)\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});",
+                  "pm.test(\"Answer is not cacheable\", function () {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
           "name": "Course creation is not available upstream yet",
           "request": {
             "method": "POST",
