@@ -1,6 +1,6 @@
 import type { GetMeResponseView } from '@mairie360/core-api-openapi/model/getMeResponseView';
 import {
-  asCaller, HttpError, INVALID_SESSION_MESSAGE, sessionRole, sessionUserId, upstreamError, upstreamStatus, withRetry,
+  asCaller, HttpError, INVALID_SESSION_MESSAGE, isAdminRole, sessionRole, sessionUserId, upstreamError, upstreamStatus, withRetry,
 } from '@mairie360/bffs-lib';
 import type { Request } from 'express';
 import { coreClient } from '../../clients/coreClient';
@@ -31,8 +31,6 @@ function coreRoles(me: CoreMe): string[] {
   const roles = Array.isArray(me.roles) ? me.roles : [me.role];
   return roles.map(text).filter(Boolean);
 }
-
-const isAdminRole = (role: string) => role.toLowerCase() === 'admin';
 
 /** The Core profile mapped to the screens' user; `id` is the verified caller, never an id read from the answer. */
 function mapCurrentUser(me: CoreMe, id: number): BffCurrentUser {
