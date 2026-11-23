@@ -15,6 +15,8 @@ import ratingRouter from './routes/Elearning/rating';
 import startRouter from './routes/Elearning/start';
 import adminCoursesRouter from './routes/Elearning/admin_courses';
 import adminStatsRouter from './routes/Elearning/admin_stats';
+import adminLearnersRouter from './routes/Elearning/admin_learners';
+import adminAgentsRouter from './routes/Elearning/admin_agents';
 import certificateRouter from './routes/Elearning/certificate';
 import certificatesRouter from './routes/Elearning/certificates';
 import contentFileRouter from './routes/Elearning/content_file';
@@ -48,7 +50,8 @@ app.use('/elearning/profile', session, profileRouter);
 app.use('/elearning/courses', session, contentCompleteRouter, ratingRouter, startRouter, certificateRouter, contentFileRouter);
 app.use('/elearning/training-time', session, trainingTimeRouter);
 app.use('/elearning/certificates', session, certificatesRouter);
-app.use('/elearning/admin/courses', session, adminCoursesRouter);
+app.use('/elearning/admin/courses', session, adminCoursesRouter, adminLearnersRouter);
+app.use('/elearning/admin/agents', session, adminAgentsRouter);
 app.use('/elearning/admin/stats', session, adminStatsRouter);
 
 // Unknown routes and every error end in the shared envelope `{ error: { code, message, details } }`: the

@@ -1498,6 +1498,1047 @@
       "description": "An administrator creates a mandatory course, updates it, reminds its late agents, reads the indicators and deletes it; a plain user cannot. The seeded course is never edited."
     },
     {
+      "name": "Course enrolment (MAIR-817)",
+      "item": [
+        {
+          "name": "Create a course to enrol agents in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Newman enrolment course {{run_id}}\",\n  \"description\": \"Course the integration tests enrol the agent in\",\n  \"category\": \"Integration\",\n  \"level\": \"beginner\",\n  \"details\": {\n    \"title\": \"Newman enrolment course {{run_id}}\",\n    \"description\": \"Course the integration tests enrol the agent in\",\n    \"chapters\": [\n      {\n        \"id\": \"new-chapter\",\n        \"title\": \"Introduction\",\n        \"contents\": [\n          { \"id\": \"new-link\", \"title\": \"CNIL\", \"type\": \"link\", \"href\": \"https://www.cnil.fr/\", \"duration\": \"10 min\" }\n        ]\n      }\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"The course is created\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.id).to.match(/^[1-9][0-9]*$/);",
+                  "    pm.environment.set('enrol_course_id', body.id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "A plain user cannot list the agents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/agents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "agents"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "List the agents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/agents?limit=200&offset=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "agents"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "200"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The seeded agent is listed with their names\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.limit).to.eql(200);",
+                  "    pm.expect(body.offset).to.eql(0);",
+                  "    const agent = body.agents.find((a) => a.userId === pm.environment.get('agent_user_id'));",
+                  "    pm.expect(agent, 'agent').to.be.an('object');",
+                  "    pm.expect(agent.firstName).to.eql('Perf');",
+                  "    pm.expect(agent.lastName).to.eql('Tester');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Search the agents by name",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/agents?search=TESTER&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "agents"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "TESTER"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Only the matching agents are listed\", function () {",
+                  "    const agents = pm.response.json().agents;",
+                  "    pm.expect(agents.map((a) => a.userId)).to.include(pm.environment.get('agent_user_id'));",
+                  "    agents.forEach((a) => pm.expect(a.name.toLowerCase()).to.include('tester'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "An out-of-range page size is refused",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/agents?limit=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "agents"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});",
+                  "pm.test(\"The invalid field is named\", function () {",
+                  "    pm.expect(pm.response.json().error.details[0].path).to.eql('query.limit');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "A plain user cannot read the learners",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}/learners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}",
+                "learners"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The new course has no learner yet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}/learners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}",
+                "learners"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Nobody is enrolled\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.courseId).to.eql(pm.environment.get('enrol_course_id'));",
+                  "    pm.expect(body.learners).to.eql([]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The learners of an unknown course answer 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/999999/learners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "999999",
+                "learners"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "A plain user cannot enrol agents",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}/learners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}",
+                "learners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIds\": [\"{{agent_user_id}}\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "A non-numeric agent id is refused",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}/learners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}",
+                "learners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIds\": [\"alice\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});",
+                  "pm.test(\"The invalid id is named\", function () {",
+                  "    pm.expect(pm.response.json().error.details[0].path).to.eql('body.userIds.0');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Enrolling in an unknown course answers 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/999999/learners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "999999",
+                "learners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIds\": [\"{{agent_user_id}}\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Enrol the agent and an unknown account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}/learners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}",
+                "learners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIds\": [\"{{agent_user_id}}\", \"999999\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The agent is enrolled, the unknown account failed\", function () {",
+                  "    pm.expect(pm.response.json()).to.eql({",
+                  "        courseId: pm.environment.get('enrol_course_id'),",
+                  "        enrolled: [pm.environment.get('agent_user_id')],",
+                  "        alreadyEnrolled: [],",
+                  "        failed: ['999999'],",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Enrolling the agent again keeps the enrolment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}/learners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}",
+                "learners"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIds\": [\"{{agent_user_id}}\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The agent is reported enrolled already\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.alreadyEnrolled).to.eql([pm.environment.get('agent_user_id')]);",
+                  "    pm.expect(body.enrolled).to.eql([]);",
+                  "    pm.expect(body.failed).to.eql([]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The learners list the agent",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}/learners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}",
+                "learners"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The agent is a learner who has not started\", function () {",
+                  "    const learners = pm.response.json().learners;",
+                  "    pm.expect(learners.map((l) => l.userId)).to.eql([pm.environment.get('agent_user_id')]);",
+                  "    pm.expect(learners[0]).to.include({ firstName: 'Perf', lastName: 'Tester', status: 'not-started', progress: 0 });",
+                  "    pm.expect(learners[0].startedAt).to.eql(null);",
+                  "    pm.expect(learners[0].completedAt).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The agent finds the course in the catalogue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/catalog?search=enrolment%20course%20{{run_id}}&status=all&page=1&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "catalog"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "enrolment%20course%20{{run_id}}"
+                },
+                {
+                  "key": "status",
+                  "value": "all"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The enrolled course is in the catalogue of the agent\", function () {",
+                  "    const courses = pm.response.json().catalog.courses;",
+                  "    pm.expect(courses.map((c) => c.id)).to.include(pm.environment.get('enrol_course_id'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "A plain user cannot unenrol agents",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}/learners/{{agent_user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}",
+                "learners",
+                "{{agent_user_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Unenrol the agent",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}/learners/{{agent_user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}",
+                "learners",
+                "{{agent_user_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The unenrolment is confirmed\", function () {",
+                  "    pm.expect(pm.response.json()).to.eql({ removed: true, courseId: pm.environment.get('enrol_course_id'), userId: pm.environment.get('agent_user_id') });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Unenrolling the agent again answers 404",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}/learners/{{agent_user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}",
+                "learners",
+                "{{agent_user_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The course has no learner any more",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}/learners",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}",
+                "learners"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Nobody is enrolled\", function () {",
+                  "    pm.expect(pm.response.json().learners).to.eql([]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Delete the enrolment course",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{enrol_course_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{enrol_course_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The deletion is confirmed\", function () {",
+                  "    pm.expect(pm.response.json()).to.eql({ deleted: true, courseId: pm.environment.get('enrol_course_id') });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ],
+      "description": "Only an administrator enrols agents: the administrator creates a course of its own, picks the seeded agent among the agents, enrols it (an unknown account fails, a second enrolment is reported), reads the learners, unenrols it (404 the second time) and deletes the course; a plain user is refused every step."
+    },
+    {
       "name": "Enrolment: catalogue and start",
       "item": [
         {

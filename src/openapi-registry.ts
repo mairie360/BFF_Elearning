@@ -596,6 +596,103 @@ export const SendRemindersResponse = z
   })
   .openapi({ description: 'Reminders sent' });
 
+// =====================
+// ENROLMENT (MAIR-817): only an administrator enrols agents in a course
+// =====================
+
+// The enrolment writes name course 7 and agent 2 of init-test.sql, so the ZAP scan (which calls every operation on the
+// examples) enrols and unenrols the seeded agent on the scratch course, never on course 4.
+export const AdminLearnerParams = z.object({
+  courseId: NumericId('Course (E-learning API formation) identifier', '7'),
+  userId: NumericId('Core API id of the agent', '2'),
+});
+
+const agentIdentityShape = {
+  userId: z.string().openapi({ description: 'Core API id of the agent', example: '2' }),
+  name: z.string().openapi({ description: 'First and last name, as the e-learning service gives it', example: 'Alice Martin' }),
+  firstName: z.string().openapi({ description: 'Part of `name` before its first space', example: 'Alice' }),
+  lastName: z.string().openapi({ description: 'Part of `name` after its first space (empty without a space)', example: 'Martin' }),
+};
+
+export const AgentIdentity = z.object(agentIdentityShape).openapi({ description: 'An active (non-archived) agent of the instance' });
+
+export const AdminAgentsQuery = z.object({
+  search: z.string().trim().min(1).max(100).optional().openapi({
+    description: 'Part of the name of the agent, case and accents ignored. The e-learning service cannot search: the BFF filters at most 1000 agents (5 pages of 200) from `offset` per request and gives `nextOffset` to read on.',
+    example: 'martin',
+  }),
+  limit: z.coerce.number().int().min(1).max(200).default(50).openapi({ description: 'Agents to return, 1 to 200 (default 50)', example: 50 }),
+  offset: z.coerce.number().int().min(0).max(1_000_000).default(0).openapi({ description: 'Agents to skip, in id order (default 0): the `nextOffset` of the previous page', example: 0 }),
+});
+
+export const AdminAgentsResponse = z
+  .object({
+    agents: z.array(AgentIdentity).openapi({ description: 'Agents of the page, in id order' }),
+    limit: z.number().int().openapi({ example: 50 }),
+    offset: z.number().int().openapi({ example: 0 }),
+    nextOffset: z.number().int().nullable().openapi({ description: 'Offset of the next page, `null` after the last agent. The total is not known upstream.', example: 50 }),
+  })
+  .openapi({ description: 'One page of the agents an administrator can enrol' });
+
+export const CourseLearner = z.object({
+  ...agentIdentityShape,
+  status: CourseStatus,
+  progress: z.number().int().min(0).max(100).openapi({ description: 'Share of the chapters completed, percent', example: 50 }),
+  startedAt: z.string().nullable().openapi({ description: 'First chapter completed (RFC 3339), `null` before', example: '2026-03-02T09:15:00Z' }),
+  completedAt: z.string().nullable().openapi({ description: 'Course completed (RFC 3339), `null` before', example: null }),
+}).openapi({ description: 'An agent enrolled in the course, with their progress' });
+
+export const CourseLearnersQuery = z.object({
+  limit: z.coerce.number().int().min(1).max(50).default(50).openapi({ description: 'Agents examined, 1 to 50 (default 50): not the number of learners returned', example: 50 }),
+  offset: z.coerce.number().int().min(0).max(1_000_000).default(0).openapi({ description: 'Agents skipped, in id order (default 0): the `nextOffset` of the previous page', example: 0 }),
+});
+
+export const CourseLearnersResponse = z
+  .object({
+    courseId: z.string().openapi({ example: '4' }),
+    learners: z.array(CourseLearner).openapi({ description: 'The enrolled agents among the `limit` agents examined from `offset`, in id order' }),
+    limit: z.number().int().openapi({ example: 50 }),
+    offset: z.number().int().openapi({ example: 0 }),
+    nextOffset: z.number().int().nullable().openapi({ description: 'Offset to examine the next agents, `null` once every agent was examined', example: 50 }),
+  })
+  .openapi({
+    description: 'Learners of a course. The e-learning service has no list of the enrolled agents: the BFF examines one page of the active agents (`limit`, `offset`) and keeps those enrolled; read on with `nextOffset` until it is `null`.',
+  });
+
+export const EnrolLearnersBody = z
+  .object({
+    userIds: z.array(NumericId('Core API id of an agent', '2')).min(1).max(200).openapi({ description: '1 to 200 agents to enrol (duplicates are counted once)' }),
+  })
+  .openapi({ description: 'Agents to enrol in the course' });
+
+export const EnrolLearnersResponse = z
+  .object({
+    courseId: z.string().openapi({ example: '7' }),
+    enrolled: z.array(z.string()).openapi({ description: 'Agents enrolled by this request', example: ['2'] }),
+    alreadyEnrolled: z.array(z.string()).openapi({ description: 'Agents who were enrolled already (their progress is kept)', example: [] }),
+    failed: z.array(z.string()).openapi({ description: 'Agents not enrolled: unknown or archived account, or a failure of the e-learning service for that agent', example: [] }),
+  })
+  .openapi({ description: 'Outcome of the enrolment, per agent, in the order of the request' });
+
+export const RemoveLearnerResponse = z
+  .object({
+    removed: z.boolean(),
+    courseId: z.string().openapi({ example: '7' }),
+    userId: z.string().openapi({ example: '2' }),
+  })
+  .openapi({ description: 'Confirmation that the agent was unenrolled (their progress on the course is deleted)' });
+
+registry.register('AdminLearnerParams', AdminLearnerParams);
+registry.register('AgentIdentity', AgentIdentity);
+registry.register('AdminAgentsQuery', AdminAgentsQuery);
+registry.register('AdminAgentsResponse', AdminAgentsResponse);
+registry.register('CourseLearner', CourseLearner);
+registry.register('CourseLearnersQuery', CourseLearnersQuery);
+registry.register('CourseLearnersResponse', CourseLearnersResponse);
+registry.register('EnrolLearnersBody', EnrolLearnersBody);
+registry.register('EnrolLearnersResponse', EnrolLearnersResponse);
+registry.register('RemoveLearnerResponse', RemoveLearnerResponse);
+
 registry.register('YearQuery', YearQuery);
 registry.register('TrainingTimeCourse', TrainingTimeCourse);
 registry.register('TrainingTimeResponse', TrainingTimeResponse);

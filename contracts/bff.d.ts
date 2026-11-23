@@ -1460,6 +1460,570 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/elearning/admin/courses/{courseId}/learners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lists the agents enrolled in a course, with their progress
+         * @description The e-learning service has no list of the learners of a course: the BFF examines one page of the active agents (`limit`, at most 50, from `offset`, in id order), keeps those enrolled in the course and reads their progress (at most 2 + 2 x `limit` upstream calls). Read on with `nextOffset` until it is `null`; a page may hold no learner while `nextOffset` is not `null`.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Agents examined, 1 to 50 (default 50): not the number of learners returned */
+                    limit?: number;
+                    /** @description Agents skipped, in id order (default 0): the `nextOffset` of the previous page */
+                    offset?: number | null;
+                };
+                header?: never;
+                path: {
+                    /** @description Course (E-learning API formation) identifier */
+                    courseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Learners among the agents examined */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example 4 */
+                            courseId: string;
+                            /** @description The enrolled agents among the `limit` agents examined from `offset`, in id order */
+                            learners: {
+                                /**
+                                 * @description Core API id of the agent
+                                 * @example 2
+                                 */
+                                userId: string;
+                                /**
+                                 * @description First and last name, as the e-learning service gives it
+                                 * @example Alice Martin
+                                 */
+                                name: string;
+                                /**
+                                 * @description Part of `name` before its first space
+                                 * @example Alice
+                                 */
+                                firstName: string;
+                                /**
+                                 * @description Part of `name` after its first space (empty without a space)
+                                 * @example Martin
+                                 */
+                                lastName: string;
+                                /**
+                                 * @description Progress status of the formation for the signed-in user
+                                 * @example in-progress
+                                 * @enum {string}
+                                 */
+                                status: "not-started" | "in-progress" | "completed";
+                                /**
+                                 * @description Share of the chapters completed, percent
+                                 * @example 50
+                                 */
+                                progress: number;
+                                /**
+                                 * @description First chapter completed (RFC 3339), `null` before
+                                 * @example 2026-03-02T09:15:00Z
+                                 */
+                                startedAt: string | null;
+                                /**
+                                 * @description Course completed (RFC 3339), `null` before
+                                 * @example null
+                                 */
+                                completedAt: string | null;
+                            }[];
+                            /** @example 50 */
+                            limit: number;
+                            /** @example 0 */
+                            offset: number;
+                            /**
+                             * @description Offset to examine the next agents, `null` once every agent was examined
+                             * @example 50
+                             */
+                            nextOffset: number | null;
+                        };
+                    };
+                };
+                /** @description Invalid course identifier, `limit` or `offset` */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Missing, expired or invalid session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Restricted to administrators */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unknown course */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unexpected server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Enrols agents in a course
+         * @description Enrols each agent (5 at a time). An agent enrolled already keeps their progress and is listed in `alreadyEnrolled`; an unknown or archived account, or a failure of the e-learning service for one agent, lands in `failed` without stopping the others.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Course (E-learning API formation) identifier */
+                    courseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @description 1 to 200 agents to enrol (duplicates are counted once) */
+                        userIds: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Outcome per agent */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example 7 */
+                            courseId: string;
+                            /**
+                             * @description Agents enrolled by this request
+                             * @example [
+                             *       "2"
+                             *     ]
+                             */
+                            enrolled: string[];
+                            /**
+                             * @description Agents who were enrolled already (their progress is kept)
+                             * @example []
+                             */
+                            alreadyEnrolled: string[];
+                            /**
+                             * @description Agents not enrolled: unknown or archived account, or a failure of the e-learning service for that agent
+                             * @example []
+                             */
+                            failed: string[];
+                        };
+                    };
+                };
+                /** @description Invalid course identifier or body: every invalid field is named in `details` (`body.userIds.0`...) */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Missing, expired or invalid session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Restricted to administrators */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unknown course */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unexpected server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/elearning/admin/courses/{courseId}/learners/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Unenrols an agent from a course
+         * @description Removes the enrolment and the progress of the agent on this course (their other courses are untouched).
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Course (E-learning API formation) identifier */
+                    courseId: string;
+                    /** @description Core API id of the agent */
+                    userId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Agent unenrolled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            removed: boolean;
+                            /** @example 7 */
+                            courseId: string;
+                            /** @example 2 */
+                            userId: string;
+                        };
+                    };
+                };
+                /** @description Invalid course or agent identifier */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Missing, expired or invalid session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Restricted to administrators */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description The agent is not enrolled in the course, or the course or the agent is unknown */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unexpected server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/elearning/admin/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Lists the agents an administrator can enrol
+         * @description One page of the active (non-archived) agents, in id order, read from the e-learning service. With `search`, the BFF filters the names itself (the service cannot search): it reads at most 1000 agents from `offset` per request, stops at `limit` matches, and `nextOffset` tells where to read on (`null` after the last agent). No total is given.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Part of the name of the agent, case and accents ignored. The e-learning service cannot search: the BFF filters at most 1000 agents (5 pages of 200) from `offset` per request and gives `nextOffset` to read on. */
+                    search?: string;
+                    /** @description Agents to return, 1 to 200 (default 50) */
+                    limit?: number;
+                    /** @description Agents to skip, in id order (default 0): the `nextOffset` of the previous page */
+                    offset?: number | null;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Agents of the page */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @description Agents of the page, in id order */
+                            agents: {
+                                /**
+                                 * @description Core API id of the agent
+                                 * @example 2
+                                 */
+                                userId: string;
+                                /**
+                                 * @description First and last name, as the e-learning service gives it
+                                 * @example Alice Martin
+                                 */
+                                name: string;
+                                /**
+                                 * @description Part of `name` before its first space
+                                 * @example Alice
+                                 */
+                                firstName: string;
+                                /**
+                                 * @description Part of `name` after its first space (empty without a space)
+                                 * @example Martin
+                                 */
+                                lastName: string;
+                            }[];
+                            /** @example 50 */
+                            limit: number;
+                            /** @example 0 */
+                            offset: number;
+                            /**
+                             * @description Offset of the next page, `null` after the last agent. The total is not known upstream.
+                             * @example 50
+                             */
+                            nextOffset: number | null;
+                        };
+                    };
+                };
+                /** @description Invalid `search`, `limit` or `offset` */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Missing, expired or invalid session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Restricted to administrators */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unexpected server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/elearning/courses/{courseId}/certificate": {
         parameters: {
             query?: never;
@@ -4994,6 +5558,246 @@ export interface components {
                     href: string;
                 }[];
             };
+        };
+        AdminLearnerParams: {
+            /**
+             * @description Course (E-learning API formation) identifier
+             * @example 7
+             */
+            courseId: string;
+            /**
+             * @description Core API id of the agent
+             * @example 2
+             */
+            userId: string;
+        };
+        /** @description An active (non-archived) agent of the instance */
+        AgentIdentity: {
+            /**
+             * @description Core API id of the agent
+             * @example 2
+             */
+            userId: string;
+            /**
+             * @description First and last name, as the e-learning service gives it
+             * @example Alice Martin
+             */
+            name: string;
+            /**
+             * @description Part of `name` before its first space
+             * @example Alice
+             */
+            firstName: string;
+            /**
+             * @description Part of `name` after its first space (empty without a space)
+             * @example Martin
+             */
+            lastName: string;
+        };
+        AdminAgentsQuery: {
+            /**
+             * @description Part of the name of the agent, case and accents ignored. The e-learning service cannot search: the BFF filters at most 1000 agents (5 pages of 200) from `offset` per request and gives `nextOffset` to read on.
+             * @example martin
+             */
+            search?: string;
+            /**
+             * @description Agents to return, 1 to 200 (default 50)
+             * @default 50
+             * @example 50
+             */
+            limit: number;
+            /**
+             * @description Agents to skip, in id order (default 0): the `nextOffset` of the previous page
+             * @default 0
+             * @example 0
+             */
+            offset: number | null;
+        };
+        /** @description One page of the agents an administrator can enrol */
+        AdminAgentsResponse: {
+            /** @description Agents of the page, in id order */
+            agents: {
+                /**
+                 * @description Core API id of the agent
+                 * @example 2
+                 */
+                userId: string;
+                /**
+                 * @description First and last name, as the e-learning service gives it
+                 * @example Alice Martin
+                 */
+                name: string;
+                /**
+                 * @description Part of `name` before its first space
+                 * @example Alice
+                 */
+                firstName: string;
+                /**
+                 * @description Part of `name` after its first space (empty without a space)
+                 * @example Martin
+                 */
+                lastName: string;
+            }[];
+            /** @example 50 */
+            limit: number;
+            /** @example 0 */
+            offset: number;
+            /**
+             * @description Offset of the next page, `null` after the last agent. The total is not known upstream.
+             * @example 50
+             */
+            nextOffset: number | null;
+        };
+        /** @description An agent enrolled in the course, with their progress */
+        CourseLearner: {
+            /**
+             * @description Core API id of the agent
+             * @example 2
+             */
+            userId: string;
+            /**
+             * @description First and last name, as the e-learning service gives it
+             * @example Alice Martin
+             */
+            name: string;
+            /**
+             * @description Part of `name` before its first space
+             * @example Alice
+             */
+            firstName: string;
+            /**
+             * @description Part of `name` after its first space (empty without a space)
+             * @example Martin
+             */
+            lastName: string;
+            /**
+             * @description Progress status of the formation for the signed-in user
+             * @example in-progress
+             * @enum {string}
+             */
+            status: "not-started" | "in-progress" | "completed";
+            /**
+             * @description Share of the chapters completed, percent
+             * @example 50
+             */
+            progress: number;
+            /**
+             * @description First chapter completed (RFC 3339), `null` before
+             * @example 2026-03-02T09:15:00Z
+             */
+            startedAt: string | null;
+            /**
+             * @description Course completed (RFC 3339), `null` before
+             * @example null
+             */
+            completedAt: string | null;
+        };
+        CourseLearnersQuery: {
+            /**
+             * @description Agents examined, 1 to 50 (default 50): not the number of learners returned
+             * @default 50
+             * @example 50
+             */
+            limit: number;
+            /**
+             * @description Agents skipped, in id order (default 0): the `nextOffset` of the previous page
+             * @default 0
+             * @example 0
+             */
+            offset: number | null;
+        };
+        /** @description Learners of a course. The e-learning service has no list of the enrolled agents: the BFF examines one page of the active agents (`limit`, `offset`) and keeps those enrolled; read on with `nextOffset` until it is `null`. */
+        CourseLearnersResponse: {
+            /** @example 4 */
+            courseId: string;
+            /** @description The enrolled agents among the `limit` agents examined from `offset`, in id order */
+            learners: {
+                /**
+                 * @description Core API id of the agent
+                 * @example 2
+                 */
+                userId: string;
+                /**
+                 * @description First and last name, as the e-learning service gives it
+                 * @example Alice Martin
+                 */
+                name: string;
+                /**
+                 * @description Part of `name` before its first space
+                 * @example Alice
+                 */
+                firstName: string;
+                /**
+                 * @description Part of `name` after its first space (empty without a space)
+                 * @example Martin
+                 */
+                lastName: string;
+                /**
+                 * @description Progress status of the formation for the signed-in user
+                 * @example in-progress
+                 * @enum {string}
+                 */
+                status: "not-started" | "in-progress" | "completed";
+                /**
+                 * @description Share of the chapters completed, percent
+                 * @example 50
+                 */
+                progress: number;
+                /**
+                 * @description First chapter completed (RFC 3339), `null` before
+                 * @example 2026-03-02T09:15:00Z
+                 */
+                startedAt: string | null;
+                /**
+                 * @description Course completed (RFC 3339), `null` before
+                 * @example null
+                 */
+                completedAt: string | null;
+            }[];
+            /** @example 50 */
+            limit: number;
+            /** @example 0 */
+            offset: number;
+            /**
+             * @description Offset to examine the next agents, `null` once every agent was examined
+             * @example 50
+             */
+            nextOffset: number | null;
+        };
+        /** @description Agents to enrol in the course */
+        EnrolLearnersBody: {
+            /** @description 1 to 200 agents to enrol (duplicates are counted once) */
+            userIds: string[];
+        };
+        /** @description Outcome of the enrolment, per agent, in the order of the request */
+        EnrolLearnersResponse: {
+            /** @example 7 */
+            courseId: string;
+            /**
+             * @description Agents enrolled by this request
+             * @example [
+             *       "2"
+             *     ]
+             */
+            enrolled: string[];
+            /**
+             * @description Agents who were enrolled already (their progress is kept)
+             * @example []
+             */
+            alreadyEnrolled: string[];
+            /**
+             * @description Agents not enrolled: unknown or archived account, or a failure of the e-learning service for that agent
+             * @example []
+             */
+            failed: string[];
+        };
+        /** @description Confirmation that the agent was unenrolled (their progress on the course is deleted) */
+        RemoveLearnerResponse: {
+            removed: boolean;
+            /** @example 7 */
+            courseId: string;
+            /** @example 2 */
+            userId: string;
         };
         YearQuery: {
             /**

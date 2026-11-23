@@ -5,6 +5,8 @@ import type {
 import { z } from 'zod';
 import {
   AdminStatsResponse,
+  AgentIdentity,
+  CourseLearner,
   CourseChapter,
   CourseContent,
   CurrentUser,
@@ -574,5 +576,38 @@ export function adminStats(stats: GetStatsResultView): z.infer<typeof AdminStats
       progress: count(agent.progress),
       lastReminderAt: nullableText(agent.last_reminder_at),
     })),
+  };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Enrolment (MAIR-817): the agents of `GET /api/v1/admin/users/` and their enrolments, in camelCase.
+
+/**
+ * An agent of the E-learning API (`{ id, name }`, the name being `first_name || ' ' || last_name`): the first name is
+ * what precedes the first space, the last name the rest (a first name with a space is cut there; `name` keeps it whole).
+ */
+export function agentIdentity(user: { id: number; name: string }): z.infer<typeof AgentIdentity> {
+  const name = user.name.trim();
+  const space = name.indexOf(' ');
+  return {
+    userId: String(user.id),
+    name,
+    firstName: space < 0 ? name : name.slice(0, space),
+    lastName: space < 0 ? '' : name.slice(space + 1).trim(),
+  };
+}
+
+/** An enrolled agent and their progress, as the learners panel of a course reads it. */
+export function courseLearner(
+  user: { id: number; name: string },
+  enrolment: { progress_status?: unknown; started_at?: string | null; completed_at?: string | null },
+  progress: number,
+): z.infer<typeof CourseLearner> {
+  return {
+    ...agentIdentity(user),
+    status: courseStatus(enrolment.progress_status, progress),
+    progress: Math.min(100, Math.max(0, Math.round(progress))),
+    startedAt: nullableText(enrolment.started_at),
+    completedAt: nullableText(enrolment.completed_at),
   };
 }

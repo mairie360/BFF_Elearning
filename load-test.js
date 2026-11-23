@@ -16,7 +16,8 @@ import { createCoverage } from '/coverage.js';
 //   it carries the coverage gate. Handlers run path by path in contract order and, for one path,
 //   in the order get, put, post, delete, options, head, patch, trace (so DELETE runs before PATCH).
 //   Course administration (MAIR-1150) works on courses the handlers create and delete themselves (helper
-//   requests tagged `op:setup`), never on the seeded course 4. The attestation and rating handlers first
+//   requests tagged `op:setup`), never on the seeded course 4; so does the enrolment (MAIR-817), whose reads list the
+//   seeded agent on course 4. The attestation and rating handlers first
 //   complete the seeded chapter (idempotent, once per VU), so they never depend on the order of the handlers.
 // - `reads`: replays only the GET handlers, as random learners of init-perf.sql.
 // - `catalog_rush`: `GET /elearning/catalog` at a fixed arrival rate, failing on any dropped iteration.
@@ -189,6 +190,38 @@ const handlers = {
     const courseId = createCourse(data);
     check(request({ path: { courseId }, body: {}, headers: data.admin }), {
       'reminders 200': (r) => r.status === 200 && typeof (json(r) || {}).sent === 'number',
+    });
+    deleteCourse(data, courseId);
+  },
+  // --- Admin: enrolment (MAIR-817): the seeded agent on the course 4 it is enrolled in (reads), on courses the handlers
+  // create and delete (writes) ---
+  'GET /elearning/admin/agents': ({ request, data }) =>
+    check(request({ query: { limit: 20 }, headers: data.admin }), {
+      'agents 200': (r) => r.status === 200,
+      'agents list the seeded agent': (r) => r.status === 200 && ((json(r) || {}).agents || []).some((agent) => agent.userId === USER_ID),
+    }),
+  'GET /elearning/admin/courses/{courseId}/learners': ({ request, data }) =>
+    check(request({ path: { courseId: FIXTURE_COURSE_ID }, query: { limit: 5 }, headers: data.admin }), {
+      'learners 200': (r) => r.status === 200,
+      'learners list the seeded agent': (r) => r.status === 200 && ((json(r) || {}).learners || []).some((learner) => learner.userId === USER_ID),
+    }),
+  'POST /elearning/admin/courses/{courseId}/learners': ({ request, data }) => {
+    const courseId = createCourse(data);
+    check(request({ path: { courseId }, body: { userIds: [USER_ID] }, headers: data.admin }), {
+      'enrol learners 200': (r) => r.status === 200 && JSON.stringify((json(r) || {}).enrolled) === JSON.stringify([USER_ID]),
+    });
+    deleteCourse(data, courseId);
+  },
+  'DELETE /elearning/admin/courses/{courseId}/learners/{userId}': ({ request, data }) => {
+    const courseId = createCourse(data);
+    const enrol = http.post(
+      coverage.url('POST /elearning/admin/courses/{courseId}/learners', { courseId }),
+      JSON.stringify({ userIds: [USER_ID] }),
+      { headers: Object.assign({ 'Content-Type': 'application/json' }, data.admin), tags: SETUP.tags },
+    );
+    check(enrol, { 'setup enrolment 200': (r) => r.status === 200 });
+    check(request({ path: { courseId, userId: USER_ID }, headers: data.admin }), {
+      'remove learner 200': (r) => r.status === 200 && (json(r) || {}).removed === true,
     });
     deleteCourse(data, courseId);
   },

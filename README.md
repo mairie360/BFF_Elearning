@@ -56,6 +56,10 @@ Generated contract: [`contracts/openapi.json`](contracts/openapi.json) (16 opera
 | `PATCH` | `/elearning/admin/courses/{courseId}` | Replaces a course |
 | `DELETE` | `/elearning/admin/courses/{courseId}` | Deletes a course |
 | `POST` | `/elearning/admin/courses/{courseId}/reminders` | Reminds the late agents of a mandatory course |
+| `GET` | `/elearning/admin/agents` | Lists the agents an administrator can enrol |
+| `GET` | `/elearning/admin/courses/{courseId}/learners` | Lists the agents enrolled in a course, with their progress |
+| `POST` | `/elearning/admin/courses/{courseId}/learners` | Enrols agents in a course |
+| `DELETE` | `/elearning/admin/courses/{courseId}/learners/{userId}` | Unenrols an agent from a course |
 | `GET` | `/elearning/admin/stats` | E-learning indicators of the instance |
 | `GET` | `/elearning/catalog` | Loads the E-learning catalogue |
 | `GET` | `/elearning/certificates` | Attestations of the courses the caller completed during a year (PDF) |
