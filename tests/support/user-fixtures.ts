@@ -3,7 +3,9 @@ import { eddsaToken } from './session-keys';
 import { getCoreAPIMairie360 } from '@mairie360/core-api-openapi/endpoints/coreAPIMairie360';
 import { getELearningAPIMairie360 } from '@mairie360/elearning-api-openapi/endpoints/eLearningAPIMairie360';
 import type { GetMeResponseView, Group } from '@mairie360/core-api-openapi/model';
-import type { AdminFormation, File as ElearningFile, FileType, Module, Status } from '@mairie360/elearning-api-openapi/model';
+import type {
+  AdminFormation, CatalogFile, CatalogFormation, CatalogModule, ContentKind, File as ElearningFile, FileType, Module, Status,
+} from '@mairie360/elearning-api-openapi/model';
 
 // Upstream bodies typed by the models of the installed @mairie360/*-openapi packages: a field added, removed or renamed
 // by a contract breaks the compilation of the tests. They are also validated at run time against the rebuilt contract
@@ -68,4 +70,32 @@ export function learnerModule(id: number, name: string, completed = false): Modu
 
 export function attachment(id: number, fileName: string, fileType: FileType = 'Pdf'): ElearningFile {
   return { id, file_name: fileName, file_type: fileType, file_size_bytes: 1024 };
+}
+
+/** A file of `GET /api/v1/formations/catalog/` (E-learning V2 fields included). */
+export function catalogFile(id: number, fileName: string, kind: ContentKind = 'pdf', fields: Partial<CatalogFile> = {}): CatalogFile {
+  const fileType: FileType = kind === 'video' ? 'Video' : kind === 'pdf' ? 'Pdf' : 'Error';
+  return {
+    id, file_name: fileName, file_type: fileType, file_size_bytes: 1024, kind, title: fileName, description: null,
+    duration_seconds: null, is_required: true, sort_order: 1, url: null, ...fields,
+  };
+}
+
+/** A module of the catalogue, its files aside. */
+export function catalogModule(id: number, name: string, completed = false, fields: Partial<Omit<CatalogModule, 'files'>> = {}): Omit<CatalogModule, 'files'> {
+  return { id, name, description: `${name} description`, completed, duration_seconds: 0, sort_order: null, ...fields };
+}
+
+/** A formation of the catalogue of the caller, its modules aside. */
+export function catalogFormation(id: number, name: string, status: Status = 'NotStarted', fields: Partial<Omit<CatalogFormation, 'modules'>> = {}): Omit<CatalogFormation, 'modules'> {
+  return {
+    id, name, description: `${name} description`, status, category: null, deadline: null, instructor: null, is_mandatory: false,
+    learners: 1, level: null, rating_average: null, rating_count: 0, my_rating: null, source: 'internal', started_at: null,
+    completed_at: null, last_activity_at: null, last_reminder_at: null, ...fields,
+  };
+}
+
+/** `GET /api/v1/formations/{f}/{m}/` file of a catalogue file. */
+export function moduleFile({ id, file_name, file_type, file_size_bytes }: CatalogFile): ElearningFile {
+  return { id, file_name, file_type, file_size_bytes };
 }

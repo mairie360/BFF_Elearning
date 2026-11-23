@@ -3,13 +3,13 @@ import { Router, Request, Response } from 'express';
 import {
   ErrorResponse,
   CourseIdParams,
-  notImplementedResponse,
   RatingSubmitResponse,
   registry,
   sessionErrorResponses,
   SubmitRatingBody,
 } from '../../openapi-registry';
-import { notImplemented } from './elearning_helpers';
+import { ratingLabel } from './elearning_helpers';
+import { rateCourse } from './elearning_upstream';
 
 const router = Router();
 
@@ -17,9 +17,9 @@ registry.registerPath({
   method: 'post',
   path: '/elearning/courses/{courseId}/rating',
   tags: ['E-learning'],
-  summary: 'Rates a course (not available yet: 501)',
+  summary: 'Rates a course the caller completed',
   description:
-    'Not available yet: the E-learning API does not store ratings, so a valid request from an authenticated caller answers 501. The 200 answer is the contract the route will keep once ratings are persisted upstream.',
+    'Stores the rating of the caller (1 to 5; a new rating replaces the previous one) in the E-learning API and returns the rating of the course.',
   request: {
     params: CourseIdParams,
     body: {
@@ -48,6 +48,14 @@ registry.registerPath({
         },
       },
     },
+    404: {
+      description: 'Unknown course, or the caller is not enrolled in it',
+      content: { 'application/json': { schema: ErrorResponse } },
+    },
+    409: {
+      description: 'The caller has not completed the course yet',
+      content: { 'application/json': { schema: ErrorResponse } },
+    },
     ...sessionErrorResponses,
     500: {
       description: 'Unexpected server error',
@@ -57,16 +65,23 @@ registry.registerPath({
         },
       },
     },
-    ...notImplementedResponse,
   },
 });
 
-router.post('/:courseId/rating', async (req: Request, _res: Response) => {
-  parseRequest(CourseIdParams, req.params, 'params');
-  parseRequest(SubmitRatingBody, req.body, 'body');
+router.post('/:courseId/rating', async (req: Request, res: Response) => {
+  const { courseId } = parseRequest(CourseIdParams, req.params, 'params');
+  const { rating } = parseRequest(SubmitRatingBody, req.body, 'body');
 
-  // The token was verified by `requireSession`; nothing is read or written, so no upstream call (MAIR-525).
-  throw notImplemented('Course ratings are not stored by the e-learning service yet.');
+  // No profile read (MAIR-525): the E-learning API checks the session and the enrolment.
+  const result = await rateCourse(req, courseId, rating);
+  return res.status(200).json({
+    rating: result.average,
+    ratingCount: result.count,
+    ratingLabel: ratingLabel(result.average, result.count),
+    myRating: result.mine,
+    ratingDistribution: {},
+    submitted: true,
+  });
 });
 
 export default router;

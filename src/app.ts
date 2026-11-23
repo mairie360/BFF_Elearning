@@ -14,6 +14,11 @@ import contentCompleteRouter from './routes/Elearning/content_complete';
 import ratingRouter from './routes/Elearning/rating';
 import startRouter from './routes/Elearning/start';
 import adminCoursesRouter from './routes/Elearning/admin_courses';
+import adminStatsRouter from './routes/Elearning/admin_stats';
+import certificateRouter from './routes/Elearning/certificate';
+import certificatesRouter from './routes/Elearning/certificates';
+import contentFileRouter from './routes/Elearning/content_file';
+import trainingTimeRouter from './routes/Elearning/training_time';
 
 export const app = express();
 // Client IP (req.ip) as seen behind the ingress: unset or `false` trusts no proxy.
@@ -40,8 +45,11 @@ app.use('/check_apis', checkApisRouter);
 const session = [noStore, requireSession];
 app.use('/elearning/catalog', session, catalogRouter);
 app.use('/elearning/profile', session, profileRouter);
-app.use('/elearning/courses', session, contentCompleteRouter, ratingRouter, startRouter);
+app.use('/elearning/courses', session, contentCompleteRouter, ratingRouter, startRouter, certificateRouter, contentFileRouter);
+app.use('/elearning/training-time', session, trainingTimeRouter);
+app.use('/elearning/certificates', session, certificatesRouter);
 app.use('/elearning/admin/courses', session, adminCoursesRouter);
+app.use('/elearning/admin/stats', session, adminStatsRouter);
 
 // Unknown routes and every error end in the shared envelope `{ error: { code, message, details } }`: the
 // status of the error is kept (400 for an unparsable body, 401, 403, 404, 409, 502, 503...) and anything

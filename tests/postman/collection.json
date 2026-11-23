@@ -469,7 +469,7 @@
           "response": []
         },
         {
-          "name": "MAIR-689 The role Administrateur is an administrator: the course creation passes the check",
+          "name": "MAIR-689 The role Administrateur is an administrator: it creates a course",
           "request": {
             "method": "POST",
             "header": [
@@ -511,14 +511,15 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status is 501 (not available yet, past the admin check)\", function () {",
-                  "    pm.response.to.have.status(501);",
+                  "pm.test(\"Status is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
                   "});",
-                  "pm.test(\"Body is the error envelope\", function () {",
+                  "pm.test(\"The course is created in the e-learning service\", function () {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.error, 'error').to.be.an('object');",
-                  "    pm.expect(body.error.code).to.be.a('string');",
-                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "    pm.expect(body.id).to.match(/^[1-9][0-9]*$/);",
+                  "    pm.expect(body.course.id).to.eql(body.id);",
+                  "    pm.expect(body.course.title).to.eql(`Newman course ${pm.environment.get('run_id')}`);",
+                  "    pm.environment.set('administrateur_course_id', body.id);",
                   "});",
                   "pm.test(\"Answer is not cacheable\", function () {",
                   "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
@@ -591,7 +592,7 @@
           "response": []
         },
         {
-          "name": "Course creation is not available upstream yet",
+          "name": "A new content cannot be an uploaded file",
           "request": {
             "method": "POST",
             "header": [
@@ -619,7 +620,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"newman-course-{{run_id}}\",\n  \"title\": \"Newman course {{run_id}}\",\n  \"description\": \"Course created by the integration tests\",\n  \"category\": \"Integration\",\n  \"duration\": \"1 h\"\n}",
+              "raw": "{\n  \"id\": \"newman-course-{{run_id}}\",\n  \"title\": \"Newman mandatory course {{run_id}}\",\n  \"description\": \"Course created by the integration tests\",\n  \"category\": \"Integration\",\n  \"level\": \"beginner\",\n  \"mandatory\": true,\n  \"deadline\": \"2020-01-31\",\n  \"source\": \"internal\",\n  \"instructor\": \"Newman\",\n  \"details\": {\n    \"title\": \"Newman mandatory course {{run_id}}\",\n    \"description\": \"Course created by the integration tests\",\n    \"chapters\": [\n      {\n        \"id\": \"new-chapter\",\n        \"title\": \"Introduction\",\n        \"contents\": [\n          {\n            \"id\": \"new-video\",\n            \"title\": \"Video\",\n            \"type\": \"video\",\n            \"duration\": \"3 min\"\n          }\n        ]\n      }\n    ]\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -633,8 +634,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status is 501\", function () {",
-                  "    pm.response.to.have.status(501);",
+                  "pm.test(\"Status is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
                   "});",
                   "pm.test(\"Body is the error envelope\", function () {",
                   "    const body = pm.response.json();",
@@ -642,8 +643,70 @@
                   "    pm.expect(body.error.code).to.be.a('string');",
                   "    pm.expect(body.error.message).to.be.a('string');",
                   "});",
-                  "pm.test(\"The message says the e-learning service does not support it\", function () {",
-                  "    pm.expect(pm.response.json().error.message).to.include('not available');",
+                  "pm.test(\"The refused field is named\", function () {",
+                  "    pm.expect(pm.response.json().error.details.map((d) => d.path)).to.include('body.details.chapters.0.contents.0.type');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create a mandatory course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"newman-course-{{run_id}}\",\n  \"title\": \"Newman mandatory course {{run_id}}\",\n  \"description\": \"Course created by the integration tests\",\n  \"category\": \"Integration\",\n  \"level\": \"beginner\",\n  \"mandatory\": true,\n  \"deadline\": \"2020-01-31\",\n  \"source\": \"internal\",\n  \"instructor\": \"Newman\",\n  \"details\": {\n    \"title\": \"Newman mandatory course {{run_id}}\",\n    \"description\": \"Course created by the integration tests\",\n    \"chapters\": [\n      {\n        \"id\": \"new-chapter\",\n        \"title\": \"Introduction\",\n        \"contents\": [\n          {\n            \"id\": \"new-link\",\n            \"title\": \"CNIL\",\n            \"type\": \"link\",\n            \"href\": \"https://www.cnil.fr/\",\n            \"duration\": \"10 min\"\n          },\n          {\n            \"id\": \"new-quiz\",\n            \"title\": \"Quiz\",\n            \"type\": \"quiz\",\n            \"duration\": \"5 min\",\n            \"required\": false\n          }\n        ]\n      }\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"The course is created with its chapter and contents\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.id).to.match(/^[1-9][0-9]*$/);",
+                  "    pm.expect(body.course.id).to.eql(body.id);",
+                  "    pm.expect(body.course.mandatory).to.eql(true);",
+                  "    pm.expect(body.course.titleBadge).to.eql({ label: 'Obligatoire', variant: 'mandatory' });",
+                  "    pm.expect(body.course.levelBadge).to.eql({ label: 'Débutant', variant: 'beginner' });",
+                  "    pm.expect(body.course.deadline).to.eql('2020-01-31');",
+                  "    pm.environment.set('admin_course_id', body.id);",
                   "});"
                 ]
               }
@@ -726,7 +789,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/elearning/admin/courses/{{course_id}}",
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{admin_course_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -734,12 +797,12 @@
                 "elearning",
                 "admin",
                 "courses",
-                "{{course_id}}"
+                "{{admin_course_id}}"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"4\",\n  \"title\": \"RGPD pour les agents territoriaux\",\n  \"description\": \"Edited by the integration tests\"\n}",
+              "raw": "{\n  \"id\": \"{{admin_course_id}}\",\n  \"title\": \"Newman mandatory course {{run_id}}, updated\",\n  \"description\": \"Course created by the integration tests\",\n  \"category\": \"Integration\",\n  \"level\": \"advanced\",\n  \"mandatory\": true,\n  \"deadline\": \"2020-01-31\",\n  \"source\": \"internal\",\n  \"instructor\": \"Newman\",\n  \"details\": {\n    \"title\": \"Newman mandatory course {{run_id}}\",\n    \"description\": \"Course created by the integration tests\",\n    \"chapters\": [\n      {\n        \"id\": \"new-chapter\",\n        \"title\": \"Introduction\",\n        \"contents\": [\n          {\n            \"id\": \"new-link\",\n            \"title\": \"CNIL\",\n            \"type\": \"link\",\n            \"href\": \"https://www.cnil.fr/\",\n            \"duration\": \"10 min\"\n          },\n          {\n            \"id\": \"new-quiz\",\n            \"title\": \"Quiz\",\n            \"type\": \"quiz\",\n            \"duration\": \"5 min\",\n            \"required\": false\n          },\n          {\n            \"id\": \"new-other\",\n            \"title\": \"Memo\",\n            \"type\": \"other\",\n            \"duration\": \"1 h 30\"\n          }\n        ]\n      }\n    ]\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -769,7 +832,7 @@
           "response": []
         },
         {
-          "name": "Course update is not available upstream yet",
+          "name": "Update the course",
           "request": {
             "method": "PATCH",
             "header": [
@@ -785,7 +848,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/elearning/admin/courses/{{course_id}}",
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{admin_course_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -793,12 +856,12 @@
                 "elearning",
                 "admin",
                 "courses",
-                "{{course_id}}"
+                "{{admin_course_id}}"
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"4\",\n  \"title\": \"RGPD pour les agents territoriaux\",\n  \"description\": \"Edited by the integration tests\"\n}",
+              "raw": "{\n  \"id\": \"{{admin_course_id}}\",\n  \"title\": \"Newman mandatory course {{run_id}}, updated\",\n  \"description\": \"Course created by the integration tests\",\n  \"category\": \"Integration\",\n  \"level\": \"advanced\",\n  \"mandatory\": true,\n  \"deadline\": \"2020-01-31\",\n  \"source\": \"internal\",\n  \"instructor\": \"Newman\",\n  \"details\": {\n    \"title\": \"Newman mandatory course {{run_id}}\",\n    \"description\": \"Course created by the integration tests\",\n    \"chapters\": [\n      {\n        \"id\": \"new-chapter\",\n        \"title\": \"Introduction\",\n        \"contents\": [\n          {\n            \"id\": \"new-link\",\n            \"title\": \"CNIL\",\n            \"type\": \"link\",\n            \"href\": \"https://www.cnil.fr/\",\n            \"duration\": \"10 min\"\n          },\n          {\n            \"id\": \"new-quiz\",\n            \"title\": \"Quiz\",\n            \"type\": \"quiz\",\n            \"duration\": \"5 min\",\n            \"required\": false\n          },\n          {\n            \"id\": \"new-other\",\n            \"title\": \"Memo\",\n            \"type\": \"other\",\n            \"duration\": \"1 h 30\"\n          }\n        ]\n      }\n    ]\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -812,14 +875,402 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status is 501\", function () {",
-                  "    pm.response.to.have.status(501);",
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The course is replaced\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.id).to.eql(pm.environment.get('admin_course_id'));",
+                  "    pm.expect(body.course.title).to.include('updated');",
+                  "    pm.expect(body.course.level).to.eql('advanced');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Updating an unknown course answers 404",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/999999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "999999999"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{admin_course_id}}\",\n  \"title\": \"Newman mandatory course {{run_id}}, updated\",\n  \"description\": \"Course created by the integration tests\",\n  \"category\": \"Integration\",\n  \"level\": \"advanced\",\n  \"mandatory\": true,\n  \"deadline\": \"2020-01-31\",\n  \"source\": \"internal\",\n  \"instructor\": \"Newman\",\n  \"details\": {\n    \"title\": \"Newman mandatory course {{run_id}}\",\n    \"description\": \"Course created by the integration tests\",\n    \"chapters\": [\n      {\n        \"id\": \"new-chapter\",\n        \"title\": \"Introduction\",\n        \"contents\": [\n          {\n            \"id\": \"new-link\",\n            \"title\": \"CNIL\",\n            \"type\": \"link\",\n            \"href\": \"https://www.cnil.fr/\",\n            \"duration\": \"10 min\"\n          },\n          {\n            \"id\": \"new-quiz\",\n            \"title\": \"Quiz\",\n            \"type\": \"quiz\",\n            \"duration\": \"5 min\",\n            \"required\": false\n          },\n          {\n            \"id\": \"new-other\",\n            \"title\": \"Memo\",\n            \"type\": \"other\",\n            \"duration\": \"1 h 30\"\n          }\n        ]\n      }\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
                   "});",
                   "pm.test(\"Body is the error envelope\", function () {",
                   "    const body = pm.response.json();",
                   "    pm.expect(body.error, 'error').to.be.an('object');",
                   "    pm.expect(body.error.code).to.be.a('string');",
                   "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "A plain user cannot send reminders",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{admin_course_id}}/reminders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{admin_course_id}}",
+                "reminders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Reminders are refused on a course that is not mandatory",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{course_id}}/reminders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{course_id}}",
+                "reminders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Reminders on an unknown course answer 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/999999999/reminders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "999999999",
+                "reminders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Remind the late agents of the mandatory course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{admin_course_id}}/reminders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{admin_course_id}}",
+                "reminders"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userIds\": [\n    \"{{agent_user_id}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Nobody is enrolled, so nobody is reminded\", function () {",
+                  "    pm.expect(pm.response.json()).to.eql({ sent: 0 });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "A plain user cannot read the indicators",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "stats"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The indicators list the new course",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "stats"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The indicators are ready to render\", function () {",
+                  "    const body = pm.response.json();",
+                  "    ['internalCourses', 'platformCourses', 'mandatoryInternalCourses', 'agents', 'participants', 'participationRate', 'averageCompletion', 'lateMandatory']",
+                  "        .forEach((key) => pm.expect(body[key], key).to.be.a('number'));",
+                  "    pm.expect(body.byService).to.be.an('array');",
+                  "    pm.expect(body.lateAgents).to.be.an('array');",
+                  "    const course = body.byCourse.find((c) => c.id === pm.environment.get('admin_course_id'));",
+                  "    pm.expect(course, 'new course').to.be.an('object');",
+                  "    pm.expect(course).to.include({ mandatory: true, source: 'internal', enrolled: 0, completed: 0 });",
                   "});"
                 ]
               }
@@ -839,7 +1290,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/elearning/admin/courses/{{course_id}}",
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{admin_course_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -847,7 +1298,7 @@
                 "elearning",
                 "admin",
                 "courses",
-                "{{course_id}}"
+                "{{admin_course_id}}"
               ]
             }
           },
@@ -873,7 +1324,7 @@
           "response": []
         },
         {
-          "name": "Course deletion is not available upstream yet",
+          "name": "Delete the course",
           "request": {
             "method": "DELETE",
             "header": [
@@ -884,7 +1335,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/elearning/admin/courses/{{course_id}}",
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{admin_course_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -892,7 +1343,7 @@
                 "elearning",
                 "admin",
                 "courses",
-                "{{course_id}}"
+                "{{admin_course_id}}"
               ]
             }
           },
@@ -902,14 +1353,95 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status is 501\", function () {",
-                  "    pm.response.to.have.status(501);",
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The deletion is confirmed\", function () {",
+                  "    pm.expect(pm.response.json()).to.eql({ deleted: true, courseId: pm.environment.get('admin_course_id') });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Deleting it again answers 404",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{admin_course_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{admin_course_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
                   "});",
                   "pm.test(\"Body is the error envelope\", function () {",
                   "    const body = pm.response.json();",
                   "    pm.expect(body.error, 'error').to.be.an('object');",
                   "    pm.expect(body.error.code).to.be.a('string');",
                   "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "MAIR-689 The role Administrateur deletes its course",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_administrateur}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/courses/{{administrateur_course_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "courses",
+                "{{administrateur_course_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});"
                 ]
               }
@@ -963,7 +1495,7 @@
           "response": []
         }
       ],
-      "description": "An administrator creates, updates and deletes a course; a plain user cannot. The E-learning API cannot edit formations yet, so the administrator gets the documented 501 after the role check."
+      "description": "An administrator creates a mandatory course, updates it, reminds its late agents, reads the indicators and deletes it; a plain user cannot. The seeded course is never edited."
     },
     {
       "name": "Enrolment: catalogue and start",
@@ -1064,6 +1596,10 @@
                   "    pm.expect(content.type).to.eql('pdf');",
                   "    pm.expect(content.fileName).to.eql('rgpd-principes.pdf');",
                   "    pm.expect(content.completed).to.eql(false);",
+                  "    pm.expect(content.required).to.eql(true);",
+                  "    pm.expect(course.mandatory).to.eql(false);",
+                  "    pm.expect(course.source).to.eql('internal');",
+                  "    pm.expect(course.learners).to.be.at.least(2);",
                   "    pm.expect(body.footer.productName).to.eql('Mairie360');",
                   "});"
                 ]
@@ -1293,6 +1829,208 @@
                   "    pm.expect(body.course.progress).to.eql(0);",
                   "    pm.expect(body.nextContentId).to.eql(pm.environment.get('content_id'));",
                   "    pm.expect(body.redirectUrl).to.eql(`/courses/${pm.environment.get('course_id')}`);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Rating before completing the course answers 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/rating",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "rating"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The attestation is refused before the course is completed",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/certificate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "certificate"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 409\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Open the PDF of the course",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/chapters/{{chapter_id}}/contents/{{content_id}}/file",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "chapters",
+                "{{chapter_id}}",
+                "contents",
+                "{{content_id}}",
+                "file"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"A signed URL of the stored file\", function () {",
+                  "    pm.expect(pm.response.json().url).to.match(/^https:\\/\\//);",
+                  "});",
+                  "pm.test(\"Answer is not cacheable\", function () {",
+                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "A content that is not in the chapter has no file",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/chapters/{{chapter_id}}/contents/999999999/file",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "chapters",
+                "{{chapter_id}}",
+                "contents",
+                "999999999",
+                "file"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
                   "});"
                 ]
               }
@@ -1819,7 +2557,125 @@
           "response": []
         },
         {
-          "name": "Rating the course is not available upstream yet",
+          "name": "A rating out of range is refused",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/rating",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "rating"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 6\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Rating a course of nobody answers 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/999999999/rating",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "999999999",
+                "rating"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Rate the completed course",
           "request": {
             "method": "POST",
             "header": [
@@ -1862,17 +2718,58 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status is 501\", function () {",
-                  "    pm.response.to.have.status(501);",
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Body is the error envelope\", function () {",
+                  "pm.test(\"The rating of the course includes the agent's\", function () {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.error, 'error').to.be.an('object');",
-                  "    pm.expect(body.error.code).to.be.a('string');",
-                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "    pm.expect(body.myRating).to.eql(5);",
+                  "    pm.expect(body.submitted).to.eql(true);",
+                  "    pm.expect(body.ratingCount).to.be.at.least(1);",
+                  "    pm.expect(body.rating).to.be.within(1, 5);",
+                  "    pm.expect(body.ratingLabel).to.include('avis');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The catalogue shows the rating of the agent",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/catalog",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "catalog"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Answer is not cacheable\", function () {",
-                  "    pm.expect(pm.response.headers.get('Cache-Control')).to.include('no-store');",
+                  "pm.test(\"The course carries the rating\", function () {",
+                  "    const course = pm.response.json().catalog.courses.find((c) => c.id === pm.environment.get('course_id'));",
+                  "    pm.expect(course.ratingCount).to.be.at.least(1);",
+                  "    pm.expect(course.details.completionRating).to.include({ submitted: true, initialValue: 5 });",
                   "});"
                 ]
               }
@@ -1881,7 +2778,292 @@
           "response": []
         }
       ],
-      "description": "The agent rates the completed course: ratings are not stored upstream yet (501)."
+      "description": "The agent rates the completed course; the rating is stored by the E-learning API."
+    },
+    {
+      "name": "Attestations and training time",
+      "description": "Once the course is completed, the agent downloads its attestation and the attestations of the year, and reads the training time of the year.",
+      "item": [
+        {
+          "name": "Download the attestation of the course",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/{{course_id}}/certificate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "{{course_id}}",
+                "certificate"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"A PDF document with its file name\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf');",
+                  "    pm.expect(pm.response.headers.get('Content-Disposition')).to.include('.pdf');",
+                  "    pm.expect(pm.response.text().startsWith('%PDF-')).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The attestation of an unknown course answers 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/999999999/certificate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "999999999",
+                "certificate"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Download the attestations of the year",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/certificates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "certificates"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"A PDF document with its file name\", function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf');",
+                  "    pm.expect(pm.response.headers.get('Content-Disposition')).to.include('.pdf');",
+                  "    pm.expect(pm.response.text().startsWith('%PDF-')).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "No attestation in 2000",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/certificates?year=2000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "certificates"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2000"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Training time of the year",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/training-time",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "training-time"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The completed course counts in the year\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.year).to.eql(new Date().getUTCFullYear());",
+                  "    pm.expect(body.goalMinutes).to.be.a('number');",
+                  "    pm.expect(body.timeSpentSeconds).to.be.a('number');",
+                  "    pm.expect(body.completedCount).to.be.at.least(1);",
+                  "    const course = body.courses.find((c) => c.id === pm.environment.get('course_id'));",
+                  "    pm.expect(course.status).to.eql('completed');",
+                  "    pm.expect(course.completedAt).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "A year out of range is refused",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/training-time?year=1999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "training-time"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "1999"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Body is the error envelope\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error, 'error').to.be.an('object');",
+                  "    pm.expect(body.error.code).to.be.a('string');",
+                  "    pm.expect(body.error.message).to.be.a('string');",
+                  "});",
+                  "pm.test(\"The year is named\", function () {",
+                  "    pm.expect(pm.response.json().error.details.map((d) => d.path)).to.include('query.year');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
     },
     {
       "name": "Profile is read-only (MAIR-684)",

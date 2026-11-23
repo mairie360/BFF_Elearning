@@ -46,19 +46,25 @@ JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n<base64 of Core's public key>\n-----
 
 ## Routes
 
-Generated contract: [`contracts/openapi.json`](contracts/openapi.json) (11 operations), published on every release as `@mairie360/bff-elearning-openapi` for the front.
+Generated contract: [`contracts/openapi.json`](contracts/openapi.json) (16 operations), published on every release as `@mairie360/bff-elearning-openapi` for the front.
 
 | Method | Path | Summary |
 | --- | --- | --- |
 | `GET` | `/health` | Check the health of the BFF |
 | `GET` | `/check_apis` | Checks that Core API and E-learning API answer their /health probe |
-| `POST` | `/elearning/admin/courses` | Creates a course (not available yet: 501) |
-| `PATCH` | `/elearning/admin/courses/{courseId}` | Updates a course (not available yet: 501) |
-| `DELETE` | `/elearning/admin/courses/{courseId}` | Deletes a course (not available yet: 501) |
+| `POST` | `/elearning/admin/courses` | Creates a course |
+| `PATCH` | `/elearning/admin/courses/{courseId}` | Replaces a course |
+| `DELETE` | `/elearning/admin/courses/{courseId}` | Deletes a course |
+| `POST` | `/elearning/admin/courses/{courseId}/reminders` | Reminds the late agents of a mandatory course |
+| `GET` | `/elearning/admin/stats` | E-learning indicators of the instance |
 | `GET` | `/elearning/catalog` | Loads the E-learning catalogue |
+| `GET` | `/elearning/certificates` | Attestations of the courses the caller completed during a year (PDF) |
+| `GET` | `/elearning/courses/{courseId}/certificate` | Attestation of a course the caller completed (PDF) |
+| `GET` | `/elearning/courses/{courseId}/chapters/{chapterId}/contents/{contentId}/file` | Signed URL of a stored file of a course |
+| `GET` | `/elearning/training-time` | Training time of the caller during a year |
 | `POST` | `/elearning/courses/{courseId}/contents/{contentId}/complete` | Marks a content as completed |
 | `GET` | `/elearning/profile` | Loads the E-learning profile |
-| `POST` | `/elearning/courses/{courseId}/rating` | Rates a course (not available yet: 501) |
+| `POST` | `/elearning/courses/{courseId}/rating` | Rates a course the caller completed |
 | `POST` | `/elearning/courses/{courseId}/start` | Starts or resumes a course |
 
 ## Upstream contracts

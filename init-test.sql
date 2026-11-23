@@ -53,3 +53,15 @@ DELETE FROM user_modules WHERE user_id IN (1, 2) AND module_id = 11;
 
 INSERT INTO user_courses (user_id, course_id) VALUES (1, 4), (2, 4)
 ON CONFLICT DO NOTHING;
+
+-- MAIR-1150: scratch course of the administration routes. Their contract example is course 7 (nobody enrolled,
+-- nothing else reads it), so the ZAP scan, which calls every operation on the examples, edits and deletes this
+-- course and never the course 4 the learner routes read.
+INSERT INTO courses (id, title, description)
+VALUES (7, 'Scratch course of the administration routes', 'Edited and deleted by the scans')
+ON CONFLICT (id) DO NOTHING;
+
+-- The courses the administration routes create must not collide with the fixed ids above.
+SELECT setval(pg_get_serial_sequence('courses', 'id'), GREATEST((SELECT max(id) FROM courses), 1000));
+SELECT setval(pg_get_serial_sequence('course_modules', 'id'), GREATEST((SELECT max(id) FROM course_modules), 1000));
+SELECT setval(pg_get_serial_sequence('course_attachments', 'id'), GREATEST((SELECT max(id) FROM course_attachments), 1000));

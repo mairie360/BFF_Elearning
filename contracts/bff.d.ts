@@ -92,7 +92,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Creates a course (not available yet: 501) */
+        /**
+         * Creates a course
+         * @description The course as the front edits it. Sent to the e-learning service: `title`, `description`, `category`, `level` (else read from `levelBadge`), `mandatory` (else `titleBadge.variant` = `mandatory`), `deadline`, `source` (default `internal`), `instructor` (else `details.instructor`) and `details.chapters[].contents[]` (`type`, `title`, `description`, `durationSeconds` or `duration`, `required` (default `true`), `href` for a link). Other fields are ignored. Every chapter and content is new: their ids are ignored, and a content can only be a `link`, a `quiz` or `other` (there is no upload).
+         */
         post: {
             parameters: {
                 query?: never;
@@ -113,6 +116,11 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Id of the course in the e-learning service
+                             * @example 42
+                             */
+                            id: string;
                             /** @description Formation shown in the catalogue */
                             course: {
                                 /** @example accueil-agents */
@@ -121,16 +129,49 @@ export interface paths {
                                 title: string;
                                 description: string;
                                 instructor?: string;
-                                /** @example 4.8 */
+                                /**
+                                 * @description Average rating (1 to 5, one decimal), absent while nobody rated the course
+                                 * @example 4.8
+                                 */
                                 rating?: number | string;
-                                /** @example 2 h 15 */
+                                /**
+                                 * @description Number of ratings
+                                 * @example 12
+                                 */
+                                ratingCount?: number;
+                                /**
+                                 * @description Sum of the durations of its contents
+                                 * @example 2 h 15
+                                 */
                                 duration?: string;
+                                /**
+                                 * @description Sum of the durations of its contents, in seconds
+                                 * @example 8100
+                                 */
+                                durationSeconds?: number;
                                 /** @example 4 */
                                 chapters?: number | string;
-                                /** @example 128 */
+                                /**
+                                 * @description Number of users enrolled in the course
+                                 * @example 128
+                                 */
                                 learners?: number | string;
                                 /** @example Integration */
                                 category?: string;
+                                /**
+                                 * @description Level of a formation
+                                 * @example beginner
+                                 * @enum {string}
+                                 */
+                                level?: "beginner" | "intermediate" | "advanced";
+                                /** @description `true` for a mandatory course (its `titleBadge` is then the mandatory badge) */
+                                mandatory?: boolean;
+                                /**
+                                 * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+                                 * @example internal
+                                 * @enum {string}
+                                 */
+                                source?: "internal" | "platform";
                                 /**
                                  * @description Progress status of the formation for the signed-in user
                                  * @example in-progress
@@ -171,8 +212,31 @@ export interface paths {
                                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                 };
                                 progress?: number;
-                                /** @example 30 juin 2026 */
+                                /**
+                                 * @description Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).
+                                 * @example 2026-06-30
+                                 */
                                 deadline?: string;
+                                /**
+                                 * @description Start of the caller on the course (RFC 3339), absent when none was recorded
+                                 * @example 2026-03-02T08:15:00Z
+                                 */
+                                startedAt?: string;
+                                /**
+                                 * @description Completion of the course by the caller (RFC 3339), absent while not completed
+                                 * @example 2026-03-20T16:40:00Z
+                                 */
+                                completedAt?: string;
+                                /**
+                                 * @description Latest chapter the caller completed (RFC 3339), absent before any
+                                 * @example 2026-03-18T10:05:00Z
+                                 */
+                                lastActivityAt?: string;
+                                /**
+                                 * @description Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one
+                                 * @example 2026-03-10T09:00:00Z
+                                 */
+                                lastReminderAt?: string;
                                 /**
                                  * @description Distribution of the ratings by value, from 1 to 5
                                  * @example {
@@ -198,6 +262,7 @@ export interface paths {
                                     instructor?: string;
                                     duration?: string;
                                     rating?: number | string;
+                                    /** @example 4,5 (12 avis) */
                                     ratingLabel?: string;
                                     /**
                                      * @description Distribution of the ratings by value, from 1 to 5
@@ -235,8 +300,16 @@ export interface paths {
                                         /** @example Municipal organisation */
                                         title: string;
                                         description?: string;
-                                        /** @example 25 min */
+                                        /**
+                                         * @description Sum of the durations of its contents
+                                         * @example 25 min
+                                         */
                                         duration?: string;
+                                        /**
+                                         * @description Sum of the durations of its contents, in seconds
+                                         * @example 1500
+                                         */
+                                        durationSeconds?: number;
                                         completed?: boolean;
                                         active?: boolean;
                                         contents?: {
@@ -245,19 +318,34 @@ export interface paths {
                                             /** @example Présentation des directions et services */
                                             title: string;
                                             /**
-                                             * @description Type of learning content
+                                             * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                                              * @example video
                                              * @enum {string}
                                              */
                                             type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                                             description?: string;
-                                            /** @example 12 min */
+                                            /**
+                                             * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                                             * @example 12 min
+                                             */
                                             duration?: string;
-                                            /** @example organigramme-mairie360.pdf */
+                                            /**
+                                             * @description Duration in seconds; wins over `duration` in an administration body
+                                             * @example 720
+                                             */
+                                            durationSeconds?: number;
+                                            /**
+                                             * @description Name of the stored file (stored files only)
+                                             * @example organigramme-mairie360.pdf
+                                             */
                                             fileName?: string;
-                                            /** @example /documents/organigramme-mairie360.pdf */
+                                            /**
+                                             * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                                             * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                                             */
                                             href?: string;
                                             completed?: boolean;
+                                            /** @description `false` for an optional content (defaults to `true` in an administration body) */
                                             required?: boolean;
                                         }[];
                                     }[];
@@ -266,7 +354,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Invalid request payload */
+                /** @description Invalid request payload: every invalid field is named in `details` (`body.title`, `body.details.chapters.0.contents.1.href`...). A field the e-learning service refused is named when it can be told. */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -304,15 +392,6 @@ export interface paths {
                 };
                 /** @description Unexpected server error */
                 500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not available: no upstream service stores this data yet */
-                501: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -356,7 +435,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Deletes a course (not available yet: 501) */
+        /**
+         * Deletes a course
+         * @description Deletes the course with its chapters, contents, enrolments and progress.
+         */
         delete: {
             parameters: {
                 query?: never;
@@ -381,6 +463,15 @@ export interface paths {
                         };
                     };
                 };
+                /** @description Invalid course identifier */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description Missing, expired or invalid session */
                 401: {
                     headers: {
@@ -399,6 +490,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description Unknown course */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
                 429: {
                     headers: {
@@ -410,15 +510,6 @@ export interface paths {
                 };
                 /** @description Unexpected server error */
                 500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not available: no upstream service stores this data yet */
-                501: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -448,7 +539,10 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** Updates a course (not available yet: 501) */
+        /**
+         * Replaces a course
+         * @description The course as the front edits it. Sent to the e-learning service: `title`, `description`, `category`, `level` (else read from `levelBadge`), `mandatory` (else `titleBadge.variant` = `mandatory`), `deadline`, `source` (default `internal`), `instructor` (else `details.instructor`) and `details.chapters[].contents[]` (`type`, `title`, `description`, `durationSeconds` or `duration`, `required` (default `true`), `href` for a link). Other fields are ignored. Full replacement: the chapters and contents whose `id` is the decimal id of an existing row are kept (a stored file keeps its file and its type), the others are created (a new content can only be a `link`, a `quiz` or `other`), and the rows left out are deleted.
+         */
         patch: {
             parameters: {
                 query?: never;
@@ -468,16 +562,49 @@ export interface paths {
                         title: string;
                         description: string;
                         instructor?: string;
-                        /** @example 4.8 */
+                        /**
+                         * @description Average rating (1 to 5, one decimal), absent while nobody rated the course
+                         * @example 4.8
+                         */
                         rating?: number | string;
-                        /** @example 2 h 15 */
+                        /**
+                         * @description Number of ratings
+                         * @example 12
+                         */
+                        ratingCount?: number;
+                        /**
+                         * @description Sum of the durations of its contents
+                         * @example 2 h 15
+                         */
                         duration?: string;
+                        /**
+                         * @description Sum of the durations of its contents, in seconds
+                         * @example 8100
+                         */
+                        durationSeconds?: number;
                         /** @example 4 */
                         chapters?: number | string;
-                        /** @example 128 */
+                        /**
+                         * @description Number of users enrolled in the course
+                         * @example 128
+                         */
                         learners?: number | string;
                         /** @example Integration */
                         category?: string;
+                        /**
+                         * @description Level of a formation
+                         * @example beginner
+                         * @enum {string}
+                         */
+                        level?: "beginner" | "intermediate" | "advanced";
+                        /** @description `true` for a mandatory course (its `titleBadge` is then the mandatory badge) */
+                        mandatory?: boolean;
+                        /**
+                         * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+                         * @example internal
+                         * @enum {string}
+                         */
+                        source?: "internal" | "platform";
                         /**
                          * @description Progress status of the formation for the signed-in user
                          * @example in-progress
@@ -518,8 +645,31 @@ export interface paths {
                             variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                         };
                         progress?: number;
-                        /** @example 30 juin 2026 */
+                        /**
+                         * @description Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).
+                         * @example 2026-06-30
+                         */
                         deadline?: string;
+                        /**
+                         * @description Start of the caller on the course (RFC 3339), absent when none was recorded
+                         * @example 2026-03-02T08:15:00Z
+                         */
+                        startedAt?: string;
+                        /**
+                         * @description Completion of the course by the caller (RFC 3339), absent while not completed
+                         * @example 2026-03-20T16:40:00Z
+                         */
+                        completedAt?: string;
+                        /**
+                         * @description Latest chapter the caller completed (RFC 3339), absent before any
+                         * @example 2026-03-18T10:05:00Z
+                         */
+                        lastActivityAt?: string;
+                        /**
+                         * @description Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one
+                         * @example 2026-03-10T09:00:00Z
+                         */
+                        lastReminderAt?: string;
                         /**
                          * @description Distribution of the ratings by value, from 1 to 5
                          * @example {
@@ -545,6 +695,7 @@ export interface paths {
                             instructor?: string;
                             duration?: string;
                             rating?: number | string;
+                            /** @example 4,5 (12 avis) */
                             ratingLabel?: string;
                             /**
                              * @description Distribution of the ratings by value, from 1 to 5
@@ -582,8 +733,16 @@ export interface paths {
                                 /** @example Municipal organisation */
                                 title: string;
                                 description?: string;
-                                /** @example 25 min */
+                                /**
+                                 * @description Sum of the durations of its contents
+                                 * @example 25 min
+                                 */
                                 duration?: string;
+                                /**
+                                 * @description Sum of the durations of its contents, in seconds
+                                 * @example 1500
+                                 */
+                                durationSeconds?: number;
                                 completed?: boolean;
                                 active?: boolean;
                                 contents?: {
@@ -592,19 +751,34 @@ export interface paths {
                                     /** @example Présentation des directions et services */
                                     title: string;
                                     /**
-                                     * @description Type of learning content
+                                     * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                                      * @example video
                                      * @enum {string}
                                      */
                                     type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                                     description?: string;
-                                    /** @example 12 min */
+                                    /**
+                                     * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                                     * @example 12 min
+                                     */
                                     duration?: string;
-                                    /** @example organigramme-mairie360.pdf */
+                                    /**
+                                     * @description Duration in seconds; wins over `duration` in an administration body
+                                     * @example 720
+                                     */
+                                    durationSeconds?: number;
+                                    /**
+                                     * @description Name of the stored file (stored files only)
+                                     * @example organigramme-mairie360.pdf
+                                     */
                                     fileName?: string;
-                                    /** @example /documents/organigramme-mairie360.pdf */
+                                    /**
+                                     * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                                     * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                                     */
                                     href?: string;
                                     completed?: boolean;
+                                    /** @description `false` for an optional content (defaults to `true` in an administration body) */
                                     required?: boolean;
                                 }[];
                             }[];
@@ -620,6 +794,11 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            /**
+                             * @description Id of the course in the e-learning service
+                             * @example 42
+                             */
+                            id: string;
                             /** @description Formation shown in the catalogue */
                             course: {
                                 /** @example accueil-agents */
@@ -628,16 +807,49 @@ export interface paths {
                                 title: string;
                                 description: string;
                                 instructor?: string;
-                                /** @example 4.8 */
+                                /**
+                                 * @description Average rating (1 to 5, one decimal), absent while nobody rated the course
+                                 * @example 4.8
+                                 */
                                 rating?: number | string;
-                                /** @example 2 h 15 */
+                                /**
+                                 * @description Number of ratings
+                                 * @example 12
+                                 */
+                                ratingCount?: number;
+                                /**
+                                 * @description Sum of the durations of its contents
+                                 * @example 2 h 15
+                                 */
                                 duration?: string;
+                                /**
+                                 * @description Sum of the durations of its contents, in seconds
+                                 * @example 8100
+                                 */
+                                durationSeconds?: number;
                                 /** @example 4 */
                                 chapters?: number | string;
-                                /** @example 128 */
+                                /**
+                                 * @description Number of users enrolled in the course
+                                 * @example 128
+                                 */
                                 learners?: number | string;
                                 /** @example Integration */
                                 category?: string;
+                                /**
+                                 * @description Level of a formation
+                                 * @example beginner
+                                 * @enum {string}
+                                 */
+                                level?: "beginner" | "intermediate" | "advanced";
+                                /** @description `true` for a mandatory course (its `titleBadge` is then the mandatory badge) */
+                                mandatory?: boolean;
+                                /**
+                                 * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+                                 * @example internal
+                                 * @enum {string}
+                                 */
+                                source?: "internal" | "platform";
                                 /**
                                  * @description Progress status of the formation for the signed-in user
                                  * @example in-progress
@@ -678,8 +890,31 @@ export interface paths {
                                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                 };
                                 progress?: number;
-                                /** @example 30 juin 2026 */
+                                /**
+                                 * @description Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).
+                                 * @example 2026-06-30
+                                 */
                                 deadline?: string;
+                                /**
+                                 * @description Start of the caller on the course (RFC 3339), absent when none was recorded
+                                 * @example 2026-03-02T08:15:00Z
+                                 */
+                                startedAt?: string;
+                                /**
+                                 * @description Completion of the course by the caller (RFC 3339), absent while not completed
+                                 * @example 2026-03-20T16:40:00Z
+                                 */
+                                completedAt?: string;
+                                /**
+                                 * @description Latest chapter the caller completed (RFC 3339), absent before any
+                                 * @example 2026-03-18T10:05:00Z
+                                 */
+                                lastActivityAt?: string;
+                                /**
+                                 * @description Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one
+                                 * @example 2026-03-10T09:00:00Z
+                                 */
+                                lastReminderAt?: string;
                                 /**
                                  * @description Distribution of the ratings by value, from 1 to 5
                                  * @example {
@@ -705,6 +940,7 @@ export interface paths {
                                     instructor?: string;
                                     duration?: string;
                                     rating?: number | string;
+                                    /** @example 4,5 (12 avis) */
                                     ratingLabel?: string;
                                     /**
                                      * @description Distribution of the ratings by value, from 1 to 5
@@ -742,8 +978,16 @@ export interface paths {
                                         /** @example Municipal organisation */
                                         title: string;
                                         description?: string;
-                                        /** @example 25 min */
+                                        /**
+                                         * @description Sum of the durations of its contents
+                                         * @example 25 min
+                                         */
                                         duration?: string;
+                                        /**
+                                         * @description Sum of the durations of its contents, in seconds
+                                         * @example 1500
+                                         */
+                                        durationSeconds?: number;
                                         completed?: boolean;
                                         active?: boolean;
                                         contents?: {
@@ -752,24 +996,162 @@ export interface paths {
                                             /** @example Présentation des directions et services */
                                             title: string;
                                             /**
-                                             * @description Type of learning content
+                                             * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                                              * @example video
                                              * @enum {string}
                                              */
                                             type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                                             description?: string;
-                                            /** @example 12 min */
+                                            /**
+                                             * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                                             * @example 12 min
+                                             */
                                             duration?: string;
-                                            /** @example organigramme-mairie360.pdf */
+                                            /**
+                                             * @description Duration in seconds; wins over `duration` in an administration body
+                                             * @example 720
+                                             */
+                                            durationSeconds?: number;
+                                            /**
+                                             * @description Name of the stored file (stored files only)
+                                             * @example organigramme-mairie360.pdf
+                                             */
                                             fileName?: string;
-                                            /** @example /documents/organigramme-mairie360.pdf */
+                                            /**
+                                             * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                                             * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                                             */
                                             href?: string;
                                             completed?: boolean;
+                                            /** @description `false` for an optional content (defaults to `true` in an administration body) */
                                             required?: boolean;
                                         }[];
                                     }[];
                                 };
                             };
+                        };
+                    };
+                };
+                /** @description Invalid request payload: every invalid field is named in `details` (`body.title`, `body.details.chapters.0.contents.1.href`...). A field the e-learning service refused is named when it can be told. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Missing, expired or invalid session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Restricted to administrators */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unknown course */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unexpected server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/elearning/admin/courses/{courseId}/reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reminds the late agents of a mandatory course
+         * @description Sends a reminder to the given agents, or to every agent late on the course (deadline past, not completed) when `userIds` is absent. Agents not enrolled, or who completed it, are ignored.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Course (E-learning API formation) identifier */
+                    courseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        /** @description Agents to remind (at most 1000). Absent: every late agent of the course. Agents not enrolled, or who completed it, are ignored. */
+                        userIds?: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Reminders sent */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description One per agent reminded; 0 when nobody was to remind
+                             * @example 3
+                             */
+                            sent: number;
                         };
                     };
                 };
@@ -780,6 +1162,238 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Missing, expired or invalid session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Restricted to administrators */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unknown course */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description The course is not mandatory */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unexpected server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/elearning/admin/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * E-learning indicators of the instance
+         * @description Courses by origin, participation (overall and per service), average completion, indicators per course and the agents late on a mandatory course, read from the E-learning API.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Indicators */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Courses made by the mairie
+                             * @example 12
+                             */
+                            internalCourses: number;
+                            /**
+                             * @description Courses provided with Mairie360
+                             * @example 30
+                             */
+                            platformCourses: number;
+                            /**
+                             * @description Mandatory courses among the internal ones
+                             * @example 3
+                             */
+                            mandatoryInternalCourses: number;
+                            /**
+                             * @description Non-archived accounts
+                             * @example 120
+                             */
+                            agents: number;
+                            /**
+                             * @description Agents enrolled in at least one course
+                             * @example 95
+                             */
+                            participants: number;
+                            /**
+                             * @description `participants / agents`, percent, one decimal
+                             * @example 79.2
+                             */
+                            participationRate: number;
+                            /**
+                             * @description Average progress over every enrolment, percent, one decimal
+                             * @example 61.4
+                             */
+                            averageCompletion: number;
+                            /**
+                             * @description Enrolments on a mandatory course whose deadline is past, not completed
+                             * @example 7
+                             */
+                            lateMandatory: number;
+                            /** @description By service name, the agents without a service last */
+                            byService: {
+                                /**
+                                 * @description Id of the service, `null` for the agents without a service
+                                 * @example 3
+                                 */
+                                serviceId: string | null;
+                                /**
+                                 * @description Name of the service, `null` for the agents without a service
+                                 * @example Urbanisme
+                                 */
+                                serviceName: string | null;
+                                /** @example 25 */
+                                agents: number;
+                                /** @example 20 */
+                                participants: number;
+                                /**
+                                 * @description Percent, one decimal
+                                 * @example 80
+                                 */
+                                participationRate: number;
+                            }[];
+                            /** @description Every course, by increasing id */
+                            byCourse: {
+                                /** @example 4 */
+                                id: string;
+                                /** @example RGPD pour les agents */
+                                title: string;
+                                /**
+                                 * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+                                 * @example internal
+                                 * @enum {string}
+                                 */
+                                source: "internal" | "platform";
+                                mandatory: boolean;
+                                /**
+                                 * @description Agents enrolled (archived accounts excluded)
+                                 * @example 40
+                                 */
+                                enrolled: number;
+                                /**
+                                 * @description Agents who completed it
+                                 * @example 12
+                                 */
+                                completed: number;
+                                /**
+                                 * @description Average progress of the enrolled agents, percent, one decimal
+                                 * @example 47.5
+                                 */
+                                averageProgress: number;
+                            }[];
+                            /** @description The 500 most overdue late enrolments (`lateMandatory` counts them all), by deadline, then course, then agent */
+                            lateAgents: {
+                                /**
+                                 * @description Core API id of the agent
+                                 * @example 42
+                                 */
+                                userId: string;
+                                /** @example Alice */
+                                firstName: string;
+                                /** @example Martin */
+                                lastName: string;
+                                /** @example 4 */
+                                courseId: string;
+                                /** @example RGPD pour les agents */
+                                courseTitle: string;
+                                /**
+                                 * @description Past deadline of the course, `YYYY-MM-DD`
+                                 * @example 2026-06-30
+                                 */
+                                deadline: string;
+                                /**
+                                 * @description Progress of the agent, percent, one decimal
+                                 * @example 50
+                                 */
+                                progress: number;
+                                /**
+                                 * @description Latest reminder sent to the agent about this course (RFC 3339), `null` without one
+                                 * @example null
+                                 */
+                                lastReminderAt: string | null;
+                            }[];
+                        };
                     };
                 };
                 /** @description Missing, expired or invalid session */
@@ -818,8 +1432,115 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
-                /** @description Not available: no upstream service stores this data yet */
-                501: {
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/elearning/courses/{courseId}/certificate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Attestation of a course the caller completed (PDF)
+         * @description The PDF attestation written by the E-learning API, with its `Content-Disposition` file name.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Course (E-learning API formation) identifier */
+                    courseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description PDF attestation */
+                200: {
+                    headers: {
+                        /** @description File name of the attestation */
+                        "Content-Disposition"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": string;
+                    };
+                };
+                /** @description Invalid course identifier */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Missing, expired or invalid session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unknown course, or the caller is not enrolled in it */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description The caller has not completed the course yet */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unexpected server error */
+                500: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -847,6 +1568,371 @@ export interface paths {
                 };
             };
         };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/elearning/certificates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Attestations of the courses the caller completed during a year (PDF)
+         * @description One PDF written by the E-learning API, with its `Content-Disposition` file name.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Calendar year, from 2000 to 2100; defaults to the current year (UTC) */
+                    year?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description PDF attestations of the year */
+                200: {
+                    headers: {
+                        /** @description File name of the attestations */
+                        "Content-Disposition"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": string;
+                    };
+                };
+                /** @description Invalid year */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Missing, expired or invalid session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description The caller completed no course during this year */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unexpected server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/elearning/courses/{courseId}/chapters/{chapterId}/contents/{contentId}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Signed URL of a stored file of a course
+         * @description Where to open a stored file (video, PDF, document, audio) of a course the caller is enrolled in: a URL valid a few minutes, to ask for again on every opening. A link carries its own `href` in the catalogue; a link, a quiz or `other` has no file (404).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Course (E-learning API formation) identifier */
+                    courseId: string;
+                    /** @description Chapter (E-learning API module) identifier */
+                    chapterId: string;
+                    /** @description Content (E-learning API attachment) identifier */
+                    contentId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Signed URL of the file */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /**
+                             * @description Signed URL of the stored file, valid a few minutes: ask for it again on every opening instead of storing it
+                             * @example https://elearning.s3.fr-par.scw.cloud/courses/4/principes.pdf?X-Amz-Signature=abc
+                             */
+                            url: string;
+                        };
+                    };
+                };
+                /** @description Invalid identifiers */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Missing, expired or invalid session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unknown course or course the caller is not enrolled in, or no stored file under this chapter and id */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unexpected server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/elearning/training-time": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Training time of the caller during a year
+         * @description Yearly goal of the instance, time spent (the durations of the contents of the chapters completed that year), courses completed that year, and the time per course, read from the E-learning API.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Calendar year, from 2000 to 2100; defaults to the current year (UTC) */
+                    year?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Training time of the year */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @example 2026 */
+                            year: number;
+                            /**
+                             * @description Yearly training goal of an agent, in minutes, set for the whole instance
+                             * @example 600
+                             */
+                            goalMinutes: number;
+                            /**
+                             * @description Training time of the year, every course together, in seconds
+                             * @example 5400
+                             */
+                            timeSpentSeconds: number;
+                            /**
+                             * @description Courses completed during the year
+                             * @example 2
+                             */
+                            completedCount: number;
+                            /** @description Every course the caller is enrolled in, by increasing id */
+                            courses: {
+                                /** @example 4 */
+                                id: string;
+                                /** @example RGPD pour les agents */
+                                title: string;
+                                /**
+                                 * @description Current progress of the caller, whatever the year
+                                 * @example in-progress
+                                 * @enum {string}
+                                 */
+                                status: "not-started" | "in-progress" | "completed";
+                                /**
+                                 * @description Durations of the contents of the chapters completed during the year
+                                 * @example 1800
+                                 */
+                                timeSpentSeconds: number;
+                                /**
+                                 * @description Completion of the course (RFC 3339), `null` while not completed
+                                 * @example 2026-03-20T16:40:00Z
+                                 */
+                                completedAt: string | null;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Invalid year */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Missing, expired or invalid session */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Unexpected server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is unreachable, failed or answered an unusable body */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description An upstream API is not configured (`<SERVICE>_URL` missing or invalid) */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/elearning/catalog": {
@@ -970,16 +2056,49 @@ export interface paths {
                                     title: string;
                                     description: string;
                                     instructor?: string;
-                                    /** @example 4.8 */
+                                    /**
+                                     * @description Average rating (1 to 5, one decimal), absent while nobody rated the course
+                                     * @example 4.8
+                                     */
                                     rating?: number | string;
-                                    /** @example 2 h 15 */
+                                    /**
+                                     * @description Number of ratings
+                                     * @example 12
+                                     */
+                                    ratingCount?: number;
+                                    /**
+                                     * @description Sum of the durations of its contents
+                                     * @example 2 h 15
+                                     */
                                     duration?: string;
+                                    /**
+                                     * @description Sum of the durations of its contents, in seconds
+                                     * @example 8100
+                                     */
+                                    durationSeconds?: number;
                                     /** @example 4 */
                                     chapters?: number | string;
-                                    /** @example 128 */
+                                    /**
+                                     * @description Number of users enrolled in the course
+                                     * @example 128
+                                     */
                                     learners?: number | string;
                                     /** @example Integration */
                                     category?: string;
+                                    /**
+                                     * @description Level of a formation
+                                     * @example beginner
+                                     * @enum {string}
+                                     */
+                                    level?: "beginner" | "intermediate" | "advanced";
+                                    /** @description `true` for a mandatory course (its `titleBadge` is then the mandatory badge) */
+                                    mandatory?: boolean;
+                                    /**
+                                     * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+                                     * @example internal
+                                     * @enum {string}
+                                     */
+                                    source?: "internal" | "platform";
                                     /**
                                      * @description Progress status of the formation for the signed-in user
                                      * @example in-progress
@@ -1020,8 +2139,31 @@ export interface paths {
                                         variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                     };
                                     progress?: number;
-                                    /** @example 30 juin 2026 */
+                                    /**
+                                     * @description Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).
+                                     * @example 2026-06-30
+                                     */
                                     deadline?: string;
+                                    /**
+                                     * @description Start of the caller on the course (RFC 3339), absent when none was recorded
+                                     * @example 2026-03-02T08:15:00Z
+                                     */
+                                    startedAt?: string;
+                                    /**
+                                     * @description Completion of the course by the caller (RFC 3339), absent while not completed
+                                     * @example 2026-03-20T16:40:00Z
+                                     */
+                                    completedAt?: string;
+                                    /**
+                                     * @description Latest chapter the caller completed (RFC 3339), absent before any
+                                     * @example 2026-03-18T10:05:00Z
+                                     */
+                                    lastActivityAt?: string;
+                                    /**
+                                     * @description Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one
+                                     * @example 2026-03-10T09:00:00Z
+                                     */
+                                    lastReminderAt?: string;
                                     /**
                                      * @description Distribution of the ratings by value, from 1 to 5
                                      * @example {
@@ -1047,6 +2189,7 @@ export interface paths {
                                         instructor?: string;
                                         duration?: string;
                                         rating?: number | string;
+                                        /** @example 4,5 (12 avis) */
                                         ratingLabel?: string;
                                         /**
                                          * @description Distribution of the ratings by value, from 1 to 5
@@ -1084,8 +2227,16 @@ export interface paths {
                                             /** @example Municipal organisation */
                                             title: string;
                                             description?: string;
-                                            /** @example 25 min */
+                                            /**
+                                             * @description Sum of the durations of its contents
+                                             * @example 25 min
+                                             */
                                             duration?: string;
+                                            /**
+                                             * @description Sum of the durations of its contents, in seconds
+                                             * @example 1500
+                                             */
+                                            durationSeconds?: number;
                                             completed?: boolean;
                                             active?: boolean;
                                             contents?: {
@@ -1094,19 +2245,34 @@ export interface paths {
                                                 /** @example Présentation des directions et services */
                                                 title: string;
                                                 /**
-                                                 * @description Type of learning content
+                                                 * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                                                  * @example video
                                                  * @enum {string}
                                                  */
                                                 type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                                                 description?: string;
-                                                /** @example 12 min */
+                                                /**
+                                                 * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                                                 * @example 12 min
+                                                 */
                                                 duration?: string;
-                                                /** @example organigramme-mairie360.pdf */
+                                                /**
+                                                 * @description Duration in seconds; wins over `duration` in an administration body
+                                                 * @example 720
+                                                 */
+                                                durationSeconds?: number;
+                                                /**
+                                                 * @description Name of the stored file (stored files only)
+                                                 * @example organigramme-mairie360.pdf
+                                                 */
                                                 fileName?: string;
-                                                /** @example /documents/organigramme-mairie360.pdf */
+                                                /**
+                                                 * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                                                 * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                                                 */
                                                 href?: string;
                                                 completed?: boolean;
+                                                /** @description `false` for an optional content (defaults to `true` in an administration body) */
                                                 required?: boolean;
                                             }[];
                                         }[];
@@ -1254,8 +2420,16 @@ export interface paths {
                                 /** @example Municipal organisation */
                                 title: string;
                                 description?: string;
-                                /** @example 25 min */
+                                /**
+                                 * @description Sum of the durations of its contents
+                                 * @example 25 min
+                                 */
                                 duration?: string;
+                                /**
+                                 * @description Sum of the durations of its contents, in seconds
+                                 * @example 1500
+                                 */
+                                durationSeconds?: number;
                                 completed?: boolean;
                                 active?: boolean;
                                 contents?: {
@@ -1264,19 +2438,34 @@ export interface paths {
                                     /** @example Présentation des directions et services */
                                     title: string;
                                     /**
-                                     * @description Type of learning content
+                                     * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                                      * @example video
                                      * @enum {string}
                                      */
                                     type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                                     description?: string;
-                                    /** @example 12 min */
+                                    /**
+                                     * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                                     * @example 12 min
+                                     */
                                     duration?: string;
-                                    /** @example organigramme-mairie360.pdf */
+                                    /**
+                                     * @description Duration in seconds; wins over `duration` in an administration body
+                                     * @example 720
+                                     */
+                                    durationSeconds?: number;
+                                    /**
+                                     * @description Name of the stored file (stored files only)
+                                     * @example organigramme-mairie360.pdf
+                                     */
                                     fileName?: string;
-                                    /** @example /documents/organigramme-mairie360.pdf */
+                                    /**
+                                     * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                                     * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                                     */
                                     href?: string;
                                     completed?: boolean;
+                                    /** @description `false` for an optional content (defaults to `true` in an administration body) */
                                     required?: boolean;
                                 }[];
                             }[];
@@ -1287,8 +2476,16 @@ export interface paths {
                                 /** @example Municipal organisation */
                                 title: string;
                                 description?: string;
-                                /** @example 25 min */
+                                /**
+                                 * @description Sum of the durations of its contents
+                                 * @example 25 min
+                                 */
                                 duration?: string;
+                                /**
+                                 * @description Sum of the durations of its contents, in seconds
+                                 * @example 1500
+                                 */
+                                durationSeconds?: number;
                                 completed?: boolean;
                                 active?: boolean;
                                 contents?: {
@@ -1297,19 +2494,34 @@ export interface paths {
                                     /** @example Présentation des directions et services */
                                     title: string;
                                     /**
-                                     * @description Type of learning content
+                                     * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                                      * @example video
                                      * @enum {string}
                                      */
                                     type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                                     description?: string;
-                                    /** @example 12 min */
+                                    /**
+                                     * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                                     * @example 12 min
+                                     */
                                     duration?: string;
-                                    /** @example organigramme-mairie360.pdf */
+                                    /**
+                                     * @description Duration in seconds; wins over `duration` in an administration body
+                                     * @example 720
+                                     */
+                                    durationSeconds?: number;
+                                    /**
+                                     * @description Name of the stored file (stored files only)
+                                     * @example organigramme-mairie360.pdf
+                                     */
                                     fileName?: string;
-                                    /** @example /documents/organigramme-mairie360.pdf */
+                                    /**
+                                     * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                                     * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                                     */
                                     href?: string;
                                     completed?: boolean;
+                                    /** @description `false` for an optional content (defaults to `true` in an administration body) */
                                     required?: boolean;
                                 }[];
                             };
@@ -1320,19 +2532,34 @@ export interface paths {
                                 /** @example Présentation des directions et services */
                                 title: string;
                                 /**
-                                 * @description Type of learning content
+                                 * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                                  * @example video
                                  * @enum {string}
                                  */
                                 type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                                 description?: string;
-                                /** @example 12 min */
+                                /**
+                                 * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                                 * @example 12 min
+                                 */
                                 duration?: string;
-                                /** @example organigramme-mairie360.pdf */
+                                /**
+                                 * @description Duration in seconds; wins over `duration` in an administration body
+                                 * @example 720
+                                 */
+                                durationSeconds?: number;
+                                /**
+                                 * @description Name of the stored file (stored files only)
+                                 * @example organigramme-mairie360.pdf
+                                 */
                                 fileName?: string;
-                                /** @example /documents/organigramme-mairie360.pdf */
+                                /**
+                                 * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                                 * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                                 */
                                 href?: string;
                                 completed?: boolean;
+                                /** @description `false` for an optional content (defaults to `true` in an administration body) */
                                 required?: boolean;
                             };
                         };
@@ -1561,8 +2788,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Rates a course (not available yet: 501)
-         * @description Not available yet: the E-learning API does not store ratings, so a valid request from an authenticated caller answers 501. The 200 answer is the contract the route will keep once ratings are persisted upstream.
+         * Rates a course the caller completed
+         * @description Stores the rating of the caller (1 to 5; a new rating replaces the previous one) in the E-learning API and returns the rating of the course.
          */
         post: {
             parameters: {
@@ -1590,10 +2817,25 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            rating: number;
-                            ratingCount: number;
                             /**
-                             * @description Distribution of the ratings by value, from 1 to 5
+                             * @description Average rating of the course, one decimal, the caller's included
+                             * @example 4.5
+                             */
+                            rating: number;
+                            /**
+                             * @description Number of ratings of the course, the caller's included
+                             * @example 12
+                             */
+                            ratingCount: number;
+                            /** @example 4,5 (12 avis) */
+                            ratingLabel: string;
+                            /**
+                             * @description The rating the caller just gave
+                             * @example 5
+                             */
+                            myRating: number;
+                            /**
+                             * @description Always empty: the e-learning service does not publish the distribution
                              * @example {
                              *       "1": 0,
                              *       "2": 1,
@@ -1609,6 +2851,7 @@ export interface paths {
                                 4?: number;
                                 5?: number;
                             };
+                            /** @description Always `true` */
                             submitted: boolean;
                         };
                     };
@@ -1631,6 +2874,24 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description Unknown course, or the caller is not enrolled in it */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description The caller has not completed the course yet */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
                 /** @description An upstream API rate limit is reached: retry after the Retry-After header (seconds) */
                 429: {
                     headers: {
@@ -1642,15 +2903,6 @@ export interface paths {
                 };
                 /** @description Unexpected server error */
                 500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ErrorResponse"];
-                    };
-                };
-                /** @description Not available: no upstream service stores this data yet */
-                501: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -1731,16 +2983,49 @@ export interface paths {
                                 title: string;
                                 description: string;
                                 instructor?: string;
-                                /** @example 4.8 */
+                                /**
+                                 * @description Average rating (1 to 5, one decimal), absent while nobody rated the course
+                                 * @example 4.8
+                                 */
                                 rating?: number | string;
-                                /** @example 2 h 15 */
+                                /**
+                                 * @description Number of ratings
+                                 * @example 12
+                                 */
+                                ratingCount?: number;
+                                /**
+                                 * @description Sum of the durations of its contents
+                                 * @example 2 h 15
+                                 */
                                 duration?: string;
+                                /**
+                                 * @description Sum of the durations of its contents, in seconds
+                                 * @example 8100
+                                 */
+                                durationSeconds?: number;
                                 /** @example 4 */
                                 chapters?: number | string;
-                                /** @example 128 */
+                                /**
+                                 * @description Number of users enrolled in the course
+                                 * @example 128
+                                 */
                                 learners?: number | string;
                                 /** @example Integration */
                                 category?: string;
+                                /**
+                                 * @description Level of a formation
+                                 * @example beginner
+                                 * @enum {string}
+                                 */
+                                level?: "beginner" | "intermediate" | "advanced";
+                                /** @description `true` for a mandatory course (its `titleBadge` is then the mandatory badge) */
+                                mandatory?: boolean;
+                                /**
+                                 * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+                                 * @example internal
+                                 * @enum {string}
+                                 */
+                                source?: "internal" | "platform";
                                 /**
                                  * @description Progress status of the formation for the signed-in user
                                  * @example in-progress
@@ -1781,8 +3066,31 @@ export interface paths {
                                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                                 };
                                 progress?: number;
-                                /** @example 30 juin 2026 */
+                                /**
+                                 * @description Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).
+                                 * @example 2026-06-30
+                                 */
                                 deadline?: string;
+                                /**
+                                 * @description Start of the caller on the course (RFC 3339), absent when none was recorded
+                                 * @example 2026-03-02T08:15:00Z
+                                 */
+                                startedAt?: string;
+                                /**
+                                 * @description Completion of the course by the caller (RFC 3339), absent while not completed
+                                 * @example 2026-03-20T16:40:00Z
+                                 */
+                                completedAt?: string;
+                                /**
+                                 * @description Latest chapter the caller completed (RFC 3339), absent before any
+                                 * @example 2026-03-18T10:05:00Z
+                                 */
+                                lastActivityAt?: string;
+                                /**
+                                 * @description Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one
+                                 * @example 2026-03-10T09:00:00Z
+                                 */
+                                lastReminderAt?: string;
                                 /**
                                  * @description Distribution of the ratings by value, from 1 to 5
                                  * @example {
@@ -1808,6 +3116,7 @@ export interface paths {
                                     instructor?: string;
                                     duration?: string;
                                     rating?: number | string;
+                                    /** @example 4,5 (12 avis) */
                                     ratingLabel?: string;
                                     /**
                                      * @description Distribution of the ratings by value, from 1 to 5
@@ -1845,8 +3154,16 @@ export interface paths {
                                         /** @example Municipal organisation */
                                         title: string;
                                         description?: string;
-                                        /** @example 25 min */
+                                        /**
+                                         * @description Sum of the durations of its contents
+                                         * @example 25 min
+                                         */
                                         duration?: string;
+                                        /**
+                                         * @description Sum of the durations of its contents, in seconds
+                                         * @example 1500
+                                         */
+                                        durationSeconds?: number;
                                         completed?: boolean;
                                         active?: boolean;
                                         contents?: {
@@ -1855,19 +3172,34 @@ export interface paths {
                                             /** @example Présentation des directions et services */
                                             title: string;
                                             /**
-                                             * @description Type of learning content
+                                             * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                                              * @example video
                                              * @enum {string}
                                              */
                                             type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                                             description?: string;
-                                            /** @example 12 min */
+                                            /**
+                                             * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                                             * @example 12 min
+                                             */
                                             duration?: string;
-                                            /** @example organigramme-mairie360.pdf */
+                                            /**
+                                             * @description Duration in seconds; wins over `duration` in an administration body
+                                             * @example 720
+                                             */
+                                            durationSeconds?: number;
+                                            /**
+                                             * @description Name of the stored file (stored files only)
+                                             * @example organigramme-mairie360.pdf
+                                             */
                                             fileName?: string;
-                                            /** @example /documents/organigramme-mairie360.pdf */
+                                            /**
+                                             * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                                             * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                                             */
                                             href?: string;
                                             completed?: boolean;
+                                            /** @description `false` for an optional content (defaults to `true` in an administration body) */
                                             required?: boolean;
                                         }[];
                                     }[];
@@ -1972,11 +3304,23 @@ export interface components {
          */
         BadgeVariant: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
         /**
-         * @description Type of learning content
+         * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
          * @example video
          * @enum {string}
          */
         ContentType: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
+        /**
+         * @description Level of a formation
+         * @example beginner
+         * @enum {string}
+         */
+        CourseLevel: "beginner" | "intermediate" | "advanced";
+        /**
+         * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+         * @example internal
+         * @enum {string}
+         */
+        CourseSource: "internal" | "platform";
         /**
          * @description Distribution of the ratings by value, from 1 to 5
          * @example {
@@ -2100,19 +3444,34 @@ export interface components {
             /** @example Présentation des directions et services */
             title: string;
             /**
-             * @description Type of learning content
+             * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
              * @example video
              * @enum {string}
              */
             type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
             description?: string;
-            /** @example 12 min */
+            /**
+             * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+             * @example 12 min
+             */
             duration?: string;
-            /** @example organigramme-mairie360.pdf */
+            /**
+             * @description Duration in seconds; wins over `duration` in an administration body
+             * @example 720
+             */
+            durationSeconds?: number;
+            /**
+             * @description Name of the stored file (stored files only)
+             * @example organigramme-mairie360.pdf
+             */
             fileName?: string;
-            /** @example /documents/organigramme-mairie360.pdf */
+            /**
+             * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+             * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+             */
             href?: string;
             completed?: boolean;
+            /** @description `false` for an optional content (defaults to `true` in an administration body) */
             required?: boolean;
         };
         /** @description Chapter of a formation */
@@ -2122,8 +3481,16 @@ export interface components {
             /** @example Municipal organisation */
             title: string;
             description?: string;
-            /** @example 25 min */
+            /**
+             * @description Sum of the durations of its contents
+             * @example 25 min
+             */
             duration?: string;
+            /**
+             * @description Sum of the durations of its contents, in seconds
+             * @example 1500
+             */
+            durationSeconds?: number;
             completed?: boolean;
             active?: boolean;
             contents?: {
@@ -2132,19 +3499,34 @@ export interface components {
                 /** @example Présentation des directions et services */
                 title: string;
                 /**
-                 * @description Type of learning content
+                 * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                  * @example video
                  * @enum {string}
                  */
                 type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                 description?: string;
-                /** @example 12 min */
+                /**
+                 * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                 * @example 12 min
+                 */
                 duration?: string;
-                /** @example organigramme-mairie360.pdf */
+                /**
+                 * @description Duration in seconds; wins over `duration` in an administration body
+                 * @example 720
+                 */
+                durationSeconds?: number;
+                /**
+                 * @description Name of the stored file (stored files only)
+                 * @example organigramme-mairie360.pdf
+                 */
                 fileName?: string;
-                /** @example /documents/organigramme-mairie360.pdf */
+                /**
+                 * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                 * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                 */
                 href?: string;
                 completed?: boolean;
+                /** @description `false` for an optional content (defaults to `true` in an administration body) */
                 required?: boolean;
             }[];
         };
@@ -2156,6 +3538,7 @@ export interface components {
             instructor?: string;
             duration?: string;
             rating?: number | string;
+            /** @example 4,5 (12 avis) */
             ratingLabel?: string;
             /**
              * @description Distribution of the ratings by value, from 1 to 5
@@ -2193,8 +3576,16 @@ export interface components {
                 /** @example Municipal organisation */
                 title: string;
                 description?: string;
-                /** @example 25 min */
+                /**
+                 * @description Sum of the durations of its contents
+                 * @example 25 min
+                 */
                 duration?: string;
+                /**
+                 * @description Sum of the durations of its contents, in seconds
+                 * @example 1500
+                 */
+                durationSeconds?: number;
                 completed?: boolean;
                 active?: boolean;
                 contents?: {
@@ -2203,19 +3594,34 @@ export interface components {
                     /** @example Présentation des directions et services */
                     title: string;
                     /**
-                     * @description Type of learning content
+                     * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                      * @example video
                      * @enum {string}
                      */
                     type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                     description?: string;
-                    /** @example 12 min */
+                    /**
+                     * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                     * @example 12 min
+                     */
                     duration?: string;
-                    /** @example organigramme-mairie360.pdf */
+                    /**
+                     * @description Duration in seconds; wins over `duration` in an administration body
+                     * @example 720
+                     */
+                    durationSeconds?: number;
+                    /**
+                     * @description Name of the stored file (stored files only)
+                     * @example organigramme-mairie360.pdf
+                     */
                     fileName?: string;
-                    /** @example /documents/organigramme-mairie360.pdf */
+                    /**
+                     * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                     * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                     */
                     href?: string;
                     completed?: boolean;
+                    /** @description `false` for an optional content (defaults to `true` in an administration body) */
                     required?: boolean;
                 }[];
             }[];
@@ -2228,16 +3634,49 @@ export interface components {
             title: string;
             description: string;
             instructor?: string;
-            /** @example 4.8 */
+            /**
+             * @description Average rating (1 to 5, one decimal), absent while nobody rated the course
+             * @example 4.8
+             */
             rating?: number | string;
-            /** @example 2 h 15 */
+            /**
+             * @description Number of ratings
+             * @example 12
+             */
+            ratingCount?: number;
+            /**
+             * @description Sum of the durations of its contents
+             * @example 2 h 15
+             */
             duration?: string;
+            /**
+             * @description Sum of the durations of its contents, in seconds
+             * @example 8100
+             */
+            durationSeconds?: number;
             /** @example 4 */
             chapters?: number | string;
-            /** @example 128 */
+            /**
+             * @description Number of users enrolled in the course
+             * @example 128
+             */
             learners?: number | string;
             /** @example Integration */
             category?: string;
+            /**
+             * @description Level of a formation
+             * @example beginner
+             * @enum {string}
+             */
+            level?: "beginner" | "intermediate" | "advanced";
+            /** @description `true` for a mandatory course (its `titleBadge` is then the mandatory badge) */
+            mandatory?: boolean;
+            /**
+             * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+             * @example internal
+             * @enum {string}
+             */
+            source?: "internal" | "platform";
             /**
              * @description Progress status of the formation for the signed-in user
              * @example in-progress
@@ -2278,8 +3717,31 @@ export interface components {
                 variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
             };
             progress?: number;
-            /** @example 30 juin 2026 */
+            /**
+             * @description Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).
+             * @example 2026-06-30
+             */
             deadline?: string;
+            /**
+             * @description Start of the caller on the course (RFC 3339), absent when none was recorded
+             * @example 2026-03-02T08:15:00Z
+             */
+            startedAt?: string;
+            /**
+             * @description Completion of the course by the caller (RFC 3339), absent while not completed
+             * @example 2026-03-20T16:40:00Z
+             */
+            completedAt?: string;
+            /**
+             * @description Latest chapter the caller completed (RFC 3339), absent before any
+             * @example 2026-03-18T10:05:00Z
+             */
+            lastActivityAt?: string;
+            /**
+             * @description Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one
+             * @example 2026-03-10T09:00:00Z
+             */
+            lastReminderAt?: string;
             /**
              * @description Distribution of the ratings by value, from 1 to 5
              * @example {
@@ -2305,6 +3767,7 @@ export interface components {
                 instructor?: string;
                 duration?: string;
                 rating?: number | string;
+                /** @example 4,5 (12 avis) */
                 ratingLabel?: string;
                 /**
                  * @description Distribution of the ratings by value, from 1 to 5
@@ -2342,8 +3805,16 @@ export interface components {
                     /** @example Municipal organisation */
                     title: string;
                     description?: string;
-                    /** @example 25 min */
+                    /**
+                     * @description Sum of the durations of its contents
+                     * @example 25 min
+                     */
                     duration?: string;
+                    /**
+                     * @description Sum of the durations of its contents, in seconds
+                     * @example 1500
+                     */
+                    durationSeconds?: number;
                     completed?: boolean;
                     active?: boolean;
                     contents?: {
@@ -2352,42 +3823,93 @@ export interface components {
                         /** @example Présentation des directions et services */
                         title: string;
                         /**
-                         * @description Type of learning content
+                         * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                          * @example video
                          * @enum {string}
                          */
                         type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                         description?: string;
-                        /** @example 12 min */
+                        /**
+                         * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                         * @example 12 min
+                         */
                         duration?: string;
-                        /** @example organigramme-mairie360.pdf */
+                        /**
+                         * @description Duration in seconds; wins over `duration` in an administration body
+                         * @example 720
+                         */
+                        durationSeconds?: number;
+                        /**
+                         * @description Name of the stored file (stored files only)
+                         * @example organigramme-mairie360.pdf
+                         */
                         fileName?: string;
-                        /** @example /documents/organigramme-mairie360.pdf */
+                        /**
+                         * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                         * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                         */
                         href?: string;
                         completed?: boolean;
+                        /** @description `false` for an optional content (defaults to `true` in an administration body) */
                         required?: boolean;
                     }[];
                 }[];
             };
         };
-        /** @description Formation to create */
+        /** @description Formation to create. Its chapters (`details.chapters`) and their contents are created in order; a new content can only be a `link` (with its `href`), a `quiz` or `other`: there is no upload. Chapter and content ids are ignored. */
         AdminCourseCreateBody: {
-            /** @example scan-course */
-            id: string;
+            /**
+             * @description Ignored: the e-learning service allocates the id
+             * @example new-course
+             */
+            id?: string;
             /** @example Accueil des nouveaux agents */
             title: string;
             description: string;
             instructor?: string;
-            /** @example 4.8 */
+            /**
+             * @description Average rating (1 to 5, one decimal), absent while nobody rated the course
+             * @example 4.8
+             */
             rating?: number | string;
-            /** @example 2 h 15 */
+            /**
+             * @description Number of ratings
+             * @example 12
+             */
+            ratingCount?: number;
+            /**
+             * @description Sum of the durations of its contents
+             * @example 2 h 15
+             */
             duration?: string;
+            /**
+             * @description Sum of the durations of its contents, in seconds
+             * @example 8100
+             */
+            durationSeconds?: number;
             /** @example 4 */
             chapters?: number | string;
-            /** @example 128 */
+            /**
+             * @description Number of users enrolled in the course
+             * @example 128
+             */
             learners?: number | string;
             /** @example Integration */
             category?: string;
+            /**
+             * @description Level of a formation
+             * @example beginner
+             * @enum {string}
+             */
+            level?: "beginner" | "intermediate" | "advanced";
+            /** @description `true` for a mandatory course (its `titleBadge` is then the mandatory badge) */
+            mandatory?: boolean;
+            /**
+             * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+             * @example internal
+             * @enum {string}
+             */
+            source?: "internal" | "platform";
             /**
              * @description Progress status of the formation for the signed-in user
              * @example in-progress
@@ -2428,8 +3950,31 @@ export interface components {
                 variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
             };
             progress?: number;
-            /** @example 30 juin 2026 */
+            /**
+             * @description Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).
+             * @example 2026-06-30
+             */
             deadline?: string;
+            /**
+             * @description Start of the caller on the course (RFC 3339), absent when none was recorded
+             * @example 2026-03-02T08:15:00Z
+             */
+            startedAt?: string;
+            /**
+             * @description Completion of the course by the caller (RFC 3339), absent while not completed
+             * @example 2026-03-20T16:40:00Z
+             */
+            completedAt?: string;
+            /**
+             * @description Latest chapter the caller completed (RFC 3339), absent before any
+             * @example 2026-03-18T10:05:00Z
+             */
+            lastActivityAt?: string;
+            /**
+             * @description Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one
+             * @example 2026-03-10T09:00:00Z
+             */
+            lastReminderAt?: string;
             /**
              * @description Distribution of the ratings by value, from 1 to 5
              * @example {
@@ -2455,6 +4000,7 @@ export interface components {
                 instructor?: string;
                 duration?: string;
                 rating?: number | string;
+                /** @example 4,5 (12 avis) */
                 ratingLabel?: string;
                 /**
                  * @description Distribution of the ratings by value, from 1 to 5
@@ -2492,8 +4038,16 @@ export interface components {
                     /** @example Municipal organisation */
                     title: string;
                     description?: string;
-                    /** @example 25 min */
+                    /**
+                     * @description Sum of the durations of its contents
+                     * @example 25 min
+                     */
                     duration?: string;
+                    /**
+                     * @description Sum of the durations of its contents, in seconds
+                     * @example 1500
+                     */
+                    durationSeconds?: number;
                     completed?: boolean;
                     active?: boolean;
                     contents?: {
@@ -2502,19 +4056,34 @@ export interface components {
                         /** @example Présentation des directions et services */
                         title: string;
                         /**
-                         * @description Type of learning content
+                         * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                          * @example video
                          * @enum {string}
                          */
                         type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                         description?: string;
-                        /** @example 12 min */
+                        /**
+                         * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                         * @example 12 min
+                         */
                         duration?: string;
-                        /** @example organigramme-mairie360.pdf */
+                        /**
+                         * @description Duration in seconds; wins over `duration` in an administration body
+                         * @example 720
+                         */
+                        durationSeconds?: number;
+                        /**
+                         * @description Name of the stored file (stored files only)
+                         * @example organigramme-mairie360.pdf
+                         */
                         fileName?: string;
-                        /** @example /documents/organigramme-mairie360.pdf */
+                        /**
+                         * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                         * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                         */
                         href?: string;
                         completed?: boolean;
+                        /** @description `false` for an optional content (defaults to `true` in an administration body) */
                         required?: boolean;
                     }[];
                 }[];
@@ -2583,16 +4152,49 @@ export interface components {
                 title: string;
                 description: string;
                 instructor?: string;
-                /** @example 4.8 */
+                /**
+                 * @description Average rating (1 to 5, one decimal), absent while nobody rated the course
+                 * @example 4.8
+                 */
                 rating?: number | string;
-                /** @example 2 h 15 */
+                /**
+                 * @description Number of ratings
+                 * @example 12
+                 */
+                ratingCount?: number;
+                /**
+                 * @description Sum of the durations of its contents
+                 * @example 2 h 15
+                 */
                 duration?: string;
+                /**
+                 * @description Sum of the durations of its contents, in seconds
+                 * @example 8100
+                 */
+                durationSeconds?: number;
                 /** @example 4 */
                 chapters?: number | string;
-                /** @example 128 */
+                /**
+                 * @description Number of users enrolled in the course
+                 * @example 128
+                 */
                 learners?: number | string;
                 /** @example Integration */
                 category?: string;
+                /**
+                 * @description Level of a formation
+                 * @example beginner
+                 * @enum {string}
+                 */
+                level?: "beginner" | "intermediate" | "advanced";
+                /** @description `true` for a mandatory course (its `titleBadge` is then the mandatory badge) */
+                mandatory?: boolean;
+                /**
+                 * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+                 * @example internal
+                 * @enum {string}
+                 */
+                source?: "internal" | "platform";
                 /**
                  * @description Progress status of the formation for the signed-in user
                  * @example in-progress
@@ -2633,8 +4235,31 @@ export interface components {
                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                 };
                 progress?: number;
-                /** @example 30 juin 2026 */
+                /**
+                 * @description Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).
+                 * @example 2026-06-30
+                 */
                 deadline?: string;
+                /**
+                 * @description Start of the caller on the course (RFC 3339), absent when none was recorded
+                 * @example 2026-03-02T08:15:00Z
+                 */
+                startedAt?: string;
+                /**
+                 * @description Completion of the course by the caller (RFC 3339), absent while not completed
+                 * @example 2026-03-20T16:40:00Z
+                 */
+                completedAt?: string;
+                /**
+                 * @description Latest chapter the caller completed (RFC 3339), absent before any
+                 * @example 2026-03-18T10:05:00Z
+                 */
+                lastActivityAt?: string;
+                /**
+                 * @description Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one
+                 * @example 2026-03-10T09:00:00Z
+                 */
+                lastReminderAt?: string;
                 /**
                  * @description Distribution of the ratings by value, from 1 to 5
                  * @example {
@@ -2660,6 +4285,7 @@ export interface components {
                     instructor?: string;
                     duration?: string;
                     rating?: number | string;
+                    /** @example 4,5 (12 avis) */
                     ratingLabel?: string;
                     /**
                      * @description Distribution of the ratings by value, from 1 to 5
@@ -2697,8 +4323,16 @@ export interface components {
                         /** @example Municipal organisation */
                         title: string;
                         description?: string;
-                        /** @example 25 min */
+                        /**
+                         * @description Sum of the durations of its contents
+                         * @example 25 min
+                         */
                         duration?: string;
+                        /**
+                         * @description Sum of the durations of its contents, in seconds
+                         * @example 1500
+                         */
+                        durationSeconds?: number;
                         completed?: boolean;
                         active?: boolean;
                         contents?: {
@@ -2707,19 +4341,34 @@ export interface components {
                             /** @example Présentation des directions et services */
                             title: string;
                             /**
-                             * @description Type of learning content
+                             * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                              * @example video
                              * @enum {string}
                              */
                             type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                             description?: string;
-                            /** @example 12 min */
+                            /**
+                             * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                             * @example 12 min
+                             */
                             duration?: string;
-                            /** @example organigramme-mairie360.pdf */
+                            /**
+                             * @description Duration in seconds; wins over `duration` in an administration body
+                             * @example 720
+                             */
+                            durationSeconds?: number;
+                            /**
+                             * @description Name of the stored file (stored files only)
+                             * @example organigramme-mairie360.pdf
+                             */
                             fileName?: string;
-                            /** @example /documents/organigramme-mairie360.pdf */
+                            /**
+                             * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                             * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                             */
                             href?: string;
                             completed?: boolean;
+                            /** @description `false` for an optional content (defaults to `true` in an administration body) */
                             required?: boolean;
                         }[];
                     }[];
@@ -2815,16 +4464,49 @@ export interface components {
                     title: string;
                     description: string;
                     instructor?: string;
-                    /** @example 4.8 */
+                    /**
+                     * @description Average rating (1 to 5, one decimal), absent while nobody rated the course
+                     * @example 4.8
+                     */
                     rating?: number | string;
-                    /** @example 2 h 15 */
+                    /**
+                     * @description Number of ratings
+                     * @example 12
+                     */
+                    ratingCount?: number;
+                    /**
+                     * @description Sum of the durations of its contents
+                     * @example 2 h 15
+                     */
                     duration?: string;
+                    /**
+                     * @description Sum of the durations of its contents, in seconds
+                     * @example 8100
+                     */
+                    durationSeconds?: number;
                     /** @example 4 */
                     chapters?: number | string;
-                    /** @example 128 */
+                    /**
+                     * @description Number of users enrolled in the course
+                     * @example 128
+                     */
                     learners?: number | string;
                     /** @example Integration */
                     category?: string;
+                    /**
+                     * @description Level of a formation
+                     * @example beginner
+                     * @enum {string}
+                     */
+                    level?: "beginner" | "intermediate" | "advanced";
+                    /** @description `true` for a mandatory course (its `titleBadge` is then the mandatory badge) */
+                    mandatory?: boolean;
+                    /**
+                     * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+                     * @example internal
+                     * @enum {string}
+                     */
+                    source?: "internal" | "platform";
                     /**
                      * @description Progress status of the formation for the signed-in user
                      * @example in-progress
@@ -2865,8 +4547,31 @@ export interface components {
                         variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                     };
                     progress?: number;
-                    /** @example 30 juin 2026 */
+                    /**
+                     * @description Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).
+                     * @example 2026-06-30
+                     */
                     deadline?: string;
+                    /**
+                     * @description Start of the caller on the course (RFC 3339), absent when none was recorded
+                     * @example 2026-03-02T08:15:00Z
+                     */
+                    startedAt?: string;
+                    /**
+                     * @description Completion of the course by the caller (RFC 3339), absent while not completed
+                     * @example 2026-03-20T16:40:00Z
+                     */
+                    completedAt?: string;
+                    /**
+                     * @description Latest chapter the caller completed (RFC 3339), absent before any
+                     * @example 2026-03-18T10:05:00Z
+                     */
+                    lastActivityAt?: string;
+                    /**
+                     * @description Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one
+                     * @example 2026-03-10T09:00:00Z
+                     */
+                    lastReminderAt?: string;
                     /**
                      * @description Distribution of the ratings by value, from 1 to 5
                      * @example {
@@ -2892,6 +4597,7 @@ export interface components {
                         instructor?: string;
                         duration?: string;
                         rating?: number | string;
+                        /** @example 4,5 (12 avis) */
                         ratingLabel?: string;
                         /**
                          * @description Distribution of the ratings by value, from 1 to 5
@@ -2929,8 +4635,16 @@ export interface components {
                             /** @example Municipal organisation */
                             title: string;
                             description?: string;
-                            /** @example 25 min */
+                            /**
+                             * @description Sum of the durations of its contents
+                             * @example 25 min
+                             */
                             duration?: string;
+                            /**
+                             * @description Sum of the durations of its contents, in seconds
+                             * @example 1500
+                             */
+                            durationSeconds?: number;
                             completed?: boolean;
                             active?: boolean;
                             contents?: {
@@ -2939,19 +4653,34 @@ export interface components {
                                 /** @example Présentation des directions et services */
                                 title: string;
                                 /**
-                                 * @description Type of learning content
+                                 * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                                  * @example video
                                  * @enum {string}
                                  */
                                 type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                                 description?: string;
-                                /** @example 12 min */
+                                /**
+                                 * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                                 * @example 12 min
+                                 */
                                 duration?: string;
-                                /** @example organigramme-mairie360.pdf */
+                                /**
+                                 * @description Duration in seconds; wins over `duration` in an administration body
+                                 * @example 720
+                                 */
+                                durationSeconds?: number;
+                                /**
+                                 * @description Name of the stored file (stored files only)
+                                 * @example organigramme-mairie360.pdf
+                                 */
                                 fileName?: string;
-                                /** @example /documents/organigramme-mairie360.pdf */
+                                /**
+                                 * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                                 * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                                 */
                                 href?: string;
                                 completed?: boolean;
+                                /** @description `false` for an optional content (defaults to `true` in an administration body) */
                                 required?: boolean;
                             }[];
                         }[];
@@ -2972,8 +4701,13 @@ export interface components {
                 }[];
             };
         };
-        /** @description Formation created or updated by an administrator */
+        /** @description Formation created or updated by an administrator: `course` is the course as it was sent, with its normalised fields and the id of the e-learning service. The ids of new chapters and contents are known once the catalogue is read again. */
         AdminCourseResponse: {
+            /**
+             * @description Id of the course in the e-learning service
+             * @example 42
+             */
+            id: string;
             /** @description Formation shown in the catalogue */
             course: {
                 /** @example accueil-agents */
@@ -2982,16 +4716,49 @@ export interface components {
                 title: string;
                 description: string;
                 instructor?: string;
-                /** @example 4.8 */
+                /**
+                 * @description Average rating (1 to 5, one decimal), absent while nobody rated the course
+                 * @example 4.8
+                 */
                 rating?: number | string;
-                /** @example 2 h 15 */
+                /**
+                 * @description Number of ratings
+                 * @example 12
+                 */
+                ratingCount?: number;
+                /**
+                 * @description Sum of the durations of its contents
+                 * @example 2 h 15
+                 */
                 duration?: string;
+                /**
+                 * @description Sum of the durations of its contents, in seconds
+                 * @example 8100
+                 */
+                durationSeconds?: number;
                 /** @example 4 */
                 chapters?: number | string;
-                /** @example 128 */
+                /**
+                 * @description Number of users enrolled in the course
+                 * @example 128
+                 */
                 learners?: number | string;
                 /** @example Integration */
                 category?: string;
+                /**
+                 * @description Level of a formation
+                 * @example beginner
+                 * @enum {string}
+                 */
+                level?: "beginner" | "intermediate" | "advanced";
+                /** @description `true` for a mandatory course (its `titleBadge` is then the mandatory badge) */
+                mandatory?: boolean;
+                /**
+                 * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+                 * @example internal
+                 * @enum {string}
+                 */
+                source?: "internal" | "platform";
                 /**
                  * @description Progress status of the formation for the signed-in user
                  * @example in-progress
@@ -3032,8 +4799,31 @@ export interface components {
                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                 };
                 progress?: number;
-                /** @example 30 juin 2026 */
+                /**
+                 * @description Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).
+                 * @example 2026-06-30
+                 */
                 deadline?: string;
+                /**
+                 * @description Start of the caller on the course (RFC 3339), absent when none was recorded
+                 * @example 2026-03-02T08:15:00Z
+                 */
+                startedAt?: string;
+                /**
+                 * @description Completion of the course by the caller (RFC 3339), absent while not completed
+                 * @example 2026-03-20T16:40:00Z
+                 */
+                completedAt?: string;
+                /**
+                 * @description Latest chapter the caller completed (RFC 3339), absent before any
+                 * @example 2026-03-18T10:05:00Z
+                 */
+                lastActivityAt?: string;
+                /**
+                 * @description Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one
+                 * @example 2026-03-10T09:00:00Z
+                 */
+                lastReminderAt?: string;
                 /**
                  * @description Distribution of the ratings by value, from 1 to 5
                  * @example {
@@ -3059,6 +4849,7 @@ export interface components {
                     instructor?: string;
                     duration?: string;
                     rating?: number | string;
+                    /** @example 4,5 (12 avis) */
                     ratingLabel?: string;
                     /**
                      * @description Distribution of the ratings by value, from 1 to 5
@@ -3096,8 +4887,16 @@ export interface components {
                         /** @example Municipal organisation */
                         title: string;
                         description?: string;
-                        /** @example 25 min */
+                        /**
+                         * @description Sum of the durations of its contents
+                         * @example 25 min
+                         */
                         duration?: string;
+                        /**
+                         * @description Sum of the durations of its contents, in seconds
+                         * @example 1500
+                         */
+                        durationSeconds?: number;
                         completed?: boolean;
                         active?: boolean;
                         contents?: {
@@ -3106,19 +4905,34 @@ export interface components {
                             /** @example Présentation des directions et services */
                             title: string;
                             /**
-                             * @description Type of learning content
+                             * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                              * @example video
                              * @enum {string}
                              */
                             type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                             description?: string;
-                            /** @example 12 min */
+                            /**
+                             * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                             * @example 12 min
+                             */
                             duration?: string;
-                            /** @example organigramme-mairie360.pdf */
+                            /**
+                             * @description Duration in seconds; wins over `duration` in an administration body
+                             * @example 720
+                             */
+                            durationSeconds?: number;
+                            /**
+                             * @description Name of the stored file (stored files only)
+                             * @example organigramme-mairie360.pdf
+                             */
                             fileName?: string;
-                            /** @example /documents/organigramme-mairie360.pdf */
+                            /**
+                             * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                             * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                             */
                             href?: string;
                             completed?: boolean;
+                            /** @description `false` for an optional content (defaults to `true` in an administration body) */
                             required?: boolean;
                         }[];
                     }[];
@@ -3181,10 +4995,335 @@ export interface components {
                 }[];
             };
         };
+        YearQuery: {
+            /**
+             * @description Calendar year, from 2000 to 2100; defaults to the current year (UTC)
+             * @example 2026
+             */
+            year?: number;
+        };
+        /** @description Training time of the caller on one course during the year */
+        TrainingTimeCourse: {
+            /** @example 4 */
+            id: string;
+            /** @example RGPD pour les agents */
+            title: string;
+            /**
+             * @description Current progress of the caller, whatever the year
+             * @example in-progress
+             * @enum {string}
+             */
+            status: "not-started" | "in-progress" | "completed";
+            /**
+             * @description Durations of the contents of the chapters completed during the year
+             * @example 1800
+             */
+            timeSpentSeconds: number;
+            /**
+             * @description Completion of the course (RFC 3339), `null` while not completed
+             * @example 2026-03-20T16:40:00Z
+             */
+            completedAt: string | null;
+        };
+        /** @description Training time of the caller during a year */
+        TrainingTimeResponse: {
+            /** @example 2026 */
+            year: number;
+            /**
+             * @description Yearly training goal of an agent, in minutes, set for the whole instance
+             * @example 600
+             */
+            goalMinutes: number;
+            /**
+             * @description Training time of the year, every course together, in seconds
+             * @example 5400
+             */
+            timeSpentSeconds: number;
+            /**
+             * @description Courses completed during the year
+             * @example 2
+             */
+            completedCount: number;
+            /** @description Every course the caller is enrolled in, by increasing id */
+            courses: {
+                /** @example 4 */
+                id: string;
+                /** @example RGPD pour les agents */
+                title: string;
+                /**
+                 * @description Current progress of the caller, whatever the year
+                 * @example in-progress
+                 * @enum {string}
+                 */
+                status: "not-started" | "in-progress" | "completed";
+                /**
+                 * @description Durations of the contents of the chapters completed during the year
+                 * @example 1800
+                 */
+                timeSpentSeconds: number;
+                /**
+                 * @description Completion of the course (RFC 3339), `null` while not completed
+                 * @example 2026-03-20T16:40:00Z
+                 */
+                completedAt: string | null;
+            }[];
+        };
+        ChapterContentParams: {
+            /**
+             * @description Course (E-learning API formation) identifier
+             * @example 4
+             */
+            courseId: string;
+            /**
+             * @description Chapter (E-learning API module) identifier
+             * @example 11
+             */
+            chapterId: string;
+            /**
+             * @description Content (E-learning API attachment) identifier
+             * @example 27
+             */
+            contentId: string;
+        };
+        /** @description Where to open a stored file (video, PDF, document, audio) */
+        ContentFileResponse: {
+            /**
+             * @description Signed URL of the stored file, valid a few minutes: ask for it again on every opening instead of storing it
+             * @example https://elearning.s3.fr-par.scw.cloud/courses/4/principes.pdf?X-Amz-Signature=abc
+             */
+            url: string;
+        };
+        /** @description Participation of one service of the mairie */
+        ServiceStats: {
+            /**
+             * @description Id of the service, `null` for the agents without a service
+             * @example 3
+             */
+            serviceId: string | null;
+            /**
+             * @description Name of the service, `null` for the agents without a service
+             * @example Urbanisme
+             */
+            serviceName: string | null;
+            /** @example 25 */
+            agents: number;
+            /** @example 20 */
+            participants: number;
+            /**
+             * @description Percent, one decimal
+             * @example 80
+             */
+            participationRate: number;
+        };
+        /** @description Indicators of one course */
+        CourseStats: {
+            /** @example 4 */
+            id: string;
+            /** @example RGPD pour les agents */
+            title: string;
+            /**
+             * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+             * @example internal
+             * @enum {string}
+             */
+            source: "internal" | "platform";
+            mandatory: boolean;
+            /**
+             * @description Agents enrolled (archived accounts excluded)
+             * @example 40
+             */
+            enrolled: number;
+            /**
+             * @description Agents who completed it
+             * @example 12
+             */
+            completed: number;
+            /**
+             * @description Average progress of the enrolled agents, percent, one decimal
+             * @example 47.5
+             */
+            averageProgress: number;
+        };
+        /** @description An agent late on a mandatory course */
+        LateAgent: {
+            /**
+             * @description Core API id of the agent
+             * @example 42
+             */
+            userId: string;
+            /** @example Alice */
+            firstName: string;
+            /** @example Martin */
+            lastName: string;
+            /** @example 4 */
+            courseId: string;
+            /** @example RGPD pour les agents */
+            courseTitle: string;
+            /**
+             * @description Past deadline of the course, `YYYY-MM-DD`
+             * @example 2026-06-30
+             */
+            deadline: string;
+            /**
+             * @description Progress of the agent, percent, one decimal
+             * @example 50
+             */
+            progress: number;
+            /**
+             * @description Latest reminder sent to the agent about this course (RFC 3339), `null` without one
+             * @example null
+             */
+            lastReminderAt: string | null;
+        };
+        /** @description E-learning indicators of the instance */
+        AdminStatsResponse: {
+            /**
+             * @description Courses made by the mairie
+             * @example 12
+             */
+            internalCourses: number;
+            /**
+             * @description Courses provided with Mairie360
+             * @example 30
+             */
+            platformCourses: number;
+            /**
+             * @description Mandatory courses among the internal ones
+             * @example 3
+             */
+            mandatoryInternalCourses: number;
+            /**
+             * @description Non-archived accounts
+             * @example 120
+             */
+            agents: number;
+            /**
+             * @description Agents enrolled in at least one course
+             * @example 95
+             */
+            participants: number;
+            /**
+             * @description `participants / agents`, percent, one decimal
+             * @example 79.2
+             */
+            participationRate: number;
+            /**
+             * @description Average progress over every enrolment, percent, one decimal
+             * @example 61.4
+             */
+            averageCompletion: number;
+            /**
+             * @description Enrolments on a mandatory course whose deadline is past, not completed
+             * @example 7
+             */
+            lateMandatory: number;
+            /** @description By service name, the agents without a service last */
+            byService: {
+                /**
+                 * @description Id of the service, `null` for the agents without a service
+                 * @example 3
+                 */
+                serviceId: string | null;
+                /**
+                 * @description Name of the service, `null` for the agents without a service
+                 * @example Urbanisme
+                 */
+                serviceName: string | null;
+                /** @example 25 */
+                agents: number;
+                /** @example 20 */
+                participants: number;
+                /**
+                 * @description Percent, one decimal
+                 * @example 80
+                 */
+                participationRate: number;
+            }[];
+            /** @description Every course, by increasing id */
+            byCourse: {
+                /** @example 4 */
+                id: string;
+                /** @example RGPD pour les agents */
+                title: string;
+                /**
+                 * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+                 * @example internal
+                 * @enum {string}
+                 */
+                source: "internal" | "platform";
+                mandatory: boolean;
+                /**
+                 * @description Agents enrolled (archived accounts excluded)
+                 * @example 40
+                 */
+                enrolled: number;
+                /**
+                 * @description Agents who completed it
+                 * @example 12
+                 */
+                completed: number;
+                /**
+                 * @description Average progress of the enrolled agents, percent, one decimal
+                 * @example 47.5
+                 */
+                averageProgress: number;
+            }[];
+            /** @description The 500 most overdue late enrolments (`lateMandatory` counts them all), by deadline, then course, then agent */
+            lateAgents: {
+                /**
+                 * @description Core API id of the agent
+                 * @example 42
+                 */
+                userId: string;
+                /** @example Alice */
+                firstName: string;
+                /** @example Martin */
+                lastName: string;
+                /** @example 4 */
+                courseId: string;
+                /** @example RGPD pour les agents */
+                courseTitle: string;
+                /**
+                 * @description Past deadline of the course, `YYYY-MM-DD`
+                 * @example 2026-06-30
+                 */
+                deadline: string;
+                /**
+                 * @description Progress of the agent, percent, one decimal
+                 * @example 50
+                 */
+                progress: number;
+                /**
+                 * @description Latest reminder sent to the agent about this course (RFC 3339), `null` without one
+                 * @example null
+                 */
+                lastReminderAt: string | null;
+            }[];
+        };
+        /** @description Who to remind about a mandatory course */
+        SendRemindersBody: {
+            /** @description Agents to remind (at most 1000). Absent: every late agent of the course. Agents not enrolled, or who completed it, are ignored. */
+            userIds?: string[];
+        };
+        /** @description Reminders sent */
+        SendRemindersResponse: {
+            /**
+             * @description One per agent reminded; 0 when nobody was to remind
+             * @example 3
+             */
+            sent: number;
+        };
         CourseIdParams: {
             /**
              * @description Course (E-learning API formation) identifier
              * @example 4
+             */
+            courseId: string;
+        };
+        AdminCourseIdParams: {
+            /**
+             * @description Course (E-learning API formation) identifier
+             * @example 7
              */
             courseId: string;
         };
@@ -3227,8 +5366,16 @@ export interface components {
                 /** @example Municipal organisation */
                 title: string;
                 description?: string;
-                /** @example 25 min */
+                /**
+                 * @description Sum of the durations of its contents
+                 * @example 25 min
+                 */
                 duration?: string;
+                /**
+                 * @description Sum of the durations of its contents, in seconds
+                 * @example 1500
+                 */
+                durationSeconds?: number;
                 completed?: boolean;
                 active?: boolean;
                 contents?: {
@@ -3237,19 +5384,34 @@ export interface components {
                     /** @example Présentation des directions et services */
                     title: string;
                     /**
-                     * @description Type of learning content
+                     * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                      * @example video
                      * @enum {string}
                      */
                     type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                     description?: string;
-                    /** @example 12 min */
+                    /**
+                     * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                     * @example 12 min
+                     */
                     duration?: string;
-                    /** @example organigramme-mairie360.pdf */
+                    /**
+                     * @description Duration in seconds; wins over `duration` in an administration body
+                     * @example 720
+                     */
+                    durationSeconds?: number;
+                    /**
+                     * @description Name of the stored file (stored files only)
+                     * @example organigramme-mairie360.pdf
+                     */
                     fileName?: string;
-                    /** @example /documents/organigramme-mairie360.pdf */
+                    /**
+                     * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                     * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                     */
                     href?: string;
                     completed?: boolean;
+                    /** @description `false` for an optional content (defaults to `true` in an administration body) */
                     required?: boolean;
                 }[];
             }[];
@@ -3260,8 +5422,16 @@ export interface components {
                 /** @example Municipal organisation */
                 title: string;
                 description?: string;
-                /** @example 25 min */
+                /**
+                 * @description Sum of the durations of its contents
+                 * @example 25 min
+                 */
                 duration?: string;
+                /**
+                 * @description Sum of the durations of its contents, in seconds
+                 * @example 1500
+                 */
+                durationSeconds?: number;
                 completed?: boolean;
                 active?: boolean;
                 contents?: {
@@ -3270,19 +5440,34 @@ export interface components {
                     /** @example Présentation des directions et services */
                     title: string;
                     /**
-                     * @description Type of learning content
+                     * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                      * @example video
                      * @enum {string}
                      */
                     type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                     description?: string;
-                    /** @example 12 min */
+                    /**
+                     * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                     * @example 12 min
+                     */
                     duration?: string;
-                    /** @example organigramme-mairie360.pdf */
+                    /**
+                     * @description Duration in seconds; wins over `duration` in an administration body
+                     * @example 720
+                     */
+                    durationSeconds?: number;
+                    /**
+                     * @description Name of the stored file (stored files only)
+                     * @example organigramme-mairie360.pdf
+                     */
                     fileName?: string;
-                    /** @example /documents/organigramme-mairie360.pdf */
+                    /**
+                     * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                     * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                     */
                     href?: string;
                     completed?: boolean;
+                    /** @description `false` for an optional content (defaults to `true` in an administration body) */
                     required?: boolean;
                 }[];
             };
@@ -3293,19 +5478,34 @@ export interface components {
                 /** @example Présentation des directions et services */
                 title: string;
                 /**
-                 * @description Type of learning content
+                 * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                  * @example video
                  * @enum {string}
                  */
                 type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                 description?: string;
-                /** @example 12 min */
+                /**
+                 * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                 * @example 12 min
+                 */
                 duration?: string;
-                /** @example organigramme-mairie360.pdf */
+                /**
+                 * @description Duration in seconds; wins over `duration` in an administration body
+                 * @example 720
+                 */
+                durationSeconds?: number;
+                /**
+                 * @description Name of the stored file (stored files only)
+                 * @example organigramme-mairie360.pdf
+                 */
                 fileName?: string;
-                /** @example /documents/organigramme-mairie360.pdf */
+                /**
+                 * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                 * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                 */
                 href?: string;
                 completed?: boolean;
+                /** @description `false` for an optional content (defaults to `true` in an administration body) */
                 required?: boolean;
             };
         };
@@ -3316,10 +5516,25 @@ export interface components {
         };
         /** @description Rating summary after sending */
         RatingSubmitResponse: {
-            rating: number;
-            ratingCount: number;
             /**
-             * @description Distribution of the ratings by value, from 1 to 5
+             * @description Average rating of the course, one decimal, the caller's included
+             * @example 4.5
+             */
+            rating: number;
+            /**
+             * @description Number of ratings of the course, the caller's included
+             * @example 12
+             */
+            ratingCount: number;
+            /** @example 4,5 (12 avis) */
+            ratingLabel: string;
+            /**
+             * @description The rating the caller just gave
+             * @example 5
+             */
+            myRating: number;
+            /**
+             * @description Always empty: the e-learning service does not publish the distribution
              * @example {
              *       "1": 0,
              *       "2": 1,
@@ -3335,6 +5550,7 @@ export interface components {
                 4?: number;
                 5?: number;
             };
+            /** @description Always `true` */
             submitted: boolean;
         };
         /** @description Context to start or resume a formation */
@@ -3352,16 +5568,49 @@ export interface components {
                 title: string;
                 description: string;
                 instructor?: string;
-                /** @example 4.8 */
+                /**
+                 * @description Average rating (1 to 5, one decimal), absent while nobody rated the course
+                 * @example 4.8
+                 */
                 rating?: number | string;
-                /** @example 2 h 15 */
+                /**
+                 * @description Number of ratings
+                 * @example 12
+                 */
+                ratingCount?: number;
+                /**
+                 * @description Sum of the durations of its contents
+                 * @example 2 h 15
+                 */
                 duration?: string;
+                /**
+                 * @description Sum of the durations of its contents, in seconds
+                 * @example 8100
+                 */
+                durationSeconds?: number;
                 /** @example 4 */
                 chapters?: number | string;
-                /** @example 128 */
+                /**
+                 * @description Number of users enrolled in the course
+                 * @example 128
+                 */
                 learners?: number | string;
                 /** @example Integration */
                 category?: string;
+                /**
+                 * @description Level of a formation
+                 * @example beginner
+                 * @enum {string}
+                 */
+                level?: "beginner" | "intermediate" | "advanced";
+                /** @description `true` for a mandatory course (its `titleBadge` is then the mandatory badge) */
+                mandatory?: boolean;
+                /**
+                 * @description Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)
+                 * @example internal
+                 * @enum {string}
+                 */
+                source?: "internal" | "platform";
                 /**
                  * @description Progress status of the formation for the signed-in user
                  * @example in-progress
@@ -3402,8 +5651,31 @@ export interface components {
                     variant?: "default" | "beginner" | "intermediate" | "advanced" | "inProgress" | "completed" | "mandatory" | "notStarted";
                 };
                 progress?: number;
-                /** @example 30 juin 2026 */
+                /**
+                 * @description Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).
+                 * @example 2026-06-30
+                 */
                 deadline?: string;
+                /**
+                 * @description Start of the caller on the course (RFC 3339), absent when none was recorded
+                 * @example 2026-03-02T08:15:00Z
+                 */
+                startedAt?: string;
+                /**
+                 * @description Completion of the course by the caller (RFC 3339), absent while not completed
+                 * @example 2026-03-20T16:40:00Z
+                 */
+                completedAt?: string;
+                /**
+                 * @description Latest chapter the caller completed (RFC 3339), absent before any
+                 * @example 2026-03-18T10:05:00Z
+                 */
+                lastActivityAt?: string;
+                /**
+                 * @description Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one
+                 * @example 2026-03-10T09:00:00Z
+                 */
+                lastReminderAt?: string;
                 /**
                  * @description Distribution of the ratings by value, from 1 to 5
                  * @example {
@@ -3429,6 +5701,7 @@ export interface components {
                     instructor?: string;
                     duration?: string;
                     rating?: number | string;
+                    /** @example 4,5 (12 avis) */
                     ratingLabel?: string;
                     /**
                      * @description Distribution of the ratings by value, from 1 to 5
@@ -3466,8 +5739,16 @@ export interface components {
                         /** @example Municipal organisation */
                         title: string;
                         description?: string;
-                        /** @example 25 min */
+                        /**
+                         * @description Sum of the durations of its contents
+                         * @example 25 min
+                         */
                         duration?: string;
+                        /**
+                         * @description Sum of the durations of its contents, in seconds
+                         * @example 1500
+                         */
+                        durationSeconds?: number;
                         completed?: boolean;
                         active?: boolean;
                         contents?: {
@@ -3476,19 +5757,34 @@ export interface components {
                             /** @example Présentation des directions et services */
                             title: string;
                             /**
-                             * @description Type of learning content
+                             * @description Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.
                              * @example video
                              * @enum {string}
                              */
                             type: "video" | "pdf" | "document" | "link" | "quiz" | "audio" | "other";
                             description?: string;
-                            /** @example 12 min */
+                            /**
+                             * @description Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.
+                             * @example 12 min
+                             */
                             duration?: string;
-                            /** @example organigramme-mairie360.pdf */
+                            /**
+                             * @description Duration in seconds; wins over `duration` in an administration body
+                             * @example 720
+                             */
+                            durationSeconds?: number;
+                            /**
+                             * @description Name of the stored file (stored files only)
+                             * @example organigramme-mairie360.pdf
+                             */
                             fileName?: string;
-                            /** @example /documents/organigramme-mairie360.pdf */
+                            /**
+                             * @description Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)
+                             * @example https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on
+                             */
                             href?: string;
                             completed?: boolean;
+                            /** @description `false` for an optional content (defaults to `true` in an administration body) */
                             required?: boolean;
                         }[];
                     }[];
