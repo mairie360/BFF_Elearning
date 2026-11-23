@@ -3822,17 +3822,17 @@
           },
           "name": {
             "type": "string",
-            "description": "First and last name, as the e-learning service gives it",
+            "description": "First and last name",
             "example": "Alice Martin"
           },
           "firstName": {
             "type": "string",
-            "description": "Part of `name` before its first space",
+            "description": "First name of the account",
             "example": "Alice"
           },
           "lastName": {
             "type": "string",
-            "description": "Part of `name` after its first space (empty without a space)",
+            "description": "Last name of the account",
             "example": "Martin"
           }
         },
@@ -3851,7 +3851,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 100,
-            "description": "Part of the name of the agent, case and accents ignored. The e-learning service cannot search: the BFF filters at most 1000 agents (5 pages of 200) from `offset` per request and gives `nextOffset` to read on.",
+            "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).",
             "example": "martin"
           },
           "limit": {
@@ -3872,6 +3872,12 @@
             "default": 0,
             "description": "Agents to skip, in id order (default 0): the `nextOffset` of the previous page",
             "example": 0
+          },
+          "excludeCourseId": {
+            "type": "string",
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Leaves out the agents already enrolled in this course (the « add agents » picker of a course)",
+            "example": "4"
           }
         }
       },
@@ -3890,17 +3896,17 @@
                 },
                 "name": {
                   "type": "string",
-                  "description": "First and last name, as the e-learning service gives it",
+                  "description": "First and last name",
                   "example": "Alice Martin"
                 },
                 "firstName": {
                   "type": "string",
-                  "description": "Part of `name` before its first space",
+                  "description": "First name of the account",
                   "example": "Alice"
                 },
                 "lastName": {
                   "type": "string",
-                  "description": "Part of `name` after its first space (empty without a space)",
+                  "description": "Last name of the account",
                   "example": "Martin"
                 }
               },
@@ -3949,17 +3955,17 @@
           },
           "name": {
             "type": "string",
-            "description": "First and last name, as the e-learning service gives it",
+            "description": "First and last name",
             "example": "Alice Martin"
           },
           "firstName": {
             "type": "string",
-            "description": "Part of `name` before its first space",
+            "description": "First name of the account",
             "example": "Alice"
           },
           "lastName": {
             "type": "string",
-            "description": "Part of `name` after its first space (empty without a space)",
+            "description": "Last name of the account",
             "example": "Martin"
           },
           "status": {
@@ -3976,7 +3982,7 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 100,
-            "description": "Share of the chapters completed, percent",
+            "description": "Share of the chapters completed, percent (100 once the course is completed)",
             "example": 50
           },
           "startedAt": {
@@ -3984,15 +3990,31 @@
               "string",
               "null"
             ],
-            "description": "First chapter completed (RFC 3339), `null` before",
-            "example": "2026-03-02T09:15:00Z"
+            "description": "First chapter completed, `null` before",
+            "example": "2026-03-02T09:15:00"
           },
           "completedAt": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Course completed (RFC 3339), `null` before",
+            "description": "Course completed, `null` before",
+            "example": null
+          },
+          "lastActivityAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Last chapter completed, `null` before",
+            "example": "2026-03-04T10:00:00"
+          },
+          "lastReminderAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Last reminder an administrator sent for this course, `null` if none",
             "example": null
           }
         },
@@ -4004,7 +4026,9 @@
           "status",
           "progress",
           "startedAt",
-          "completedAt"
+          "completedAt",
+          "lastActivityAt",
+          "lastReminderAt"
         ],
         "description": "An agent enrolled in the course, with their progress"
       },
@@ -4014,9 +4038,9 @@
           "limit": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 50,
+            "maximum": 200,
             "default": 50,
-            "description": "Agents examined, 1 to 50 (default 50): not the number of learners returned",
+            "description": "Learners to return, 1 to 200 (default 50)",
             "example": 50
           },
           "offset": {
@@ -4027,7 +4051,7 @@
             "minimum": 0,
             "maximum": 1000000,
             "default": 0,
-            "description": "Agents skipped, in id order (default 0): the `nextOffset` of the previous page",
+            "description": "Learners to skip (default 0): the `nextOffset` of the previous page",
             "example": 0
           }
         }
@@ -4051,17 +4075,17 @@
                 },
                 "name": {
                   "type": "string",
-                  "description": "First and last name, as the e-learning service gives it",
+                  "description": "First and last name",
                   "example": "Alice Martin"
                 },
                 "firstName": {
                   "type": "string",
-                  "description": "Part of `name` before its first space",
+                  "description": "First name of the account",
                   "example": "Alice"
                 },
                 "lastName": {
                   "type": "string",
-                  "description": "Part of `name` after its first space (empty without a space)",
+                  "description": "Last name of the account",
                   "example": "Martin"
                 },
                 "status": {
@@ -4078,7 +4102,7 @@
                   "type": "integer",
                   "minimum": 0,
                   "maximum": 100,
-                  "description": "Share of the chapters completed, percent",
+                  "description": "Share of the chapters completed, percent (100 once the course is completed)",
                   "example": 50
                 },
                 "startedAt": {
@@ -4086,15 +4110,31 @@
                     "string",
                     "null"
                   ],
-                  "description": "First chapter completed (RFC 3339), `null` before",
-                  "example": "2026-03-02T09:15:00Z"
+                  "description": "First chapter completed, `null` before",
+                  "example": "2026-03-02T09:15:00"
                 },
                 "completedAt": {
                   "type": [
                     "string",
                     "null"
                   ],
-                  "description": "Course completed (RFC 3339), `null` before",
+                  "description": "Course completed, `null` before",
+                  "example": null
+                },
+                "lastActivityAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Last chapter completed, `null` before",
+                  "example": "2026-03-04T10:00:00"
+                },
+                "lastReminderAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Last reminder an administrator sent for this course, `null` if none",
                   "example": null
                 }
               },
@@ -4106,11 +4146,19 @@
                 "status",
                 "progress",
                 "startedAt",
-                "completedAt"
+                "completedAt",
+                "lastActivityAt",
+                "lastReminderAt"
               ],
               "description": "An agent enrolled in the course, with their progress"
             },
-            "description": "The enrolled agents among the `limit` agents examined from `offset`, in id order"
+            "description": "Learners of the page, by last name, first name and id"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Active learners of the course, all pages together",
+            "example": 12
           },
           "limit": {
             "type": "integer",
@@ -4125,18 +4173,19 @@
               "integer",
               "null"
             ],
-            "description": "Offset to examine the next agents, `null` once every agent was examined",
-            "example": 50
+            "description": "Offset of the next page, `null` after the last learner",
+            "example": null
           }
         },
         "required": [
           "courseId",
           "learners",
+          "total",
           "limit",
           "offset",
           "nextOffset"
         ],
-        "description": "Learners of a course. The e-learning service has no list of the enrolled agents: the BFF examines one page of the active agents (`limit`, `offset`) and keeps those enrolled; read on with `nextOffset` until it is `null`."
+        "description": "One page of the active (non-archived) agents enrolled in a course"
       },
       "EnrolLearnersBody": {
         "type": "object",
@@ -8246,7 +8295,7 @@
           "E-learning administration"
         ],
         "summary": "Lists the agents enrolled in a course, with their progress",
-        "description": "The e-learning service has no list of the learners of a course: the BFF examines one page of the active agents (`limit`, at most 50, from `offset`, in id order), keeps those enrolled in the course and reads their progress (at most 2 + 2 x `limit` upstream calls). Read on with `nextOffset` until it is `null`; a page may hold no learner while `nextOffset` is not `null`.",
+        "description": "One page of the active (non-archived) agents enrolled in the course, by last name, first name and id, with their progress, their last activity and the last reminder sent to them. `total` counts every page; read on with `nextOffset` until it is `null`.",
         "parameters": [
           {
             "schema": {
@@ -8264,13 +8313,13 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 50,
+              "maximum": 200,
               "default": 50,
-              "description": "Agents examined, 1 to 50 (default 50): not the number of learners returned",
+              "description": "Learners to return, 1 to 200 (default 50)",
               "example": 50
             },
             "required": false,
-            "description": "Agents examined, 1 to 50 (default 50): not the number of learners returned",
+            "description": "Learners to return, 1 to 200 (default 50)",
             "name": "limit",
             "in": "query"
           },
@@ -8283,11 +8332,11 @@
               "minimum": 0,
               "maximum": 1000000,
               "default": 0,
-              "description": "Agents skipped, in id order (default 0): the `nextOffset` of the previous page",
+              "description": "Learners to skip (default 0): the `nextOffset` of the previous page",
               "example": 0
             },
             "required": false,
-            "description": "Agents skipped, in id order (default 0): the `nextOffset` of the previous page",
+            "description": "Learners to skip (default 0): the `nextOffset` of the previous page",
             "name": "offset",
             "in": "query"
           }
@@ -8316,17 +8365,17 @@
                           },
                           "name": {
                             "type": "string",
-                            "description": "First and last name, as the e-learning service gives it",
+                            "description": "First and last name",
                             "example": "Alice Martin"
                           },
                           "firstName": {
                             "type": "string",
-                            "description": "Part of `name` before its first space",
+                            "description": "First name of the account",
                             "example": "Alice"
                           },
                           "lastName": {
                             "type": "string",
-                            "description": "Part of `name` after its first space (empty without a space)",
+                            "description": "Last name of the account",
                             "example": "Martin"
                           },
                           "status": {
@@ -8343,7 +8392,7 @@
                             "type": "integer",
                             "minimum": 0,
                             "maximum": 100,
-                            "description": "Share of the chapters completed, percent",
+                            "description": "Share of the chapters completed, percent (100 once the course is completed)",
                             "example": 50
                           },
                           "startedAt": {
@@ -8351,15 +8400,31 @@
                               "string",
                               "null"
                             ],
-                            "description": "First chapter completed (RFC 3339), `null` before",
-                            "example": "2026-03-02T09:15:00Z"
+                            "description": "First chapter completed, `null` before",
+                            "example": "2026-03-02T09:15:00"
                           },
                           "completedAt": {
                             "type": [
                               "string",
                               "null"
                             ],
-                            "description": "Course completed (RFC 3339), `null` before",
+                            "description": "Course completed, `null` before",
+                            "example": null
+                          },
+                          "lastActivityAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Last chapter completed, `null` before",
+                            "example": "2026-03-04T10:00:00"
+                          },
+                          "lastReminderAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Last reminder an administrator sent for this course, `null` if none",
                             "example": null
                           }
                         },
@@ -8371,11 +8436,19 @@
                           "status",
                           "progress",
                           "startedAt",
-                          "completedAt"
+                          "completedAt",
+                          "lastActivityAt",
+                          "lastReminderAt"
                         ],
                         "description": "An agent enrolled in the course, with their progress"
                       },
-                      "description": "The enrolled agents among the `limit` agents examined from `offset`, in id order"
+                      "description": "Learners of the page, by last name, first name and id"
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Active learners of the course, all pages together",
+                      "example": 12
                     },
                     "limit": {
                       "type": "integer",
@@ -8390,18 +8463,19 @@
                         "integer",
                         "null"
                       ],
-                      "description": "Offset to examine the next agents, `null` once every agent was examined",
-                      "example": 50
+                      "description": "Offset of the next page, `null` after the last learner",
+                      "example": null
                     }
                   },
                   "required": [
                     "courseId",
                     "learners",
+                    "total",
                     "limit",
                     "offset",
                     "nextOffset"
                   ],
-                  "description": "Learners of a course. The e-learning service has no list of the enrolled agents: the BFF examines one page of the active agents (`limit`, `offset`) and keeps those enrolled; read on with `nextOffset` until it is `null`."
+                  "description": "One page of the active (non-archived) agents enrolled in a course"
                 }
               }
             }
@@ -8821,18 +8895,18 @@
           "E-learning administration"
         ],
         "summary": "Lists the agents an administrator can enrol",
-        "description": "One page of the active (non-archived) agents, in id order, read from the e-learning service. With `search`, the BFF filters the names itself (the service cannot search): it reads at most 1000 agents from `offset` per request, stops at `limit` matches, and `nextOffset` tells where to read on (`null` after the last agent). No total is given.",
+        "description": "One page of the active (non-archived) agents, in id order. `search` keeps the agents whose name or e-mail contains the term, `excludeCourseId` leaves out the learners of a course (the picker that enrols agents). `nextOffset` tells where to read on (`null` after the last agent).",
         "parameters": [
           {
             "schema": {
               "type": "string",
               "minLength": 1,
               "maxLength": 100,
-              "description": "Part of the name of the agent, case and accents ignored. The e-learning service cannot search: the BFF filters at most 1000 agents (5 pages of 200) from `offset` per request and gives `nextOffset` to read on.",
+              "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).",
               "example": "martin"
             },
             "required": false,
-            "description": "Part of the name of the agent, case and accents ignored. The e-learning service cannot search: the BFF filters at most 1000 agents (5 pages of 200) from `offset` per request and gives `nextOffset` to read on.",
+            "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).",
             "name": "search",
             "in": "query"
           },
@@ -8866,6 +8940,18 @@
             "description": "Agents to skip, in id order (default 0): the `nextOffset` of the previous page",
             "name": "offset",
             "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Leaves out the agents already enrolled in this course (the « add agents » picker of a course)",
+              "example": "4"
+            },
+            "required": false,
+            "description": "Leaves out the agents already enrolled in this course (the « add agents » picker of a course)",
+            "name": "excludeCourseId",
+            "in": "query"
           }
         ],
         "responses": {
@@ -8888,17 +8974,17 @@
                           },
                           "name": {
                             "type": "string",
-                            "description": "First and last name, as the e-learning service gives it",
+                            "description": "First and last name",
                             "example": "Alice Martin"
                           },
                           "firstName": {
                             "type": "string",
-                            "description": "Part of `name` before its first space",
+                            "description": "First name of the account",
                             "example": "Alice"
                           },
                           "lastName": {
                             "type": "string",
-                            "description": "Part of `name` after its first space (empty without a space)",
+                            "description": "Last name of the account",
                             "example": "Martin"
                           }
                         },
@@ -8941,7 +9027,7 @@
             }
           },
           "400": {
-            "description": "Invalid `search`, `limit` or `offset`",
+            "description": "Invalid `search`, `limit`, `offset` or `excludeCourseId`",
             "content": {
               "application/json": {
                 "schema": {

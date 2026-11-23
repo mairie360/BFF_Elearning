@@ -1848,6 +1848,8 @@
                   "    const body = pm.response.json();",
                   "    pm.expect(body.courseId).to.eql(pm.environment.get('enrol_course_id'));",
                   "    pm.expect(body.learners).to.eql([]);",
+                  "    pm.expect(body.total).to.eql(0);",
+                  "    pm.expect(body.nextOffset).to.eql(null);",
                   "});"
                 ]
               }
@@ -2246,6 +2248,65 @@
                   "    pm.expect(learners[0]).to.include({ firstName: 'Perf', lastName: 'Tester', status: 'not-started', progress: 0 });",
                   "    pm.expect(learners[0].startedAt).to.eql(null);",
                   "    pm.expect(learners[0].completedAt).to.eql(null);",
+                  "    pm.expect(learners[0].lastActivityAt).to.eql(null);",
+                  "    pm.expect(learners[0].lastReminderAt).to.eql(null);",
+                  "    pm.expect(pm.response.json().total).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "The picker leaves out the learners of the course",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/agents?search=TESTER&limit=10&excludeCourseId={{enrol_course_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "agents"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "TESTER"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "excludeCourseId",
+                  "value": "{{enrol_course_id}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The enrolled agent is not offered again\", function () {",
+                  "    const agents = pm.response.json().agents;",
+                  "    pm.expect(agents.map((a) => a.userId)).to.not.include(pm.environment.get('agent_user_id'));",
                   "});"
                 ]
               }

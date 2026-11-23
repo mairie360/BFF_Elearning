@@ -1,6 +1,6 @@
 import { HttpError, validationError } from '@mairie360/bffs-lib';
 import type {
-  CatalogFile, CatalogFormation, CourseBody, FileBody, GetStatsResultView, ModuleBody, SummaryResultView,
+  CatalogFile, CatalogFormation, CourseBody, FileBody, FormationLearner, GetStatsResultView, ModuleBody, SummaryResultView,
 } from '@mairie360/elearning-api-openapi/model';
 import { z } from 'zod';
 import {
@@ -582,32 +582,24 @@ export function adminStats(stats: GetStatsResultView): z.infer<typeof AdminStats
 // ---------------------------------------------------------------------------------------------------------------
 // Enrolment (MAIR-817): the agents of `GET /api/v1/admin/users/` and their enrolments, in camelCase.
 
-/**
- * An agent of the E-learning API (`{ id, name }`, the name being `first_name || ' ' || last_name`): the first name is
- * what precedes the first space, the last name the rest (a first name with a space is cut there; `name` keeps it whole).
- */
-export function agentIdentity(user: { id: number; name: string }): z.infer<typeof AgentIdentity> {
-  const name = user.name.trim();
-  const space = name.indexOf(' ');
-  return {
-    userId: String(user.id),
-    name,
-    firstName: space < 0 ? name : name.slice(0, space),
-    lastName: space < 0 ? '' : name.slice(space + 1).trim(),
-  };
+/** An agent of the E-learning API (`GET /api/v1/admin/users/`), names as the account holds them. */
+export function agentIdentity(user: { id: number; name: string; first_name: string; last_name: string }): z.infer<typeof AgentIdentity> {
+  return { userId: String(user.id), name: user.name.trim(), firstName: user.first_name, lastName: user.last_name };
 }
 
-/** An enrolled agent and their progress, as the learners panel of a course reads it. */
-export function courseLearner(
-  user: { id: number; name: string },
-  enrolment: { progress_status?: unknown; started_at?: string | null; completed_at?: string | null },
-  progress: number,
-): z.infer<typeof CourseLearner> {
+/** A learner of `GET /api/v1/admin/formations/{formation_id}/learners/`, as the learners panel of a course reads it. */
+export function courseLearner(learner: FormationLearner): z.infer<typeof CourseLearner> {
+  const progress = Math.min(100, Math.max(0, Math.round(learner.progress)));
   return {
-    ...agentIdentity(user),
-    status: courseStatus(enrolment.progress_status, progress),
-    progress: Math.min(100, Math.max(0, Math.round(progress))),
-    startedAt: nullableText(enrolment.started_at),
-    completedAt: nullableText(enrolment.completed_at),
+    userId: String(learner.user_id),
+    name: `${learner.first_name} ${learner.last_name}`.trim(),
+    firstName: learner.first_name,
+    lastName: learner.last_name,
+    status: courseStatus(learner.status, progress),
+    progress,
+    startedAt: nullableText(learner.started_at),
+    completedAt: nullableText(learner.completed_at),
+    lastActivityAt: nullableText(learner.last_activity_at),
+    lastReminderAt: nullableText(learner.last_reminder_at),
   };
 }

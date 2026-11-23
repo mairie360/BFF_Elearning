@@ -1469,14 +1469,14 @@ export interface paths {
         };
         /**
          * Lists the agents enrolled in a course, with their progress
-         * @description The e-learning service has no list of the learners of a course: the BFF examines one page of the active agents (`limit`, at most 50, from `offset`, in id order), keeps those enrolled in the course and reads their progress (at most 2 + 2 x `limit` upstream calls). Read on with `nextOffset` until it is `null`; a page may hold no learner while `nextOffset` is not `null`.
+         * @description One page of the active (non-archived) agents enrolled in the course, by last name, first name and id, with their progress, their last activity and the last reminder sent to them. `total` counts every page; read on with `nextOffset` until it is `null`.
          */
         get: {
             parameters: {
                 query?: {
-                    /** @description Agents examined, 1 to 50 (default 50): not the number of learners returned */
+                    /** @description Learners to return, 1 to 200 (default 50) */
                     limit?: number;
-                    /** @description Agents skipped, in id order (default 0): the `nextOffset` of the previous page */
+                    /** @description Learners to skip (default 0): the `nextOffset` of the previous page */
                     offset?: number | null;
                 };
                 header?: never;
@@ -1497,7 +1497,7 @@ export interface paths {
                         "application/json": {
                             /** @example 4 */
                             courseId: string;
-                            /** @description The enrolled agents among the `limit` agents examined from `offset`, in id order */
+                            /** @description Learners of the page, by last name, first name and id */
                             learners: {
                                 /**
                                  * @description Core API id of the agent
@@ -1505,17 +1505,17 @@ export interface paths {
                                  */
                                 userId: string;
                                 /**
-                                 * @description First and last name, as the e-learning service gives it
+                                 * @description First and last name
                                  * @example Alice Martin
                                  */
                                 name: string;
                                 /**
-                                 * @description Part of `name` before its first space
+                                 * @description First name of the account
                                  * @example Alice
                                  */
                                 firstName: string;
                                 /**
-                                 * @description Part of `name` after its first space (empty without a space)
+                                 * @description Last name of the account
                                  * @example Martin
                                  */
                                 lastName: string;
@@ -1526,28 +1526,43 @@ export interface paths {
                                  */
                                 status: "not-started" | "in-progress" | "completed";
                                 /**
-                                 * @description Share of the chapters completed, percent
+                                 * @description Share of the chapters completed, percent (100 once the course is completed)
                                  * @example 50
                                  */
                                 progress: number;
                                 /**
-                                 * @description First chapter completed (RFC 3339), `null` before
-                                 * @example 2026-03-02T09:15:00Z
+                                 * @description First chapter completed, `null` before
+                                 * @example 2026-03-02T09:15:00
                                  */
                                 startedAt: string | null;
                                 /**
-                                 * @description Course completed (RFC 3339), `null` before
+                                 * @description Course completed, `null` before
                                  * @example null
                                  */
                                 completedAt: string | null;
+                                /**
+                                 * @description Last chapter completed, `null` before
+                                 * @example 2026-03-04T10:00:00
+                                 */
+                                lastActivityAt: string | null;
+                                /**
+                                 * @description Last reminder an administrator sent for this course, `null` if none
+                                 * @example null
+                                 */
+                                lastReminderAt: string | null;
                             }[];
+                            /**
+                             * @description Active learners of the course, all pages together
+                             * @example 12
+                             */
+                            total: number;
                             /** @example 50 */
                             limit: number;
                             /** @example 0 */
                             offset: number;
                             /**
-                             * @description Offset to examine the next agents, `null` once every agent was examined
-                             * @example 50
+                             * @description Offset of the next page, `null` after the last learner
+                             * @example null
                              */
                             nextOffset: number | null;
                         };
@@ -1891,17 +1906,19 @@ export interface paths {
         };
         /**
          * Lists the agents an administrator can enrol
-         * @description One page of the active (non-archived) agents, in id order, read from the e-learning service. With `search`, the BFF filters the names itself (the service cannot search): it reads at most 1000 agents from `offset` per request, stops at `limit` matches, and `nextOffset` tells where to read on (`null` after the last agent). No total is given.
+         * @description One page of the active (non-archived) agents, in id order. `search` keeps the agents whose name or e-mail contains the term, `excludeCourseId` leaves out the learners of a course (the picker that enrols agents). `nextOffset` tells where to read on (`null` after the last agent).
          */
         get: {
             parameters: {
                 query?: {
-                    /** @description Part of the name of the agent, case and accents ignored. The e-learning service cannot search: the BFF filters at most 1000 agents (5 pages of 200) from `offset` per request and gives `nextOffset` to read on. */
+                    /** @description Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters). */
                     search?: string;
                     /** @description Agents to return, 1 to 200 (default 50) */
                     limit?: number;
                     /** @description Agents to skip, in id order (default 0): the `nextOffset` of the previous page */
                     offset?: number | null;
+                    /** @description Leaves out the agents already enrolled in this course (the « add agents » picker of a course) */
+                    excludeCourseId?: string;
                 };
                 header?: never;
                 path?: never;
@@ -1924,17 +1941,17 @@ export interface paths {
                                  */
                                 userId: string;
                                 /**
-                                 * @description First and last name, as the e-learning service gives it
+                                 * @description First and last name
                                  * @example Alice Martin
                                  */
                                 name: string;
                                 /**
-                                 * @description Part of `name` before its first space
+                                 * @description First name of the account
                                  * @example Alice
                                  */
                                 firstName: string;
                                 /**
-                                 * @description Part of `name` after its first space (empty without a space)
+                                 * @description Last name of the account
                                  * @example Martin
                                  */
                                 lastName: string;
@@ -1951,7 +1968,7 @@ export interface paths {
                         };
                     };
                 };
-                /** @description Invalid `search`, `limit` or `offset` */
+                /** @description Invalid `search`, `limit`, `offset` or `excludeCourseId` */
                 400: {
                     headers: {
                         [name: string]: unknown;
@@ -5579,24 +5596,24 @@ export interface components {
              */
             userId: string;
             /**
-             * @description First and last name, as the e-learning service gives it
+             * @description First and last name
              * @example Alice Martin
              */
             name: string;
             /**
-             * @description Part of `name` before its first space
+             * @description First name of the account
              * @example Alice
              */
             firstName: string;
             /**
-             * @description Part of `name` after its first space (empty without a space)
+             * @description Last name of the account
              * @example Martin
              */
             lastName: string;
         };
         AdminAgentsQuery: {
             /**
-             * @description Part of the name of the agent, case and accents ignored. The e-learning service cannot search: the BFF filters at most 1000 agents (5 pages of 200) from `offset` per request and gives `nextOffset` to read on.
+             * @description Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).
              * @example martin
              */
             search?: string;
@@ -5612,6 +5629,11 @@ export interface components {
              * @example 0
              */
             offset: number | null;
+            /**
+             * @description Leaves out the agents already enrolled in this course (the « add agents » picker of a course)
+             * @example 4
+             */
+            excludeCourseId?: string;
         };
         /** @description One page of the agents an administrator can enrol */
         AdminAgentsResponse: {
@@ -5623,17 +5645,17 @@ export interface components {
                  */
                 userId: string;
                 /**
-                 * @description First and last name, as the e-learning service gives it
+                 * @description First and last name
                  * @example Alice Martin
                  */
                 name: string;
                 /**
-                 * @description Part of `name` before its first space
+                 * @description First name of the account
                  * @example Alice
                  */
                 firstName: string;
                 /**
-                 * @description Part of `name` after its first space (empty without a space)
+                 * @description Last name of the account
                  * @example Martin
                  */
                 lastName: string;
@@ -5656,17 +5678,17 @@ export interface components {
              */
             userId: string;
             /**
-             * @description First and last name, as the e-learning service gives it
+             * @description First and last name
              * @example Alice Martin
              */
             name: string;
             /**
-             * @description Part of `name` before its first space
+             * @description First name of the account
              * @example Alice
              */
             firstName: string;
             /**
-             * @description Part of `name` after its first space (empty without a space)
+             * @description Last name of the account
              * @example Martin
              */
             lastName: string;
@@ -5677,40 +5699,50 @@ export interface components {
              */
             status: "not-started" | "in-progress" | "completed";
             /**
-             * @description Share of the chapters completed, percent
+             * @description Share of the chapters completed, percent (100 once the course is completed)
              * @example 50
              */
             progress: number;
             /**
-             * @description First chapter completed (RFC 3339), `null` before
-             * @example 2026-03-02T09:15:00Z
+             * @description First chapter completed, `null` before
+             * @example 2026-03-02T09:15:00
              */
             startedAt: string | null;
             /**
-             * @description Course completed (RFC 3339), `null` before
+             * @description Course completed, `null` before
              * @example null
              */
             completedAt: string | null;
+            /**
+             * @description Last chapter completed, `null` before
+             * @example 2026-03-04T10:00:00
+             */
+            lastActivityAt: string | null;
+            /**
+             * @description Last reminder an administrator sent for this course, `null` if none
+             * @example null
+             */
+            lastReminderAt: string | null;
         };
         CourseLearnersQuery: {
             /**
-             * @description Agents examined, 1 to 50 (default 50): not the number of learners returned
+             * @description Learners to return, 1 to 200 (default 50)
              * @default 50
              * @example 50
              */
             limit: number;
             /**
-             * @description Agents skipped, in id order (default 0): the `nextOffset` of the previous page
+             * @description Learners to skip (default 0): the `nextOffset` of the previous page
              * @default 0
              * @example 0
              */
             offset: number | null;
         };
-        /** @description Learners of a course. The e-learning service has no list of the enrolled agents: the BFF examines one page of the active agents (`limit`, `offset`) and keeps those enrolled; read on with `nextOffset` until it is `null`. */
+        /** @description One page of the active (non-archived) agents enrolled in a course */
         CourseLearnersResponse: {
             /** @example 4 */
             courseId: string;
-            /** @description The enrolled agents among the `limit` agents examined from `offset`, in id order */
+            /** @description Learners of the page, by last name, first name and id */
             learners: {
                 /**
                  * @description Core API id of the agent
@@ -5718,17 +5750,17 @@ export interface components {
                  */
                 userId: string;
                 /**
-                 * @description First and last name, as the e-learning service gives it
+                 * @description First and last name
                  * @example Alice Martin
                  */
                 name: string;
                 /**
-                 * @description Part of `name` before its first space
+                 * @description First name of the account
                  * @example Alice
                  */
                 firstName: string;
                 /**
-                 * @description Part of `name` after its first space (empty without a space)
+                 * @description Last name of the account
                  * @example Martin
                  */
                 lastName: string;
@@ -5739,28 +5771,43 @@ export interface components {
                  */
                 status: "not-started" | "in-progress" | "completed";
                 /**
-                 * @description Share of the chapters completed, percent
+                 * @description Share of the chapters completed, percent (100 once the course is completed)
                  * @example 50
                  */
                 progress: number;
                 /**
-                 * @description First chapter completed (RFC 3339), `null` before
-                 * @example 2026-03-02T09:15:00Z
+                 * @description First chapter completed, `null` before
+                 * @example 2026-03-02T09:15:00
                  */
                 startedAt: string | null;
                 /**
-                 * @description Course completed (RFC 3339), `null` before
+                 * @description Course completed, `null` before
                  * @example null
                  */
                 completedAt: string | null;
+                /**
+                 * @description Last chapter completed, `null` before
+                 * @example 2026-03-04T10:00:00
+                 */
+                lastActivityAt: string | null;
+                /**
+                 * @description Last reminder an administrator sent for this course, `null` if none
+                 * @example null
+                 */
+                lastReminderAt: string | null;
             }[];
+            /**
+             * @description Active learners of the course, all pages together
+             * @example 12
+             */
+            total: number;
             /** @example 50 */
             limit: number;
             /** @example 0 */
             offset: number;
             /**
-             * @description Offset to examine the next agents, `null` once every agent was examined
-             * @example 50
+             * @description Offset of the next page, `null` after the last learner
+             * @example null
              */
             nextOffset: number | null;
         };

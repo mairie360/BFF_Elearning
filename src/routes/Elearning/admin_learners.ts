@@ -37,7 +37,7 @@ registry.registerPath({
   tags: ['E-learning administration'],
   summary: 'Lists the agents enrolled in a course, with their progress',
   description:
-    'The e-learning service has no list of the learners of a course: the BFF examines one page of the active agents (`limit`, at most 50, from `offset`, in id order), keeps those enrolled in the course and reads their progress (at most 2 + 2 x `limit` upstream calls). Read on with `nextOffset` until it is `null`; a page may hold no learner while `nextOffset` is not `null`.',
+    'One page of the active (non-archived) agents enrolled in the course, by last name, first name and id, with their progress, their last activity and the last reminder sent to them. `total` counts every page; read on with `nextOffset` until it is `null`.',
   request: { params: CourseIdParams, query: CourseLearnersQuery },
   responses: {
     200: { description: 'Learners among the agents examined', content: { 'application/json': { schema: CourseLearnersResponse } } },
@@ -92,13 +92,15 @@ router.get('/:courseId/learners', async (req: Request, res: Response) => {
 
   await ensureAdmin(req);
 
-  const { learners, nextOffset } = await loadLearners(req, courseId, limit, offset);
+  const page = await loadLearners(req, courseId, limit, offset);
+  const end = offset + page.learners.length;
   return res.status(200).json({
     courseId,
-    learners: learners.map(({ user, enrolment, progress }) => courseLearner(user, enrolment, progress)),
+    learners: page.learners.map(courseLearner),
+    total: page.total,
     limit,
     offset,
-    nextOffset,
+    nextOffset: page.learners.length > 0 && end < page.total ? end : null,
   });
 });
 

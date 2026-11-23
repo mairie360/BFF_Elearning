@@ -2,7 +2,7 @@ import {
   asCaller, DEFAULT_CONCURRENCY, HttpError, mapWithConcurrency, upstreamError, upstreamStatus, withRetry,
 } from '@mairie360/bffs-lib';
 import type {
-  CatalogFormation, CourseBody, GetStatsResultView, SummaryResultView, User, UsersFormation, UsersFormationModule,
+  CatalogFormation, CourseBody, GetFormationLearnersResultView, GetStatsResultView, SummaryResultView, User, UsersFormation,
 } from '@mairie360/elearning-api-openapi/model';
 import type { Request } from 'express';
 import { elearningClient } from '../../clients/elearningClient';
@@ -289,60 +289,31 @@ export async function loadStats(req: Caller): Promise<GetStatsResultView> {
 
 // --- Enrolment (MAIR-817): only an administrator enrols agents in a course ---
 
-/** Page size of `GET /api/v1/admin/users/` (its cap) when the BFF scans the agents for a search. */
-const AGENTS_PAGE = 200;
-/** Upstream pages a search reads at most per request: 1000 agents. */
-const MAX_SEARCH_PAGES = 5;
-
 export type AgentPage = { agents: User[]; nextOffset: number | null };
 
-/** One page of the active agents (`GET /api/v1/admin/users/`), checked. */
-async function agentsPage(req: Caller, limit: number, offset: number): Promise<User[]> {
-  const body = await call(() => elearningClient.getUsers({ limit, offset }, options(req)), { retry: true, statuses: { 403: forbidden } });
-  const users = arrayOf<unknown>(body, 'users');
-  if (!users.every((user) => isRecord(user) && typeof user.id === 'number' && typeof user.name === 'string')) throw invalidAnswer();
-  return users as User[];
-}
-
-/** Lower case, accents removed: the search ignores both. */
-function folded(value: string): string {
-  return value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+function isAgent(user: unknown): user is User {
+  return isRecord(user) && typeof user.id === 'number' && typeof user.name === 'string'
+    && typeof user.first_name === 'string' && typeof user.last_name === 'string';
 }
 
 /**
- * Agents an administrator can enrol, in id order. Without `search`: one upstream page. The E-learning API cannot
- * search, so with `search` the BFF reads pages of 200 agents from `offset` (at most 5, i.e. 1000 agents) and keeps the
- * names that contain it, until `limit` matches; `nextOffset` is where to read on.
+ * Agents an administrator can enrol, in id order (`GET /api/v1/admin/users/`): the E-learning API searches the names
+ * and e-mails (`search`) and leaves out the learners of a course (`exclude_formation_id`). One upstream call.
  */
-export async function loadAgents(req: Caller, { search, limit, offset }: { search?: string; limit: number; offset: number }): Promise<AgentPage> {
-  if (!search) {
-    const agents = await agentsPage(req, limit, offset);
-    return { agents, nextOffset: agents.length < limit ? null : offset + agents.length };
-  }
-  const term = folded(search);
-  const agents: User[] = [];
-  let position = offset;
-  for (let page = 0; page < MAX_SEARCH_PAGES; page += 1) {
-    // Sequential on purpose: the next page is only read when this one did not bring `limit` matches.
-    // eslint-disable-next-line no-await-in-loop
-    const users = await agentsPage(req, AGENTS_PAGE, position);
-    for (const user of users) {
-      position += 1;
-      if (folded(user.name).includes(term)) agents.push(user);
-      if (agents.length === limit) return { agents, nextOffset: position };
-    }
-    if (users.length < AGENTS_PAGE) return { agents, nextOffset: null };
-  }
-  return { agents, nextOffset: position };
-}
-
-/** 404 unless the formation exists (`GET /api/v1/admin/formations/{formation_id}/`, its structure only). */
-async function ensureCourse(req: Caller, courseId: string): Promise<void> {
-  await call(() => elearningClient.getFormationById(toNumber(courseId), undefined, options(req)), {
-    retry: true,
-    statuses: { 403: forbidden },
-    notFound: () => courseNotFound(courseId),
-  });
+export async function loadAgents(
+  req: Caller,
+  { search, limit, offset, excludeCourseId }: { search?: string; limit: number; offset: number; excludeCourseId?: string },
+): Promise<AgentPage> {
+  const params = {
+    limit,
+    offset,
+    ...(search ? { search } : {}),
+    ...(excludeCourseId ? { exclude_formation_id: toNumber(excludeCourseId) } : {}),
+  };
+  const body = await call(() => elearningClient.getUsers(params, options(req)), { retry: true, statuses: { 403: forbidden } });
+  const agents = arrayOf<unknown>(body, 'users');
+  if (!agents.every(isAgent)) throw invalidAnswer();
+  return { agents, nextOffset: agents.length < limit ? null : offset + agents.length };
 }
 
 /** The enrolment of `userId` in the course, `undefined` when not enrolled (`GET /api/v1/admin/users/{user_id}/`). */
@@ -354,40 +325,32 @@ async function enrolmentOf(req: Caller, userId: number, courseId: string): Promi
   return found as UsersFormation | undefined;
 }
 
-/** Share of the modules `userId` completed in the course, percent (`GET /api/v1/admin/users/{user_id}/{formation_id}/`). */
-async function moduleProgress(req: Caller, userId: number, courseId: string): Promise<number> {
-  const body = await call(() => elearningClient.getUserFormation(userId, toNumber(courseId), undefined, options(req)), {
+/** 404 unless the formation exists (`GET /api/v1/admin/formations/{formation_id}/`, its structure only). */
+async function ensureCourse(req: Caller, courseId: string): Promise<void> {
+  await call(() => elearningClient.getFormationById(toNumber(courseId), undefined, options(req)), {
     retry: true,
     statuses: { 403: forbidden },
     notFound: () => courseNotFound(courseId),
   });
-  const modules = arrayOf<UsersFormationModule>(body, 'modules');
-  if (modules.length === 0) return 0;
-  return Math.round((100 * modules.filter((module) => isRecord(module) && module.is_completed === true).length) / modules.length);
 }
 
-export type Learner = { user: User; enrolment: UsersFormation; progress: number };
-
 /**
- * The agents enrolled in the course among one page of the active agents (`limit` from `offset`). The E-learning API
- * has no list of the learners of a formation, so the BFF reads the page of agents, then the enrolments of each agent
- * (5 at a time), then the module progress of those in progress: at most 2 + 2 x `limit` calls (`limit` <= 50).
- * 404 when the course does not exist.
+ * One page of the learners of the course, by last name, first name and id, with their progress
+ * (`GET /api/v1/admin/formations/{formation_id}/learners/`, one call). 404 when the course does not exist.
  */
-export async function loadLearners(req: Caller, courseId: string, limit: number, offset: number): Promise<{ learners: Learner[]; nextOffset: number | null }> {
-  const [, users] = await Promise.all([ensureCourse(req, courseId), agentsPage(req, limit, offset)]);
-  const learners = await mapWithConcurrency(users, DEFAULT_CONCURRENCY, async (user): Promise<Learner | undefined> => {
-    const enrolment = await enrolmentOf(req, user.id, courseId);
-    if (!enrolment) return undefined;
-    const progress = enrolment.progress_status === 'Completed' ? 100
-      : enrolment.progress_status === 'NotStarted' ? 0
-        : await moduleProgress(req, user.id, courseId);
-    return { user, enrolment, progress };
+export async function loadLearners(req: Caller, courseId: string, limit: number, offset: number): Promise<GetFormationLearnersResultView> {
+  const body = await call(() => elearningClient.getFormationLearners(toNumber(courseId), { limit, offset }, options(req)), {
+    retry: true,
+    statuses: { 403: forbidden },
+    notFound: () => courseNotFound(courseId),
   });
-  return {
-    learners: learners.filter((learner): learner is Learner => learner !== undefined),
-    nextOffset: users.length < limit ? null : offset + users.length,
-  };
+  if (!isRecord(body) || typeof body.total !== 'number') throw invalidAnswer();
+  const learners = arrayOf<unknown>(body, 'learners');
+  if (!learners.every((learner) => isRecord(learner) && typeof learner.user_id === 'number'
+    && typeof learner.first_name === 'string' && typeof learner.last_name === 'string' && typeof learner.progress === 'number')) {
+    throw invalidAnswer();
+  }
+  return body as unknown as GetFormationLearnersResultView;
 }
 
 export type EnrolmentOutcome = { enrolled: string[]; alreadyEnrolled: string[]; failed: string[] };

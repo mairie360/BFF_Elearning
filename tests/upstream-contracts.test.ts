@@ -40,10 +40,10 @@ const CONSUMED = [
   { contract: elearningApi, operationId: 'sendReminders', method: 'post', url: elearningApiUrls.getSendRemindersUrl(7) },
   { contract: elearningApi, operationId: 'getStats', method: 'get', url: elearningApiUrls.getGetStatsUrl() },
   // MAIR-817 (enrolment by an administrator).
-  { contract: elearningApi, operationId: 'getUsers', method: 'get', url: elearningApiUrls.getGetUsersUrl({ limit: 200, offset: 0 }) },
+  { contract: elearningApi, operationId: 'getUsers', method: 'get', url: elearningApiUrls.getGetUsersUrl({ limit: 50, offset: 0, search: 'martin', exclude_formation_id: 7 }) },
+  { contract: elearningApi, operationId: 'getFormationLearners', method: 'get', url: elearningApiUrls.getGetFormationLearnersUrl(7, { limit: 50, offset: 0 }) },
   { contract: elearningApi, operationId: 'getFormationById', method: 'get', url: elearningApiUrls.getGetFormationByIdUrl(7) },
   { contract: elearningApi, operationId: 'getUserFormations', method: 'get', url: elearningApiUrls.getGetUserFormationsUrl(2) },
-  { contract: elearningApi, operationId: 'getUserFormation', method: 'get', url: elearningApiUrls.getGetUserFormationUrl(2, 7) },
   { contract: elearningApi, operationId: 'registerUserToFormation', method: 'post', url: elearningApiUrls.getRegisterUserToFormationUrl(7) },
   { contract: elearningApi, operationId: 'unsubFormation', method: 'delete', url: elearningApiUrls.getUnsubFormationUrl(2, 7) },
 ] as const;

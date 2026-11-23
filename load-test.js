@@ -203,7 +203,8 @@ const handlers = {
   'GET /elearning/admin/courses/{courseId}/learners': ({ request, data }) =>
     check(request({ path: { courseId: FIXTURE_COURSE_ID }, query: { limit: 5 }, headers: data.admin }), {
       'learners 200': (r) => r.status === 200,
-      'learners list the seeded agent': (r) => r.status === 200 && ((json(r) || {}).learners || []).some((learner) => learner.userId === USER_ID),
+      // Ordered by name: the seeded agent is counted in `total`, not necessarily on the first page of the perf seed.
+      'learners count the seeded agents': (r) => r.status === 200 && ((json(r) || {}).total || 0) >= 1 && ((json(r) || {}).learners || []).length >= 1,
     }),
   'POST /elearning/admin/courses/{courseId}/learners': ({ request, data }) => {
     const courseId = createCourse(data);

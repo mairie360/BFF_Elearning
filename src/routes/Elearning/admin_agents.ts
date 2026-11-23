@@ -17,11 +17,11 @@ registry.registerPath({
   tags: ['E-learning administration'],
   summary: 'Lists the agents an administrator can enrol',
   description:
-    'One page of the active (non-archived) agents, in id order, read from the e-learning service. With `search`, the BFF filters the names itself (the service cannot search): it reads at most 1000 agents from `offset` per request, stops at `limit` matches, and `nextOffset` tells where to read on (`null` after the last agent). No total is given.',
+    'One page of the active (non-archived) agents, in id order. `search` keeps the agents whose name or e-mail contains the term, `excludeCourseId` leaves out the learners of a course (the picker that enrols agents). `nextOffset` tells where to read on (`null` after the last agent).',
   request: { query: AdminAgentsQuery },
   responses: {
     200: { description: 'Agents of the page', content: { 'application/json': { schema: AdminAgentsResponse } } },
-    400: json('Invalid `search`, `limit` or `offset`'),
+    400: json('Invalid `search`, `limit`, `offset` or `excludeCourseId`'),
     ...sessionErrorResponses,
     403: json('Restricted to administrators'),
     500: json('Unexpected server error'),
