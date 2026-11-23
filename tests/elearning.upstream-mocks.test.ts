@@ -5,8 +5,9 @@ import app from '../src/app';
 import { ContractMockServer, unreachableUrl, type MockReply } from './support/contract-mock-server';
 import { OpenApiContract } from './support/openapi-contract';
 import { loadOrvalContract } from './support/orval-contract';
+import type { CatalogFile } from '@mairie360/elearning-api-openapi/model';
 import {
-  attachment, bearer, coreApiUrls, coreMe, elearningApiUrls, formation, group, learnerModule,
+  bearer, catalogFile, catalogFormation, catalogModule, coreApiUrls, coreMe, elearningApiUrls, formation, group, moduleFile,
 } from './support/user-fixtures';
 import { captureLogs } from './support/logs';
 
@@ -27,7 +28,18 @@ const CORE = { me: '/api/v1/user/me/' } as const;
 const ELEARNING = {
   catalog: '/api/v1/formations/catalog/',
   module: '/api/v1/formations/{formationId}/{moduleId}/',
+  attachment: '/api/v1/formations/{formationId}/{moduleId}/{attachmentId}/',
+  rating: '/api/v1/formations/{formationId}/rating/',
+  summary: '/api/v1/formations/summary/',
+  certificate: '/api/v1/formations/{formationId}/certificate/',
+  certificates: '/api/v1/formations/certificates/',
+  adminFormations: '/api/v1/admin/formations/',
+  adminFormation: '/api/v1/admin/formations/{formationId}/',
+  reminders: '/api/v1/admin/formations/{formationId}/reminders/',
+  stats: '/api/v1/admin/stats/',
 } as const;
+const PDF = '%PDF-1.4\n1 0 obj << >> endobj\n%%EOF\n';
+const pdfReply = (headers: Record<string, string> = {}): MockReply => ({ raw: PDF, contentType: 'application/pdf', headers });
 const HEALTH = '/health';
 const bffContract = OpenApiContract.load(path.join(__dirname, '..', 'contracts', 'openapi.json'));
 
@@ -298,19 +310,23 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
   describe('learner routes, served by the E-learning API', () => {
     // Enrolments of the caller as the E-learning API returns them: formation 4 is half done (module 11 completed),
     // formation 9 is not started. PATCH .../{moduleId}/ marks a module completed, as the API does.
-    let enrolments: Array<{ formation: ReturnType<typeof formation>; chapters: Array<{ module: ReturnType<typeof learnerModule>; files: ReturnType<typeof attachment>[] }> }>;
+    type Enrolment = {
+      formation: ReturnType<typeof catalogFormation>;
+      chapters: Array<{ module: ReturnType<typeof catalogModule>; files: CatalogFile[] }>;
+    };
+    let enrolments: Enrolment[];
 
     beforeEach(() => {
       coreApi.on('get', CORE.me, { body: coreMe() });
       enrolments = [
         {
-          formation: formation(4, 'RGPD pour les agents', 'InProgress'),
+          formation: catalogFormation(4, 'RGPD pour les agents', 'InProgress'),
           chapters: [
-            { module: learnerModule(11, 'Les principes', true), files: [attachment(27, 'principes.pdf'), attachment(28, 'intro.mp4', 'Video')] },
-            { module: learnerModule(12, 'Les obligations'), files: [attachment(29, 'registre.pdf')] },
+            { module: catalogModule(11, 'Les principes', true), files: [catalogFile(27, 'principes.pdf'), catalogFile(28, 'intro.mp4', 'video', { sort_order: 2 })] },
+            { module: catalogModule(12, 'Les obligations'), files: [catalogFile(29, 'registre.pdf')] },
           ],
         },
-        { formation: formation(9, 'Accueil du public'), chapters: [{ module: learnerModule(31, 'Posture'), files: [] }] },
+        { formation: catalogFormation(9, 'Accueil du public'), chapters: [{ module: catalogModule(31, 'Posture'), files: [] }] },
       ];
       const enrolment = (id: string) => enrolments.find((entry) => String(entry.formation.id) === id);
       const chapter = (formationId: string, moduleId: string) =>
@@ -320,15 +336,14 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
         body: {
           formations: enrolments.map((entry) => ({
             ...entry.formation,
-            description: entry.formation.description ?? '',
-            modules: entry.chapters.map((chapter) => ({ ...chapter.module, description: chapter.module.description ?? '', files: chapter.files })),
+            modules: entry.chapters.map((chapter) => ({ ...chapter.module, files: chapter.files })),
           })),
         },
       }));
       elearningApi.on('get', ELEARNING.module, ({ pathParams }) => {
         if (!enrolment(pathParams.formationId)) return elearningError(403);
         const found = chapter(pathParams.formationId, pathParams.moduleId);
-        return found ? { body: { files: found.files } } : elearningError(404);
+        return found ? { body: { files: found.files.map(moduleFile) } } : elearningError(404);
       });
       elearningApi.on('patch', ELEARNING.module, ({ pathParams }) => {
         const found = chapter(pathParams.formationId, pathParams.moduleId);
@@ -360,7 +375,11 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
         id: '4',
         title: 'RGPD pour les agents',
         description: 'RGPD pour les agents description',
+        ratingCount: 0,
         chapters: 2,
+        learners: 1,
+        mandatory: false,
+        source: 'internal',
         statusValue: 'in-progress',
         statusBadge: { label: 'En cours', variant: 'inProgress' },
         progress: 50,
@@ -369,6 +388,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
           description: 'RGPD pour les agents description',
           progress: 50,
           completed: false,
+          completionRating: { submitted: false, max: 5 },
           chapters: [
             {
               id: '11',
@@ -377,8 +397,8 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
               completed: true,
               active: false,
               contents: [
-                { id: '27', title: 'principes.pdf', type: 'pdf', fileName: 'principes.pdf', completed: true },
-                { id: '28', title: 'intro.mp4', type: 'video', fileName: 'intro.mp4', completed: true },
+                { id: '27', title: 'principes.pdf', type: 'pdf', fileName: 'principes.pdf', completed: true, required: true },
+                { id: '28', title: 'intro.mp4', type: 'video', fileName: 'intro.mp4', completed: true, required: true },
               ],
             },
             {
@@ -387,7 +407,7 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
               description: 'Les obligations description',
               completed: false,
               active: true,
-              contents: [{ id: '29', title: 'registre.pdf', type: 'pdf', fileName: 'registre.pdf', completed: false }],
+              contents: [{ id: '29', title: 'registre.pdf', type: 'pdf', fileName: 'registre.pdf', completed: false, required: true }],
             },
           ],
         },
@@ -403,10 +423,10 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     // learner of the perf seed) and saturated the BFF under load (k6 red on main).
     test('GET /elearning/catalog makes one E-learning call whatever the number of courses and chapters', async () => {
       enrolments = Array.from({ length: 15 }, (_, f) => ({
-        formation: formation(100 + f, `Formation ${f}`, 'InProgress'),
+        formation: catalogFormation(100 + f, `Formation ${f}`, 'InProgress'),
         chapters: Array.from({ length: 10 }, (_unused, m) => ({
-          module: learnerModule(1000 + 10 * f + m, `Module ${m}`, m < 5),
-          files: [attachment(5000 + 10 * f + m, `support-${m}.pdf`)],
+          module: catalogModule(1000 + 10 * f + m, `Module ${m}`, m < 5),
+          files: [catalogFile(5000 + 10 * f + m, `support-${m}.pdf`)],
         })),
       }));
 
@@ -615,21 +635,301 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(elearningApi.requests.every((call) => call.method === 'GET')).toBe(true);
     });
 
-    test('POST .../rating answers 501 instead of keeping the rating in memory, and validates first', async () => {
-      captureLogs();
-      const rated = await withSession(request(app).post('/elearning/courses/4/rating'), 'rating-agent').send({ rating: 5 });
+    // MAIR-1150: every V2 field of the catalogue reaches the course, chapters and contents of the front.
+    test('MAIR-1150 GET /elearning/catalog maps the E-learning V2 fields, in display order', async () => {
+      enrolments = [{
+        formation: catalogFormation(4, 'RGPD pour les agents', 'Completed', {
+          category: 'Juridique', level: 'intermediate', is_mandatory: true, deadline: '2026-06-30', instructor: 'DPO de la mairie',
+          learners: 40, rating_average: 4.25, rating_count: 12, my_rating: 4, source: 'platform',
+          started_at: '2026-03-02T08:15:00Z', completed_at: '2026-03-20T16:40:00Z', last_activity_at: '2026-03-20T16:40:00Z',
+          last_reminder_at: '2026-03-10T09:00:00Z',
+        }),
+        chapters: [
+          {
+            module: catalogModule(12, 'Les obligations', true, { sort_order: 2, duration_seconds: 4500 }),
+            files: [
+              catalogFile(31, 'quiz', 'quiz', { title: 'Quiz final', sort_order: 3, is_required: false, duration_seconds: 900 }),
+              catalogFile(30, 'cnil', 'link', { title: 'Le site de la CNIL', url: 'https://www.cnil.fr/', sort_order: 1, duration_seconds: 600 }),
+              catalogFile(32, 'podcast.mp3', 'audio', { title: 'Podcast', description: 'Entretien', sort_order: 2, duration_seconds: 3000 }),
+            ],
+          },
+          {
+            module: catalogModule(11, 'Les principes', true, { sort_order: 1, duration_seconds: 3600 }),
+            files: [catalogFile(27, 'guide.docx', 'document', { title: 'Guide', duration_seconds: 3600 })],
+          },
+        ],
+      }];
 
-      expect(rated.status).toBe(501);
-      expectBffContract('post', '/elearning/courses/{courseId}/rating', rated);
-      expect(rated.body).toEqual({ error: { code: 'INTERNAL_ERROR', message: 'Course ratings are not stored by the e-learning service yet.', details: [] } });
-      expect(elearningApi.requests).toHaveLength(0);
-      // MAIR-525: nothing is read or written, the verified token is enough.
-      expect(coreApi.requests).toHaveLength(0);
+      const response = await withSession(request(app).get('/elearning/catalog'), 2);
 
-      const invalid = await withSession(request(app).post('/elearning/courses/4/rating'), 'rating-agent').send({ rating: 7 });
-      expect(invalid.status).toBe(400);
-      expectBffContract('post', '/elearning/courses/{courseId}/rating', invalid);
-      expect(coreApi.requests).toHaveLength(0);
+      expect(response.status).toBe(200);
+      expectBffContract('get', '/elearning/catalog', response);
+      expect(response.body.catalog.categories).toEqual([
+        { label: 'Toutes les categories', value: 'all' },
+        { label: 'Juridique', value: 'Juridique' },
+      ]);
+      const [course] = response.body.catalog.courses;
+      expect(course).toMatchObject({
+        id: '4', category: 'Juridique', level: 'intermediate', levelBadge: { label: 'Intermédiaire', variant: 'intermediate' },
+        mandatory: true, titleBadge: { label: 'Obligatoire', variant: 'mandatory' }, deadline: '2026-06-30', instructor: 'DPO de la mairie',
+        learners: 40, rating: 4.25, ratingCount: 12, source: 'platform', duration: '2 h 15', durationSeconds: 8100,
+        startedAt: '2026-03-02T08:15:00Z', completedAt: '2026-03-20T16:40:00Z', lastActivityAt: '2026-03-20T16:40:00Z',
+        lastReminderAt: '2026-03-10T09:00:00Z', statusValue: 'completed', progress: 100,
+      });
+      expect(course.details).toMatchObject({
+        instructor: 'DPO de la mairie', duration: '2 h 15', rating: 4.25, ratingLabel: '4,3 (12 avis)',
+        completionRating: { submitted: true, initialValue: 4, max: 5 },
+      });
+      expect(course.details.chapters.map((chapter: { id: string; duration: string }) => [chapter.id, chapter.duration])).toEqual([['11', '1 h'], ['12', '1 h 15']]);
+      expect(course.details.chapters[1].contents).toEqual([
+        { id: '30', title: 'Le site de la CNIL', type: 'link', duration: '10 min', durationSeconds: 600, href: 'https://www.cnil.fr/', completed: true, required: true },
+        { id: '32', title: 'Podcast', type: 'audio', description: 'Entretien', duration: '50 min', durationSeconds: 3000, fileName: 'podcast.mp3', completed: true, required: true },
+        { id: '31', title: 'Quiz final', type: 'quiz', duration: '15 min', durationSeconds: 900, completed: true, required: false },
+      ]);
+      expect(course.details.chapters[0].contents[0]).toMatchObject({ type: 'document', fileName: 'guide.docx' });
+    });
+
+    describe('POST /elearning/courses/{courseId}/rating', () => {
+      test('stores the rating upstream and returns the rating of the course', async () => {
+        elearningApi.on('post', ELEARNING.rating, { body: { rating_average: 4.5, rating_count: 12, my_rating: 5 } });
+
+        const response = await withSession(request(app).post('/elearning/courses/4/rating'), 'rating-agent').send({ rating: 5 });
+
+        expect(response.status).toBe(200);
+        expectBffContract('post', '/elearning/courses/{courseId}/rating', response);
+        expect(response.body).toEqual({ rating: 4.5, ratingCount: 12, ratingLabel: '4,5 (12 avis)', myRating: 5, ratingDistribution: {}, submitted: true });
+        const [call] = elearningApi.calls(ELEARNING.rating, 'post');
+        expect(call.url.pathname).toBe(elearningApiUrls.getRateFormationUrl(4));
+        expect(call.body).toEqual({ rating: 5 });
+        expect(call.headers.authorization).toBe(bearer('rating-agent'));
+        // MAIR-525: no profile read.
+        expect(coreApi.requests).toHaveLength(0);
+      });
+
+      test.each([
+        [403, 404, 'Course not found.'],
+        [404, 404, 'Course not found.'],
+        [409, 409, 'The course must be completed before it is rated.'],
+      ])('maps an E-learning %i to %i', async (upstream, status, message) => {
+        elearningApi.on('post', ELEARNING.rating, elearningError(upstream));
+
+        const response = await withSession(request(app).post('/elearning/courses/4/rating'), 'rating-agent').send({ rating: 3 });
+
+        expect(response.status).toBe(status);
+        expectBffContract('post', '/elearning/courses/{courseId}/rating', response);
+        expect(response.body.error.message).toBe(message);
+        expect(elearningApi.calls(ELEARNING.rating, 'post')).toHaveLength(1);
+      });
+
+      test('validates the rating before any upstream call, and answers 502 to an unusable answer', async () => {
+        captureLogs();
+        const invalid = await withSession(request(app).post('/elearning/courses/4/rating'), 'rating-agent').send({ rating: 7 });
+        expect(invalid.status).toBe(400);
+        expectBffContract('post', '/elearning/courses/{courseId}/rating', invalid);
+        expect(elearningApi.requests).toHaveLength(0);
+
+        elearningApi.on('post', ELEARNING.rating, { body: { rating: 5 }, outOfContract: true });
+        const broken = await withSession(request(app).post('/elearning/courses/4/rating'), 'rating-agent').send({ rating: 5 });
+        expect(broken.status).toBe(502);
+        expectBffContract('post', '/elearning/courses/{courseId}/rating', broken);
+      });
+    });
+
+    describe('GET /elearning/training-time', () => {
+      const summary = {
+        year: 2026, annual_goal_minutes: 600, time_spent_seconds: 5400, completed_count: 1,
+        formations: [
+          { id: 4, name: 'RGPD pour les agents', status: 'Completed' as const, time_spent_seconds: 3600, completed_at: '2026-03-20T16:40:00Z' },
+          { id: 9, name: 'Accueil du public', status: 'InProgress' as const, time_spent_seconds: 1800, completed_at: null },
+          { id: 10, name: 'Archives', status: 'Error' as const, time_spent_seconds: 0 },
+        ],
+      };
+
+      test('maps the yearly summary of the caller', async () => {
+        elearningApi.on('get', ELEARNING.summary, { body: summary });
+
+        const response = await withSession(request(app).get('/elearning/training-time?year=2026'), 'time-agent');
+
+        expect(response.status).toBe(200);
+        expectBffContract('get', '/elearning/training-time', response);
+        expect(response.body).toEqual({
+          year: 2026, goalMinutes: 600, timeSpentSeconds: 5400, completedCount: 1,
+          courses: [
+            { id: '4', title: 'RGPD pour les agents', status: 'completed', timeSpentSeconds: 3600, completedAt: '2026-03-20T16:40:00Z' },
+            { id: '9', title: 'Accueil du public', status: 'in-progress', timeSpentSeconds: 1800, completedAt: null },
+            { id: '10', title: 'Archives', status: 'not-started', timeSpentSeconds: 0, completedAt: null },
+          ],
+        });
+        const [call] = elearningApi.calls(ELEARNING.summary, 'get');
+        expect(call.url.searchParams.get('year')).toBe('2026');
+        expect(call.undeclaredQuery).toEqual([]);
+      });
+
+      test('defaults to the current year of the E-learning API', async () => {
+        elearningApi.on('get', ELEARNING.summary, { body: { ...summary, formations: [] } });
+
+        const response = await withSession(request(app).get('/elearning/training-time'), 'time-agent');
+
+        expect(response.status).toBe(200);
+        expect(elearningApi.calls(ELEARNING.summary, 'get')[0].url.search).toBe('');
+      });
+
+      test.each(['1999', '2101', 'soon'])('refuses year=%s before any upstream call', async (year) => {
+        const response = await withSession(request(app).get(`/elearning/training-time?year=${year}`), 'time-agent');
+
+        expect(response.status).toBe(400);
+        expectBffContract('get', '/elearning/training-time', response);
+        expect(response.body.error.details[0].path).toBe('query.year');
+        expect(elearningApi.requests).toHaveLength(0);
+      });
+
+      test('maps an E-learning 400 to a 400 on the year, and an unusable answer to a 502', async () => {
+        captureLogs();
+        elearningApi.on('get', ELEARNING.summary, elearningError(400));
+        const refused = await withSession(request(app).get('/elearning/training-time?year=2026'), 'time-agent');
+        expect(refused.status).toBe(400);
+        expectBffContract('get', '/elearning/training-time', refused);
+        expect(refused.body.error.details).toEqual([{ path: 'query.year', message: 'Expected a year from 2000 to 2100.' }]);
+
+        elearningApi.on('get', ELEARNING.summary, { body: { year: 2026 }, outOfContract: true });
+        const broken = await withSession(request(app).get('/elearning/training-time'), 'time-agent');
+        expect(broken.status).toBe(502);
+        expectBffContract('get', '/elearning/training-time', broken);
+      });
+    });
+
+    describe('PDF attestations', () => {
+      const binary = (call: request.Test) => call.buffer(true).parse((res, done) => {
+        const chunks: Buffer[] = [];
+        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        res.on('end', () => done(null, Buffer.concat(chunks)));
+      });
+
+      test('GET /elearning/courses/{courseId}/certificate streams the PDF with its file name', async () => {
+        elearningApi.on('get', ELEARNING.certificate, pdfReply({ 'Content-Disposition': 'attachment; filename="attestation-4.pdf"' }));
+
+        const response = await binary(withSession(request(app).get('/elearning/courses/4/certificate'), 'pdf-agent'));
+
+        expect(response.status).toBe(200);
+        expectBffContract('get', '/elearning/courses/{courseId}/certificate', response);
+        expect(response.headers['content-type']).toBe('application/pdf');
+        expect(response.headers['content-disposition']).toBe('attachment; filename="attestation-4.pdf"');
+        expect((response.body as Buffer).toString('latin1')).toBe(PDF);
+        const [call] = elearningApi.calls(ELEARNING.certificate, 'get');
+        expect(call.url.pathname).toBe(elearningApiUrls.getGetCertificateUrl(4));
+        expect(call.headers.authorization).toBe(bearer('pdf-agent'));
+        expect(call.headers.accept).toBe('application/pdf');
+      });
+
+      test('names the file itself when the E-learning API gives no safe name', async () => {
+        elearningApi.on('get', ELEARNING.certificate, pdfReply({ 'Content-Disposition': 'attachment; filename="../../etc/passwd"' }));
+
+        const response = await binary(withSession(request(app).get('/elearning/courses/4/certificate'), 'pdf-agent'));
+
+        expect(response.status).toBe(200);
+        expect(response.headers['content-disposition']).toBe('attachment; filename="attestation-4.pdf"');
+      });
+
+      test.each([
+        [403, 404, 'Course not found.'],
+        [404, 404, 'Course not found.'],
+        [409, 409, 'The course is not completed yet.'],
+      ])('maps an E-learning %i to %i', async (upstream, status, message) => {
+        elearningApi.on('get', ELEARNING.certificate, elearningError(upstream));
+
+        const response = await withSession(request(app).get('/elearning/courses/4/certificate'), 'pdf-agent');
+
+        expect(response.status).toBe(status);
+        expectBffContract('get', '/elearning/courses/{courseId}/certificate', response);
+        expect(response.body.error.message).toBe(message);
+      });
+
+      test('answers 502 when the E-learning API does not answer a PDF', async () => {
+        captureLogs();
+        elearningApi.on('get', ELEARNING.certificate, { raw: '{"oops":true}', contentType: 'application/json' });
+
+        const response = await withSession(request(app).get('/elearning/courses/4/certificate'), 'pdf-agent');
+
+        expect(response.status).toBe(502);
+        expectBffContract('get', '/elearning/courses/{courseId}/certificate', response);
+        expect(response.body.error.message).toBe('The ELEARNING_API answer is invalid.');
+      });
+
+      test('GET /elearning/certificates streams the attestations of the year', async () => {
+        elearningApi.on('get', ELEARNING.certificates, pdfReply());
+
+        const response = await binary(withSession(request(app).get('/elearning/certificates?year=2026'), 'pdf-agent'));
+
+        expect(response.status).toBe(200);
+        expectBffContract('get', '/elearning/certificates', response);
+        expect(response.headers['content-type']).toBe('application/pdf');
+        expect(response.headers['content-disposition']).toBe('attachment; filename="attestations-2026.pdf"');
+        expect((response.body as Buffer).toString('latin1')).toBe(PDF);
+        expect(elearningApi.calls(ELEARNING.certificates, 'get')[0].url.searchParams.get('year')).toBe('2026');
+      });
+
+      test('GET /elearning/certificates names the current year by default', async () => {
+        elearningApi.on('get', ELEARNING.certificates, pdfReply());
+
+        const response = await binary(withSession(request(app).get('/elearning/certificates'), 'pdf-agent'));
+
+        expect(response.headers['content-disposition']).toBe(`attachment; filename="attestations-${new Date().getUTCFullYear()}.pdf"`);
+      });
+
+      test.each([
+        [404, 404, 'No course completed during this year.'],
+        [400, 400, 'Invalid year.'],
+      ])('GET /elearning/certificates maps an E-learning %i to %i', async (upstream, status, message) => {
+        elearningApi.on('get', ELEARNING.certificates, elearningError(upstream));
+
+        const response = await withSession(request(app).get('/elearning/certificates?year=2025'), 'pdf-agent');
+
+        expect(response.status).toBe(status);
+        expectBffContract('get', '/elearning/certificates', response);
+        expect(response.body.error.message).toBe(message);
+      });
+    });
+
+    describe('GET /elearning/courses/{courseId}/chapters/{chapterId}/contents/{contentId}/file', () => {
+      const route = '/elearning/courses/{courseId}/chapters/{chapterId}/contents/{contentId}/file';
+
+      test('returns the signed URL of the stored file', async () => {
+        elearningApi.on('get', ELEARNING.attachment, { body: { url: 'https://s3.example/principes.pdf?X-Amz-Signature=abc' } });
+
+        const response = await withSession(request(app).get('/elearning/courses/4/chapters/11/contents/27/file'), 'file-agent');
+
+        expect(response.status).toBe(200);
+        expectBffContract('get', route, response);
+        expect(response.body).toEqual({ url: 'https://s3.example/principes.pdf?X-Amz-Signature=abc' });
+        const [call] = elearningApi.calls(ELEARNING.attachment, 'get');
+        expect(call.url.pathname).toBe(elearningApiUrls.getGetAttachmentUrlUrl(4, 11, 27));
+        expect(call.headers.authorization).toBe(bearer('file-agent'));
+      });
+
+      test.each([
+        [403, 'Course not found.', 'params.courseId'],
+        [404, 'File not found.', 'params.contentId'],
+      ])('maps an E-learning %i to a 404', async (upstream, message, path) => {
+        elearningApi.on('get', ELEARNING.attachment, elearningError(upstream));
+
+        const response = await withSession(request(app).get('/elearning/courses/4/chapters/11/contents/30/file'), 'file-agent');
+
+        expect(response.status).toBe(404);
+        expectBffContract('get', route, response);
+        expect(response.body.error).toMatchObject({ message, details: [{ path }] });
+      });
+
+      test('refuses non-numeric ids before any call, and an answer without URL', async () => {
+        captureLogs();
+        const invalid = await withSession(request(app).get('/elearning/courses/4/chapters/intro/contents/27/file'), 'file-agent');
+        expect(invalid.status).toBe(400);
+        expectBffContract('get', route, invalid);
+        expect(elearningApi.requests).toHaveLength(0);
+
+        elearningApi.on('get', ELEARNING.attachment, { body: { url: '' }, outOfContract: true });
+        const broken = await withSession(request(app).get('/elearning/courses/4/chapters/11/contents/27/file'), 'file-agent');
+        expect(broken.status).toBe(502);
+      });
     });
   });
 
@@ -724,23 +1024,274 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       duration: '45 min',
     };
 
-    test.each(['Admin', 'admin', 'ADMIN'])('answers 501 to a Core role %s: the E-learning API cannot edit courses', async (role) => {
-      captureLogs();
+    test.each(['Admin', 'admin', 'ADMIN'])('a Core role %s creates, updates and deletes courses through the E-learning API', async (role) => {
       coreApi.on('get', CORE.me, { body: coreMe({ role: 'User', roles: ['User', role] }) });
+      elearningApi.on('post', ELEARNING.adminFormations, { status: 200, body: { id: 42 } });
+      elearningApi.on('patch', ELEARNING.adminFormation, { body: { id: 4 } });
+      elearningApi.on('delete', ELEARNING.adminFormation, { status: 204 });
 
-      const responses = [
-        [await withSession(request(app).post('/elearning/admin/courses'), 'admin-agent').send(course), 'post', '/elearning/admin/courses'],
-        [await withSession(request(app).patch('/elearning/admin/courses/4'), 'admin-agent').send(course), 'patch', '/elearning/admin/courses/{courseId}'],
-        [await withSession(request(app).delete('/elearning/admin/courses/4'), 'admin-agent'), 'delete', '/elearning/admin/courses/{courseId}'],
-      ] as const;
+      const created = await withSession(request(app).post('/elearning/admin/courses'), 'admin-agent').send(course);
+      const updated = await withSession(request(app).patch('/elearning/admin/courses/4'), 'admin-agent').send(course);
+      const removed = await withSession(request(app).delete('/elearning/admin/courses/4'), 'admin-agent');
 
-      for (const [response, method, template] of responses) {
-        expect(response.status).toBe(501);
-        expectBffContract(method, template, response);
-        expect(response.body.error.code).toBe('INTERNAL_ERROR');
-        expect(response.body.error.message).toMatch(/^Course administration is not available/);
-      }
+      expect(created.status).toBe(201);
+      expectBffContract('post', '/elearning/admin/courses', created);
+      expect(created.body).toMatchObject({ id: '42', course: { id: '42', title: course.title, mandatory: false, source: 'internal' } });
+      expect(updated.status).toBe(200);
+      expectBffContract('patch', '/elearning/admin/courses/{courseId}', updated);
+      expect(updated.body.id).toBe('4');
+      expect(removed.status).toBe(200);
+      expectBffContract('delete', '/elearning/admin/courses/{courseId}', removed);
+      expect(removed.body).toEqual({ deleted: true, courseId: '4' });
+      expect(elearningApi.calls(ELEARNING.adminFormations, 'post')[0].body).toEqual({
+        name: course.title, description: course.description, category: null, level: null, is_mandatory: false, deadline: null,
+        source: 'internal', instructor: null, modules: [],
+      });
+      expect(elearningApi.calls(ELEARNING.adminFormation, 'delete')[0].url.pathname).toBe(elearningApiUrls.getDeleteFormationUrl(4));
+      expect(elearningApi.requests.every((call) => call.headers.authorization === bearer('admin-agent'))).toBe(true);
+    });
+
+    // A course as the admin form of the front sends it: badges, human durations, a French deadline, ids of kept rows
+    // (decimal) and of rows just added (anything else).
+    const edited = {
+      id: '4',
+      title: '  RGPD pour les agents  ',
+      description: 'Les bases',
+      category: 'Juridique',
+      levelBadge: { label: 'Avancé' },
+      titleBadge: { label: 'Obligatoire', variant: 'mandatory' as const },
+      deadline: '1er mars 2027',
+      source: 'platform' as const,
+      details: {
+        title: 'RGPD', description: 'Les bases', instructor: 'DPO', chapters: [
+          {
+            id: '11', title: 'Les principes', contents: [
+              { id: '27', title: 'Guide', type: 'pdf' as const, duration: '1 h 30', required: true },
+              { id: 'new-1', title: 'CNIL', type: 'link' as const, href: 'https://www.cnil.fr/', duration: '12:30', required: false, description: 'Site' },
+            ],
+          },
+          { id: 'chapter-new', title: 'Quiz', description: '  ', contents: [{ id: 'q', title: 'Quiz', type: 'quiz' as const, durationSeconds: 300 }] },
+        ],
+      },
+    };
+
+    test('MAIR-1150 PATCH maps the course of the front to the E-learning body and keeps the existing rows', async () => {
+      elearningApi.on('patch', ELEARNING.adminFormation, { body: { id: 4 } });
+
+      const response = await withSession(request(app).patch('/elearning/admin/courses/4'), 'jwt-admin', { role: 'admin' }).send(edited);
+
+      expect(response.status).toBe(200);
+      expectBffContract('patch', '/elearning/admin/courses/{courseId}', response);
+      const [call] = elearningApi.calls(ELEARNING.adminFormation, 'patch');
+      expect(call.url.pathname).toBe(elearningApiUrls.getUpdateFormationUrl(4));
+      expect(call.body).toEqual({
+        name: 'RGPD pour les agents', description: 'Les bases', category: 'Juridique', level: 'advanced', is_mandatory: true,
+        deadline: '2027-03-01', source: 'platform', instructor: 'DPO',
+        modules: [
+          {
+            id: 11, name: 'Les principes', description: null, files: [
+              { id: 27, title: 'Guide', description: null, file_type: 'pdf', duration_seconds: 5400, is_required: true },
+              { title: 'CNIL', description: 'Site', file_type: 'link', duration_seconds: 750, is_required: false, url: 'https://www.cnil.fr/' },
+            ],
+          },
+          { name: 'Quiz', description: null, files: [{ title: 'Quiz', description: null, file_type: 'quiz', duration_seconds: 300, is_required: true }] },
+        ],
+      });
+      expect(response.body.course).toMatchObject({
+        id: '4', title: 'RGPD pour les agents', level: 'advanced', levelBadge: { label: 'Avancé', variant: 'advanced' },
+        mandatory: true, titleBadge: { label: 'Obligatoire', variant: 'mandatory' }, deadline: '2027-03-01', source: 'platform', category: 'Juridique',
+      });
+      // MAIR-525: the role claim of the token is enough.
+      expect(coreApi.requests).toHaveLength(0);
+    });
+
+    test('POST sends no id: every chapter and content of a new course is new', async () => {
+      elearningApi.on('post', ELEARNING.adminFormations, { body: { id: 43 } });
+      const fresh = {
+        ...edited, level: 'beginner' as const, mandatory: false, deadline: '2027-01-15T00:00:00Z',
+        details: { ...edited.details, chapters: [{ ...edited.details.chapters[0], contents: [edited.details.chapters[0].contents[1]] }] },
+      };
+
+      const response = await withSession(request(app).post('/elearning/admin/courses'), 'jwt-admin', { role: 'admin' }).send(fresh);
+
+      expect(response.status).toBe(201);
+      expectBffContract('post', '/elearning/admin/courses', response);
+      const [call] = elearningApi.calls(ELEARNING.adminFormations, 'post');
+      expect(call.body).toMatchObject({
+        level: 'beginner', is_mandatory: false, deadline: '2027-01-15',
+        modules: [{ name: 'Les principes', files: [{ title: 'CNIL', file_type: 'link', url: 'https://www.cnil.fr/' }] }],
+      });
+      expect((call.body as { modules: Array<Record<string, unknown>> }).modules[0]).not.toHaveProperty('id');
+      expect(response.body).toMatchObject({ id: '43', course: { id: '43', level: 'beginner', mandatory: false } });
+      expect(response.body.course).not.toHaveProperty('titleBadge');
+    });
+
+    test('refuses the values the E-learning API would refuse, naming each field, before any call', async () => {
+      const invalid = {
+        ...edited,
+        title: ' ',
+        deadline: 'bientôt',
+        details: {
+          ...edited.details,
+          chapters: [{
+            id: 'n', title: 'Nouveau', contents: [
+              { id: 'n1', title: 'Vidéo', type: 'video' as const },
+              { id: 'n2', title: 'Lien', type: 'link' as const, href: 'http://insecure.example' },
+              { id: 'n3', title: 'Quiz', type: 'quiz' as const, duration: 'deux heures' },
+            ],
+          }],
+        },
+      };
+
+      const response = await withSession(request(app).patch('/elearning/admin/courses/4'), 'jwt-admin', { role: 'admin' }).send(invalid);
+
+      expect(response.status).toBe(400);
+      expectBffContract('patch', '/elearning/admin/courses/{courseId}', response);
+      expect(response.body.error.details.map((detail: { path: string }) => detail.path)).toEqual([
+        'body.title',
+        'body.deadline',
+        'body.details.chapters.0.contents.0.type',
+        'body.details.chapters.0.contents.1.href',
+        'body.details.chapters.0.contents.2.duration',
+      ]);
       expect(elearningApi.requests).toHaveLength(0);
+    });
+
+    test.each<[string, string | undefined]>([
+      ['url must be an absolute https URL', 'body.href'],
+      ['modules[0].files[1].duration_seconds is negative', 'body.duration'],
+      ['invalid request', undefined],
+    ])('maps an E-learning 400 "%s" to a 400 without relaying its text', async (text, path) => {
+      elearningApi.on('post', ELEARNING.adminFormations, { status: 400, raw: text, contentType: 'text/plain', outOfContract: true });
+
+      const response = await withSession(request(app).post('/elearning/admin/courses'), 'jwt-admin', { role: 'admin' }).send(course);
+
+      expect(response.status).toBe(400);
+      expectBffContract('post', '/elearning/admin/courses', response);
+      expect(response.body.error.message).toBe('The e-learning service refused the course.');
+      expect(response.body.error.details).toEqual(path ? [{ path, message: 'Refused by the e-learning service.' }] : []);
+      expect(JSON.stringify(response.body)).not.toContain(text);
+    });
+
+    test.each([
+      ['patch', 404, 404],
+      ['patch', 403, 403],
+      ['delete', 404, 404],
+      ['delete', 403, 403],
+    ] as const)('%s maps an E-learning %i to %i', async (method, upstream, status) => {
+      elearningApi.on(method, ELEARNING.adminFormation, elearningError(upstream));
+
+      const call = withSession(request(app)[method]('/elearning/admin/courses/4'), 'jwt-admin', { role: 'admin' });
+      const response = await (method === 'patch' ? call.send(course) : call);
+
+      expect(response.status).toBe(status);
+      expectBffContract(method, '/elearning/admin/courses/{courseId}', response);
+    });
+
+    describe('POST /elearning/admin/courses/{courseId}/reminders', () => {
+      const route = '/elearning/admin/courses/{courseId}/reminders';
+
+      test('reminds every late agent without a body, the given agents otherwise', async () => {
+        elearningApi.on('post', ELEARNING.reminders, { body: { sent: 3 } });
+
+        const all = await withSession(request(app).post('/elearning/admin/courses/1010/reminders'), 'jwt-admin', { role: 'admin' });
+        const some = await withSession(request(app).post('/elearning/admin/courses/1010/reminders'), 'jwt-admin', { role: 'admin' }).send({ userIds: ['42', '7'] });
+
+        for (const response of [all, some]) {
+          expect(response.status).toBe(200);
+          expectBffContract('post', route, response);
+          expect(response.body).toEqual({ sent: 3 });
+        }
+        const calls = elearningApi.calls(ELEARNING.reminders, 'post');
+        expect(calls[0].url.pathname).toBe(elearningApiUrls.getSendRemindersUrl(1010));
+        expect(calls.map((call) => call.body)).toEqual([{}, { user_ids: [42, 7] }]);
+      });
+
+      test.each([
+        [404, 404, 'Course not found.'],
+        [409, 409, 'Reminders are only sent for a mandatory course.'],
+        [403, 403, 'This action is restricted to administrators.'],
+      ])('maps an E-learning %i to %i', async (upstream, status, message) => {
+        elearningApi.on('post', ELEARNING.reminders, elearningError(upstream));
+
+        const response = await withSession(request(app).post('/elearning/admin/courses/4/reminders'), 'jwt-admin', { role: 'admin' }).send({});
+
+        expect(response.status).toBe(status);
+        expectBffContract('post', route, response);
+        expect(response.body.error.message).toBe(message);
+      });
+
+      test('forbids non-administrators and refuses non-numeric user ids before any call', async () => {
+        const agent = await withSession(request(app).post('/elearning/admin/courses/4/reminders'), 'jwt-agent', { role: 'User' }).send({});
+        expect(agent.status).toBe(403);
+        expectBffContract('post', route, agent);
+
+        const invalid = await withSession(request(app).post('/elearning/admin/courses/4/reminders'), 'jwt-admin', { role: 'admin' }).send({ userIds: ['alice'] });
+        expect(invalid.status).toBe(400);
+        expectBffContract('post', route, invalid);
+        expect(invalid.body.error.details[0].path).toBe('body.userIds.0');
+        expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+      });
+    });
+
+    describe('GET /elearning/admin/stats', () => {
+      test('maps the indicators of the E-learning API', async () => {
+        elearningApi.on('get', ELEARNING.stats, {
+          body: {
+            internal_courses: 12, platform_courses: 30, mandatory_internal_courses: 3, agents: 120, participants: 95,
+            participation_rate: 79.2, average_completion: 61.4, late_mandatory: 1,
+            by_service: [
+              { service_id: 3, service_name: 'Urbanisme', agents: 25, participants: 20, participation_rate: 80 },
+              { service_id: null, service_name: null, agents: 5, participants: 1, participation_rate: 20 },
+            ],
+            by_formation: [{ id: 4, name: 'RGPD', source: 'internal', is_mandatory: true, enrolled: 40, completed: 12, average_progress: 47.5 }],
+            late_agents: [{
+              user_id: 42, first_name: 'Alice', last_name: 'Martin', formation_id: 4, formation_name: 'RGPD', deadline: '2026-06-30',
+              progress: 50, last_reminder_at: null,
+            }],
+          },
+        });
+
+        const response = await withSession(request(app).get('/elearning/admin/stats'), 'jwt-admin', { role: 'admin' });
+
+        expect(response.status).toBe(200);
+        expectBffContract('get', '/elearning/admin/stats', response);
+        expect(response.body).toEqual({
+          internalCourses: 12, platformCourses: 30, mandatoryInternalCourses: 3, agents: 120, participants: 95,
+          participationRate: 79.2, averageCompletion: 61.4, lateMandatory: 1,
+          byService: [
+            { serviceId: '3', serviceName: 'Urbanisme', agents: 25, participants: 20, participationRate: 80 },
+            { serviceId: null, serviceName: null, agents: 5, participants: 1, participationRate: 20 },
+          ],
+          byCourse: [{ id: '4', title: 'RGPD', source: 'internal', mandatory: true, enrolled: 40, completed: 12, averageProgress: 47.5 }],
+          lateAgents: [{
+            userId: '42', firstName: 'Alice', lastName: 'Martin', courseId: '4', courseTitle: 'RGPD', deadline: '2026-06-30',
+            progress: 50, lastReminderAt: null,
+          }],
+        });
+        expect(elearningApi.calls(ELEARNING.stats, 'get')[0].headers.authorization).toBe(bearer('jwt-admin', { role: 'admin' }));
+      });
+
+      test('forbids non-administrators without calling the E-learning API', async () => {
+        const response = await withSession(request(app).get('/elearning/admin/stats'), 'jwt-agent', { role: 'User' });
+
+        expect(response.status).toBe(403);
+        expectBffContract('get', '/elearning/admin/stats', response);
+        expect(elearningApi.requests).toHaveLength(0);
+      });
+
+      test('relays an E-learning 403 and answers 502 to an unusable answer', async () => {
+        captureLogs();
+        elearningApi.on('get', ELEARNING.stats, elearningError(403));
+        const refused = await withSession(request(app).get('/elearning/admin/stats'), 'jwt-admin', { role: 'admin' });
+        expect(refused.status).toBe(403);
+        expectBffContract('get', '/elearning/admin/stats', refused);
+
+        elearningApi.on('get', ELEARNING.stats, { body: { agents: 1 }, outOfContract: true });
+        const broken = await withSession(request(app).get('/elearning/admin/stats'), 'jwt-admin', { role: 'admin' });
+        expect(broken.status).toBe(502);
+        expectBffContract('get', '/elearning/admin/stats', broken);
+      });
     });
 
     test('forbids non-administrators', async () => {
@@ -776,13 +1327,13 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('MAIR-525: reads the admin role in the token without calling Core', async () => {
-      captureLogs();
+      elearningApi.on('delete', ELEARNING.adminFormation, { status: 204 });
 
       const response = await withSession(request(app).delete('/elearning/admin/courses/4'), 'jwt-admin', { role: 'admin' });
 
-      expect(response.status).toBe(501);
+      expect(response.status).toBe(200);
       expectBffContract('delete', '/elearning/admin/courses/{courseId}', response);
-      expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+      expect(coreApi.requests).toHaveLength(0);
     });
 
     test('MAIR-525: forbids a token whose role is not admin, without calling Core', async () => {
@@ -796,12 +1347,12 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
     });
 
     test('MAIR-529: reads the role from Core for an empty `role` claim', async () => {
-      captureLogs();
       coreApi.on('get', CORE.me, { body: coreMe({ role: 'admin', roles: ['admin'] }) });
+      elearningApi.on('delete', ELEARNING.adminFormation, { status: 204 });
 
       const response = await withSession(request(app).delete('/elearning/admin/courses/4'), 'jwt-empty-role', { role: '' });
 
-      expect(response.status).toBe(501);
+      expect(response.status).toBe(200);
       expect(coreApi.requests).toHaveLength(1);
     });
 

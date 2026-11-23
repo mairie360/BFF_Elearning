@@ -15,7 +15,10 @@ Domaine fonctionnel: Formation en ligne.
 - Catalogue des formations auxquelles l’utilisateur est inscrit, avec filtres, informations de formation et progression lues dans l’API E-learning.
 - Démarrage ou reprise d’une formation et validation de ses contenus (progression enregistrée par chapitre par l’API E-learning).
 - Consultation du profil d’apprentissage (lecture seule : un utilisateur modifie son profil dans Paramètres).
-- Pas encore disponible (réponse 501) : notation des formations, création, modification et suppression de formations par un administrateur. Aucun service amont ne les stocke et le BFF ne simule pas leur enregistrement.
+- Informations de formation de l’E-learning V2 : catégorie, niveau, caractère obligatoire et échéance, origine (mairie ou plateforme), formateur, durées, nombre d’inscrits et notes.
+- Noter une formation terminée, télécharger son attestation PDF ou les attestations d’une année, et suivre le temps de formation de l’année par rapport à l’objectif de l’instance.
+- Ouvrir un fichier stocké (vidéo, PDF, document, audio) par une URL signée de courte durée.
+- Les administrateurs créent, modifient et suppriment des formations (liens, quiz et autres contenus sans envoi de fichier), relancent les agents en retard sur une formation obligatoire et consultent les indicateurs de l’instance (participation, complétion, par service, par formation, agents en retard).
 
 ## Parcours type
 
@@ -35,7 +38,7 @@ Le BFF ne conserve aucun état. Formations, chapitres (modules), contenus (pièc
 
 ## Périmètre et limites
 
-Seules les formations auxquelles l’utilisateur est inscrit sont listées, et l’inscription est faite par un administrateur dans l’API E-learning. La progression est suivie par chapitre, pas par contenu. La notation et l’administration des formations répondent 501 tant qu’aucun service amont ne les prend en charge.
+Seules les formations auxquelles l’utilisateur est inscrit sont listées, et l’inscription est faite par un administrateur dans l’API E-learning. La progression est suivie par chapitre, pas par contenu. Un nouveau contenu ne peut pas encore être un fichier envoyé : les formations se composent de liens, de quiz et d’autres contenus, les fichiers stockés sont conservés tels quels.
 
 ## Pour développer ou exploiter ce module
 

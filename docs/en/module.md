@@ -15,7 +15,10 @@ Business domain: E-learning.
 - Catalogue of the courses the user is enrolled in, with filters, course details and progress read from the E-learning API.
 - Start or resume a course and complete its content (progress is saved per chapter by the E-learning API).
 - Read the learning profile (read-only: a user edits their own profile in Settings).
-- Not available yet (answer 501): course ratings, administrator course creation, editing and deletion. No upstream service stores them, and the BFF does not fake their persistence.
+- Course details of E-learning V2: category, level, mandatory flag and deadline, origin (mairie or platform), instructor, durations, number of learners and ratings.
+- Rate a completed course, download its PDF attestation or the attestations of a year, and follow the training time of the year against the goal of the instance.
+- Open a stored file (video, PDF, document, audio) through a short-lived signed URL.
+- Administrators create, update and delete courses (links, quizzes and other contents without upload), remind the agents late on a mandatory course and read the indicators of the instance (participation, completion, per service, per course, late agents).
 
 ## Typical workflow
 
@@ -35,7 +38,7 @@ The BFF keeps no state. Courses (formations), chapters (modules), contents (atta
 
 ## Scope and limitations
 
-Only enrolled courses are listed, and enrolment is done by an administrator in the E-learning API. Progress is tracked per chapter, not per content. Ratings and course administration answer 501 until an upstream service supports them.
+Only enrolled courses are listed, and enrolment is done by an administrator in the E-learning API. Progress is tracked per chapter, not per content. A new content cannot be an uploaded file yet: courses are built from links, quizzes and other contents, stored files are kept as they are.
 
 ## Developing or operating this module
 

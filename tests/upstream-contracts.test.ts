@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { JsonSchema, OpenApiContract } from './support/openapi-contract';
 import { loadOrvalContract, resolveOrvalPackage } from './support/orval-contract';
-import { attachment, coreApiUrls, coreMe, elearningApiUrls, formation, group, learnerModule } from './support/user-fixtures';
+import {
+  attachment, catalogFile, catalogFormation, catalogModule, coreApiUrls, coreMe, elearningApiUrls, formation, group, learnerModule,
+} from './support/user-fixtures';
 
 // The upstream contracts are rebuilt from the installed @mairie360/*-openapi packages: bumping a version in
 // package.json is enough to test the BFF against the new contract.
@@ -25,6 +27,18 @@ const CONSUMED = [
   { contract: elearningApi, operationId: 'getModule', method: 'get', url: elearningApiUrls.getGetModuleUrl(4, 11) },
   { contract: elearningApi, operationId: 'completeModule', method: 'patch', url: elearningApiUrls.getCompleteModuleUrl(4, 11) },
   { contract: elearningApi, operationId: 'health', method: 'get', url: elearningApiUrls.getHealthUrl() },
+  // MAIR-1150 (E-learning V2).
+  { contract: elearningApi, operationId: 'getMyCatalog', method: 'get', url: elearningApiUrls.getGetMyCatalogUrl() },
+  { contract: elearningApi, operationId: 'rateFormation', method: 'post', url: elearningApiUrls.getRateFormationUrl(4) },
+  { contract: elearningApi, operationId: 'getMySummary', method: 'get', url: elearningApiUrls.getGetMySummaryUrl({ year: 2026 }) },
+  { contract: elearningApi, operationId: 'getCertificate', method: 'get', url: elearningApiUrls.getGetCertificateUrl(4) },
+  { contract: elearningApi, operationId: 'getMyCertificates', method: 'get', url: elearningApiUrls.getGetMyCertificatesUrl({ year: 2026 }) },
+  { contract: elearningApi, operationId: 'getAttachmentUrl', method: 'get', url: elearningApiUrls.getGetAttachmentUrlUrl(4, 11, 27) },
+  { contract: elearningApi, operationId: 'createFormation', method: 'post', url: elearningApiUrls.getCreateFormationUrl() },
+  { contract: elearningApi, operationId: 'updateFormation', method: 'patch', url: elearningApiUrls.getUpdateFormationUrl(7) },
+  { contract: elearningApi, operationId: 'deleteFormation', method: 'delete', url: elearningApiUrls.getDeleteFormationUrl(7) },
+  { contract: elearningApi, operationId: 'sendReminders', method: 'post', url: elearningApiUrls.getSendRemindersUrl(7) },
+  { contract: elearningApi, operationId: 'getStats', method: 'get', url: elearningApiUrls.getGetStatsUrl() },
 ] as const;
 
 function responseSchema(contract: OpenApiContract, method: string, url: string, status: number): JsonSchema {
@@ -77,6 +91,9 @@ describe('E-learning API fixtures conform to its contract', () => {
     ['GET /api/v1/formations/', elearningApiUrls.getGetMyFormationsUrl(), { formations: [formation(4, 'RGPD', 'InProgress')] }],
     ['GET /api/v1/formations/{id}/', elearningApiUrls.getGetMyFormationByIdUrl(4), { modules: [learnerModule(11, 'Principes', true)] }],
     ['GET /api/v1/formations/{id}/{module}/', elearningApiUrls.getGetModuleUrl(4, 11), { files: [attachment(27, 'a.pdf'), attachment(28, 'b.mp4', 'Video')] }],
+    ['MAIR-1150 GET /api/v1/formations/catalog/', elearningApiUrls.getGetMyCatalogUrl(), {
+      formations: [{ ...catalogFormation(4, 'RGPD', 'InProgress'), modules: [{ ...catalogModule(11, 'Principes', true), files: [catalogFile(27, 'a.pdf'), catalogFile(30, 'cnil', 'link', { url: 'https://www.cnil.fr/' })] }] }],
+    }],
   ])('%s 200', (_name, url, body) => {
     expect(elearningApi.validate(responseSchema(elearningApi, 'get', url, 200), JSON.parse(JSON.stringify(body)))).toEqual([]);
   });

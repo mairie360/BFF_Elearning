@@ -65,8 +65,27 @@
           "audio",
           "other"
         ],
-        "description": "Type of learning content",
+        "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
         "example": "video"
+      },
+      "CourseLevel": {
+        "type": "string",
+        "enum": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "description": "Level of a formation",
+        "example": "beginner"
+      },
+      "CourseSource": {
+        "type": "string",
+        "enum": [
+          "internal",
+          "platform"
+        ],
+        "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+        "example": "internal"
       },
       "RatingDistribution": {
         "type": "object",
@@ -372,7 +391,7 @@
               "audio",
               "other"
             ],
-            "description": "Type of learning content",
+            "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
             "example": "video"
           },
           "description": {
@@ -380,21 +399,31 @@
           },
           "duration": {
             "type": "string",
+            "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
             "example": "12 min"
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Duration in seconds; wins over `duration` in an administration body",
+            "example": 720
           },
           "fileName": {
             "type": "string",
+            "description": "Name of the stored file (stored files only)",
             "example": "organigramme-mairie360.pdf"
           },
           "href": {
             "type": "string",
-            "example": "/documents/organigramme-mairie360.pdf"
+            "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+            "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
           },
           "completed": {
             "type": "boolean"
           },
           "required": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "`false` for an optional content (defaults to `true` in an administration body)"
           }
         },
         "required": [
@@ -420,7 +449,14 @@
           },
           "duration": {
             "type": "string",
+            "description": "Sum of the durations of its contents",
             "example": "25 min"
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Sum of the durations of its contents, in seconds",
+            "example": 1500
           },
           "completed": {
             "type": "boolean"
@@ -452,7 +488,7 @@
                     "audio",
                     "other"
                   ],
-                  "description": "Type of learning content",
+                  "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                   "example": "video"
                 },
                 "description": {
@@ -460,21 +496,31 @@
                 },
                 "duration": {
                   "type": "string",
+                  "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                   "example": "12 min"
+                },
+                "durationSeconds": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Duration in seconds; wins over `duration` in an administration body",
+                  "example": 720
                 },
                 "fileName": {
                   "type": "string",
+                  "description": "Name of the stored file (stored files only)",
                   "example": "organigramme-mairie360.pdf"
                 },
                 "href": {
                   "type": "string",
-                  "example": "/documents/organigramme-mairie360.pdf"
+                  "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                  "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                 },
                 "completed": {
                   "type": "boolean"
                 },
                 "required": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "description": "`false` for an optional content (defaults to `true` in an administration body)"
                 }
               },
               "required": [
@@ -521,7 +567,8 @@
             ]
           },
           "ratingLabel": {
-            "type": "string"
+            "type": "string",
+            "example": "4,5 (12 avis)"
           },
           "ratingDistribution": {
             "type": "object",
@@ -615,7 +662,14 @@
                 },
                 "duration": {
                   "type": "string",
+                  "description": "Sum of the durations of its contents",
                   "example": "25 min"
+                },
+                "durationSeconds": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Sum of the durations of its contents, in seconds",
+                  "example": 1500
                 },
                 "completed": {
                   "type": "boolean"
@@ -647,7 +701,7 @@
                           "audio",
                           "other"
                         ],
-                        "description": "Type of learning content",
+                        "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                         "example": "video"
                       },
                       "description": {
@@ -655,21 +709,31 @@
                       },
                       "duration": {
                         "type": "string",
+                        "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                         "example": "12 min"
+                      },
+                      "durationSeconds": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Duration in seconds; wins over `duration` in an administration body",
+                        "example": 720
                       },
                       "fileName": {
                         "type": "string",
+                        "description": "Name of the stored file (stored files only)",
                         "example": "organigramme-mairie360.pdf"
                       },
                       "href": {
                         "type": "string",
-                        "example": "/documents/organigramme-mairie360.pdf"
+                        "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                        "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                       },
                       "completed": {
                         "type": "boolean"
                       },
                       "required": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "description": "`false` for an optional content (defaults to `true` in an administration body)"
                       }
                     },
                     "required": [
@@ -722,11 +786,25 @@
                 "type": "string"
               }
             ],
+            "description": "Average rating (1 to 5, one decimal), absent while nobody rated the course",
             "example": 4.8
+          },
+          "ratingCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of ratings",
+            "example": 12
           },
           "duration": {
             "type": "string",
+            "description": "Sum of the durations of its contents",
             "example": "2 h 15"
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Sum of the durations of its contents, in seconds",
+            "example": 8100
           },
           "chapters": {
             "anyOf": [
@@ -748,11 +826,35 @@
                 "type": "string"
               }
             ],
+            "description": "Number of users enrolled in the course",
             "example": 128
           },
           "category": {
             "type": "string",
             "example": "Integration"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "beginner",
+              "intermediate",
+              "advanced"
+            ],
+            "description": "Level of a formation",
+            "example": "beginner"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "description": "`true` for a mandatory course (its `titleBadge` is then the mandatory badge)"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "internal",
+              "platform"
+            ],
+            "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+            "example": "internal"
           },
           "statusValue": {
             "type": "string",
@@ -855,7 +957,28 @@
           },
           "deadline": {
             "type": "string",
-            "example": "30 juin 2026"
+            "description": "Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).",
+            "example": "2026-06-30"
+          },
+          "startedAt": {
+            "type": "string",
+            "description": "Start of the caller on the course (RFC 3339), absent when none was recorded",
+            "example": "2026-03-02T08:15:00Z"
+          },
+          "completedAt": {
+            "type": "string",
+            "description": "Completion of the course by the caller (RFC 3339), absent while not completed",
+            "example": "2026-03-20T16:40:00Z"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "description": "Latest chapter the caller completed (RFC 3339), absent before any",
+            "example": "2026-03-18T10:05:00Z"
+          },
+          "lastReminderAt": {
+            "type": "string",
+            "description": "Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one",
+            "example": "2026-03-10T09:00:00Z"
           },
           "ratingDistribution": {
             "type": "object",
@@ -919,7 +1042,8 @@
                 ]
               },
               "ratingLabel": {
-                "type": "string"
+                "type": "string",
+                "example": "4,5 (12 avis)"
               },
               "ratingDistribution": {
                 "type": "object",
@@ -1013,7 +1137,14 @@
                     },
                     "duration": {
                       "type": "string",
+                      "description": "Sum of the durations of its contents",
                       "example": "25 min"
+                    },
+                    "durationSeconds": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Sum of the durations of its contents, in seconds",
+                      "example": 1500
                     },
                     "completed": {
                       "type": "boolean"
@@ -1045,7 +1176,7 @@
                               "audio",
                               "other"
                             ],
-                            "description": "Type of learning content",
+                            "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                             "example": "video"
                           },
                           "description": {
@@ -1053,21 +1184,31 @@
                           },
                           "duration": {
                             "type": "string",
+                            "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                             "example": "12 min"
+                          },
+                          "durationSeconds": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Duration in seconds; wins over `duration` in an administration body",
+                            "example": 720
                           },
                           "fileName": {
                             "type": "string",
+                            "description": "Name of the stored file (stored files only)",
                             "example": "organigramme-mairie360.pdf"
                           },
                           "href": {
                             "type": "string",
-                            "example": "/documents/organigramme-mairie360.pdf"
+                            "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                            "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                           },
                           "completed": {
                             "type": "boolean"
                           },
                           "required": {
-                            "type": "boolean"
+                            "type": "boolean",
+                            "description": "`false` for an optional content (defaults to `true` in an administration body)"
                           }
                         },
                         "required": [
@@ -1107,7 +1248,8 @@
         "properties": {
           "id": {
             "type": "string",
-            "example": "scan-course"
+            "description": "Ignored: the e-learning service allocates the id",
+            "example": "new-course"
           },
           "title": {
             "type": "string",
@@ -1128,11 +1270,25 @@
                 "type": "string"
               }
             ],
+            "description": "Average rating (1 to 5, one decimal), absent while nobody rated the course",
             "example": 4.8
+          },
+          "ratingCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of ratings",
+            "example": 12
           },
           "duration": {
             "type": "string",
+            "description": "Sum of the durations of its contents",
             "example": "2 h 15"
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Sum of the durations of its contents, in seconds",
+            "example": 8100
           },
           "chapters": {
             "anyOf": [
@@ -1154,11 +1310,35 @@
                 "type": "string"
               }
             ],
+            "description": "Number of users enrolled in the course",
             "example": 128
           },
           "category": {
             "type": "string",
             "example": "Integration"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "beginner",
+              "intermediate",
+              "advanced"
+            ],
+            "description": "Level of a formation",
+            "example": "beginner"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "description": "`true` for a mandatory course (its `titleBadge` is then the mandatory badge)"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "internal",
+              "platform"
+            ],
+            "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+            "example": "internal"
           },
           "statusValue": {
             "type": "string",
@@ -1261,7 +1441,28 @@
           },
           "deadline": {
             "type": "string",
-            "example": "30 juin 2026"
+            "description": "Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).",
+            "example": "2026-06-30"
+          },
+          "startedAt": {
+            "type": "string",
+            "description": "Start of the caller on the course (RFC 3339), absent when none was recorded",
+            "example": "2026-03-02T08:15:00Z"
+          },
+          "completedAt": {
+            "type": "string",
+            "description": "Completion of the course by the caller (RFC 3339), absent while not completed",
+            "example": "2026-03-20T16:40:00Z"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "description": "Latest chapter the caller completed (RFC 3339), absent before any",
+            "example": "2026-03-18T10:05:00Z"
+          },
+          "lastReminderAt": {
+            "type": "string",
+            "description": "Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one",
+            "example": "2026-03-10T09:00:00Z"
           },
           "ratingDistribution": {
             "type": "object",
@@ -1325,7 +1526,8 @@
                 ]
               },
               "ratingLabel": {
-                "type": "string"
+                "type": "string",
+                "example": "4,5 (12 avis)"
               },
               "ratingDistribution": {
                 "type": "object",
@@ -1419,7 +1621,14 @@
                     },
                     "duration": {
                       "type": "string",
+                      "description": "Sum of the durations of its contents",
                       "example": "25 min"
+                    },
+                    "durationSeconds": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Sum of the durations of its contents, in seconds",
+                      "example": 1500
                     },
                     "completed": {
                       "type": "boolean"
@@ -1451,7 +1660,7 @@
                               "audio",
                               "other"
                             ],
-                            "description": "Type of learning content",
+                            "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                             "example": "video"
                           },
                           "description": {
@@ -1459,21 +1668,31 @@
                           },
                           "duration": {
                             "type": "string",
+                            "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                             "example": "12 min"
+                          },
+                          "durationSeconds": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Duration in seconds; wins over `duration` in an administration body",
+                            "example": 720
                           },
                           "fileName": {
                             "type": "string",
+                            "description": "Name of the stored file (stored files only)",
                             "example": "organigramme-mairie360.pdf"
                           },
                           "href": {
                             "type": "string",
-                            "example": "/documents/organigramme-mairie360.pdf"
+                            "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                            "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                           },
                           "completed": {
                             "type": "boolean"
                           },
                           "required": {
-                            "type": "boolean"
+                            "type": "boolean",
+                            "description": "`false` for an optional content (defaults to `true` in an administration body)"
                           }
                         },
                         "required": [
@@ -1502,11 +1721,10 @@
           }
         },
         "required": [
-          "id",
           "title",
           "description"
         ],
-        "description": "Formation to create"
+        "description": "Formation to create. Its chapters (`details.chapters`) and their contents are created in order; a new content can only be a `link` (with its `href`), a `quiz` or `other`: there is no upload. Chapter and content ids are ignored."
       },
       "ElearningCatalogQuery": {
         "type": "object",
@@ -1710,11 +1928,25 @@
                       "type": "string"
                     }
                   ],
+                  "description": "Average rating (1 to 5, one decimal), absent while nobody rated the course",
                   "example": 4.8
+                },
+                "ratingCount": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Number of ratings",
+                  "example": 12
                 },
                 "duration": {
                   "type": "string",
+                  "description": "Sum of the durations of its contents",
                   "example": "2 h 15"
+                },
+                "durationSeconds": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Sum of the durations of its contents, in seconds",
+                  "example": 8100
                 },
                 "chapters": {
                   "anyOf": [
@@ -1736,11 +1968,35 @@
                       "type": "string"
                     }
                   ],
+                  "description": "Number of users enrolled in the course",
                   "example": 128
                 },
                 "category": {
                   "type": "string",
                   "example": "Integration"
+                },
+                "level": {
+                  "type": "string",
+                  "enum": [
+                    "beginner",
+                    "intermediate",
+                    "advanced"
+                  ],
+                  "description": "Level of a formation",
+                  "example": "beginner"
+                },
+                "mandatory": {
+                  "type": "boolean",
+                  "description": "`true` for a mandatory course (its `titleBadge` is then the mandatory badge)"
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "internal",
+                    "platform"
+                  ],
+                  "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+                  "example": "internal"
                 },
                 "statusValue": {
                   "type": "string",
@@ -1843,7 +2099,28 @@
                 },
                 "deadline": {
                   "type": "string",
-                  "example": "30 juin 2026"
+                  "description": "Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).",
+                  "example": "2026-06-30"
+                },
+                "startedAt": {
+                  "type": "string",
+                  "description": "Start of the caller on the course (RFC 3339), absent when none was recorded",
+                  "example": "2026-03-02T08:15:00Z"
+                },
+                "completedAt": {
+                  "type": "string",
+                  "description": "Completion of the course by the caller (RFC 3339), absent while not completed",
+                  "example": "2026-03-20T16:40:00Z"
+                },
+                "lastActivityAt": {
+                  "type": "string",
+                  "description": "Latest chapter the caller completed (RFC 3339), absent before any",
+                  "example": "2026-03-18T10:05:00Z"
+                },
+                "lastReminderAt": {
+                  "type": "string",
+                  "description": "Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one",
+                  "example": "2026-03-10T09:00:00Z"
                 },
                 "ratingDistribution": {
                   "type": "object",
@@ -1907,7 +2184,8 @@
                       ]
                     },
                     "ratingLabel": {
-                      "type": "string"
+                      "type": "string",
+                      "example": "4,5 (12 avis)"
                     },
                     "ratingDistribution": {
                       "type": "object",
@@ -2001,7 +2279,14 @@
                           },
                           "duration": {
                             "type": "string",
+                            "description": "Sum of the durations of its contents",
                             "example": "25 min"
+                          },
+                          "durationSeconds": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Sum of the durations of its contents, in seconds",
+                            "example": 1500
                           },
                           "completed": {
                             "type": "boolean"
@@ -2033,7 +2318,7 @@
                                     "audio",
                                     "other"
                                   ],
-                                  "description": "Type of learning content",
+                                  "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                                   "example": "video"
                                 },
                                 "description": {
@@ -2041,21 +2326,31 @@
                                 },
                                 "duration": {
                                   "type": "string",
+                                  "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                                   "example": "12 min"
+                                },
+                                "durationSeconds": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "description": "Duration in seconds; wins over `duration` in an administration body",
+                                  "example": 720
                                 },
                                 "fileName": {
                                   "type": "string",
+                                  "description": "Name of the stored file (stored files only)",
                                   "example": "organigramme-mairie360.pdf"
                                 },
                                 "href": {
                                   "type": "string",
-                                  "example": "/documents/organigramme-mairie360.pdf"
+                                  "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                                  "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                                 },
                                 "completed": {
                                   "type": "boolean"
                                 },
                                 "required": {
-                                  "type": "boolean"
+                                  "type": "boolean",
+                                  "description": "`false` for an optional content (defaults to `true` in an administration body)"
                                 }
                               },
                               "required": [
@@ -2351,11 +2646,25 @@
                           "type": "string"
                         }
                       ],
+                      "description": "Average rating (1 to 5, one decimal), absent while nobody rated the course",
                       "example": 4.8
+                    },
+                    "ratingCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Number of ratings",
+                      "example": 12
                     },
                     "duration": {
                       "type": "string",
+                      "description": "Sum of the durations of its contents",
                       "example": "2 h 15"
+                    },
+                    "durationSeconds": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Sum of the durations of its contents, in seconds",
+                      "example": 8100
                     },
                     "chapters": {
                       "anyOf": [
@@ -2377,11 +2686,35 @@
                           "type": "string"
                         }
                       ],
+                      "description": "Number of users enrolled in the course",
                       "example": 128
                     },
                     "category": {
                       "type": "string",
                       "example": "Integration"
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "beginner",
+                        "intermediate",
+                        "advanced"
+                      ],
+                      "description": "Level of a formation",
+                      "example": "beginner"
+                    },
+                    "mandatory": {
+                      "type": "boolean",
+                      "description": "`true` for a mandatory course (its `titleBadge` is then the mandatory badge)"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "internal",
+                        "platform"
+                      ],
+                      "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+                      "example": "internal"
                     },
                     "statusValue": {
                       "type": "string",
@@ -2484,7 +2817,28 @@
                     },
                     "deadline": {
                       "type": "string",
-                      "example": "30 juin 2026"
+                      "description": "Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).",
+                      "example": "2026-06-30"
+                    },
+                    "startedAt": {
+                      "type": "string",
+                      "description": "Start of the caller on the course (RFC 3339), absent when none was recorded",
+                      "example": "2026-03-02T08:15:00Z"
+                    },
+                    "completedAt": {
+                      "type": "string",
+                      "description": "Completion of the course by the caller (RFC 3339), absent while not completed",
+                      "example": "2026-03-20T16:40:00Z"
+                    },
+                    "lastActivityAt": {
+                      "type": "string",
+                      "description": "Latest chapter the caller completed (RFC 3339), absent before any",
+                      "example": "2026-03-18T10:05:00Z"
+                    },
+                    "lastReminderAt": {
+                      "type": "string",
+                      "description": "Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one",
+                      "example": "2026-03-10T09:00:00Z"
                     },
                     "ratingDistribution": {
                       "type": "object",
@@ -2548,7 +2902,8 @@
                           ]
                         },
                         "ratingLabel": {
-                          "type": "string"
+                          "type": "string",
+                          "example": "4,5 (12 avis)"
                         },
                         "ratingDistribution": {
                           "type": "object",
@@ -2642,7 +2997,14 @@
                               },
                               "duration": {
                                 "type": "string",
+                                "description": "Sum of the durations of its contents",
                                 "example": "25 min"
+                              },
+                              "durationSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Sum of the durations of its contents, in seconds",
+                                "example": 1500
                               },
                               "completed": {
                                 "type": "boolean"
@@ -2674,7 +3036,7 @@
                                         "audio",
                                         "other"
                                       ],
-                                      "description": "Type of learning content",
+                                      "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                                       "example": "video"
                                     },
                                     "description": {
@@ -2682,21 +3044,31 @@
                                     },
                                     "duration": {
                                       "type": "string",
+                                      "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                                       "example": "12 min"
+                                    },
+                                    "durationSeconds": {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "description": "Duration in seconds; wins over `duration` in an administration body",
+                                      "example": 720
                                     },
                                     "fileName": {
                                       "type": "string",
+                                      "description": "Name of the stored file (stored files only)",
                                       "example": "organigramme-mairie360.pdf"
                                     },
                                     "href": {
                                       "type": "string",
-                                      "example": "/documents/organigramme-mairie360.pdf"
+                                      "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                                      "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                                     },
                                     "completed": {
                                       "type": "boolean"
                                     },
                                     "required": {
-                                      "type": "boolean"
+                                      "type": "boolean",
+                                      "description": "`false` for an optional content (defaults to `true` in an administration body)"
                                     }
                                   },
                                   "required": [
@@ -2793,6 +3165,11 @@
       "AdminCourseResponse": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id of the course in the e-learning service",
+            "example": "42"
+          },
           "course": {
             "type": "object",
             "properties": {
@@ -2819,11 +3196,25 @@
                     "type": "string"
                   }
                 ],
+                "description": "Average rating (1 to 5, one decimal), absent while nobody rated the course",
                 "example": 4.8
+              },
+              "ratingCount": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Number of ratings",
+                "example": 12
               },
               "duration": {
                 "type": "string",
+                "description": "Sum of the durations of its contents",
                 "example": "2 h 15"
+              },
+              "durationSeconds": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Sum of the durations of its contents, in seconds",
+                "example": 8100
               },
               "chapters": {
                 "anyOf": [
@@ -2845,11 +3236,35 @@
                     "type": "string"
                   }
                 ],
+                "description": "Number of users enrolled in the course",
                 "example": 128
               },
               "category": {
                 "type": "string",
                 "example": "Integration"
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "beginner",
+                  "intermediate",
+                  "advanced"
+                ],
+                "description": "Level of a formation",
+                "example": "beginner"
+              },
+              "mandatory": {
+                "type": "boolean",
+                "description": "`true` for a mandatory course (its `titleBadge` is then the mandatory badge)"
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "internal",
+                  "platform"
+                ],
+                "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+                "example": "internal"
               },
               "statusValue": {
                 "type": "string",
@@ -2952,7 +3367,28 @@
               },
               "deadline": {
                 "type": "string",
-                "example": "30 juin 2026"
+                "description": "Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).",
+                "example": "2026-06-30"
+              },
+              "startedAt": {
+                "type": "string",
+                "description": "Start of the caller on the course (RFC 3339), absent when none was recorded",
+                "example": "2026-03-02T08:15:00Z"
+              },
+              "completedAt": {
+                "type": "string",
+                "description": "Completion of the course by the caller (RFC 3339), absent while not completed",
+                "example": "2026-03-20T16:40:00Z"
+              },
+              "lastActivityAt": {
+                "type": "string",
+                "description": "Latest chapter the caller completed (RFC 3339), absent before any",
+                "example": "2026-03-18T10:05:00Z"
+              },
+              "lastReminderAt": {
+                "type": "string",
+                "description": "Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one",
+                "example": "2026-03-10T09:00:00Z"
               },
               "ratingDistribution": {
                 "type": "object",
@@ -3016,7 +3452,8 @@
                     ]
                   },
                   "ratingLabel": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "4,5 (12 avis)"
                   },
                   "ratingDistribution": {
                     "type": "object",
@@ -3110,7 +3547,14 @@
                         },
                         "duration": {
                           "type": "string",
+                          "description": "Sum of the durations of its contents",
                           "example": "25 min"
+                        },
+                        "durationSeconds": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Sum of the durations of its contents, in seconds",
+                          "example": 1500
                         },
                         "completed": {
                           "type": "boolean"
@@ -3142,7 +3586,7 @@
                                   "audio",
                                   "other"
                                 ],
-                                "description": "Type of learning content",
+                                "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                                 "example": "video"
                               },
                               "description": {
@@ -3150,21 +3594,31 @@
                               },
                               "duration": {
                                 "type": "string",
+                                "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                                 "example": "12 min"
+                              },
+                              "durationSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Duration in seconds; wins over `duration` in an administration body",
+                                "example": 720
                               },
                               "fileName": {
                                 "type": "string",
+                                "description": "Name of the stored file (stored files only)",
                                 "example": "organigramme-mairie360.pdf"
                               },
                               "href": {
                                 "type": "string",
-                                "example": "/documents/organigramme-mairie360.pdf"
+                                "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                                "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                               },
                               "completed": {
                                 "type": "boolean"
                               },
                               "required": {
-                                "type": "boolean"
+                                "type": "boolean",
+                                "description": "`false` for an optional content (defaults to `true` in an administration body)"
                               }
                             },
                             "required": [
@@ -3201,9 +3655,10 @@
           }
         },
         "required": [
+          "id",
           "course"
         ],
-        "description": "Formation created or updated by an administrator"
+        "description": "Formation created or updated by an administrator: `course` is the course as it was sent, with its normalised fields and the id of the e-learning service. The ids of new chapters and contents are known once the catalogue is read again."
       },
       "AdminCourseDeleteResponse": {
         "type": "object",
@@ -3336,6 +3791,608 @@
         ],
         "description": "Response loading the profile page"
       },
+      "YearQuery": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "minimum": 2000,
+            "maximum": 2100,
+            "description": "Calendar year, from 2000 to 2100; defaults to the current year (UTC)",
+            "example": 2026
+          }
+        }
+      },
+      "TrainingTimeCourse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "4"
+          },
+          "title": {
+            "type": "string",
+            "example": "RGPD pour les agents"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not-started",
+              "in-progress",
+              "completed"
+            ],
+            "description": "Current progress of the caller, whatever the year",
+            "example": "in-progress"
+          },
+          "timeSpentSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Durations of the contents of the chapters completed during the year",
+            "example": 1800
+          },
+          "completedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Completion of the course (RFC 3339), `null` while not completed",
+            "example": "2026-03-20T16:40:00Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "timeSpentSeconds",
+          "completedAt"
+        ],
+        "description": "Training time of the caller on one course during the year"
+      },
+      "TrainingTimeResponse": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "integer",
+            "example": 2026
+          },
+          "goalMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Yearly training goal of an agent, in minutes, set for the whole instance",
+            "example": 600
+          },
+          "timeSpentSeconds": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Training time of the year, every course together, in seconds",
+            "example": 5400
+          },
+          "completedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Courses completed during the year",
+            "example": 2
+          },
+          "courses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "4"
+                },
+                "title": {
+                  "type": "string",
+                  "example": "RGPD pour les agents"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "not-started",
+                    "in-progress",
+                    "completed"
+                  ],
+                  "description": "Current progress of the caller, whatever the year",
+                  "example": "in-progress"
+                },
+                "timeSpentSeconds": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Durations of the contents of the chapters completed during the year",
+                  "example": 1800
+                },
+                "completedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Completion of the course (RFC 3339), `null` while not completed",
+                  "example": "2026-03-20T16:40:00Z"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "status",
+                "timeSpentSeconds",
+                "completedAt"
+              ],
+              "description": "Training time of the caller on one course during the year"
+            },
+            "description": "Every course the caller is enrolled in, by increasing id"
+          }
+        },
+        "required": [
+          "year",
+          "goalMinutes",
+          "timeSpentSeconds",
+          "completedCount",
+          "courses"
+        ],
+        "description": "Training time of the caller during a year"
+      },
+      "ChapterContentParams": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Course (E-learning API formation) identifier",
+            "example": "4"
+          },
+          "chapterId": {
+            "type": "string",
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Chapter (E-learning API module) identifier",
+            "example": "11"
+          },
+          "contentId": {
+            "type": "string",
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Content (E-learning API attachment) identifier",
+            "example": "27"
+          }
+        },
+        "required": [
+          "courseId",
+          "chapterId",
+          "contentId"
+        ]
+      },
+      "ContentFileResponse": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Signed URL of the stored file, valid a few minutes: ask for it again on every opening instead of storing it",
+            "example": "https://elearning.s3.fr-par.scw.cloud/courses/4/principes.pdf?X-Amz-Signature=abc"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "description": "Where to open a stored file (video, PDF, document, audio)"
+      },
+      "ServiceStats": {
+        "type": "object",
+        "properties": {
+          "serviceId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Id of the service, `null` for the agents without a service",
+            "example": "3"
+          },
+          "serviceName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Name of the service, `null` for the agents without a service",
+            "example": "Urbanisme"
+          },
+          "agents": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 25
+          },
+          "participants": {
+            "type": "integer",
+            "minimum": 0,
+            "example": 20
+          },
+          "participationRate": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Percent, one decimal",
+            "example": 80
+          }
+        },
+        "required": [
+          "serviceId",
+          "serviceName",
+          "agents",
+          "participants",
+          "participationRate"
+        ],
+        "description": "Participation of one service of the mairie"
+      },
+      "CourseStats": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "4"
+          },
+          "title": {
+            "type": "string",
+            "example": "RGPD pour les agents"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "internal",
+              "platform"
+            ],
+            "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+            "example": "internal"
+          },
+          "mandatory": {
+            "type": "boolean"
+          },
+          "enrolled": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Agents enrolled (archived accounts excluded)",
+            "example": 40
+          },
+          "completed": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Agents who completed it",
+            "example": 12
+          },
+          "averageProgress": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Average progress of the enrolled agents, percent, one decimal",
+            "example": 47.5
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "source",
+          "mandatory",
+          "enrolled",
+          "completed",
+          "averageProgress"
+        ],
+        "description": "Indicators of one course"
+      },
+      "LateAgent": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "Core API id of the agent",
+            "example": "42"
+          },
+          "firstName": {
+            "type": "string",
+            "example": "Alice"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Martin"
+          },
+          "courseId": {
+            "type": "string",
+            "example": "4"
+          },
+          "courseTitle": {
+            "type": "string",
+            "example": "RGPD pour les agents"
+          },
+          "deadline": {
+            "type": "string",
+            "description": "Past deadline of the course, `YYYY-MM-DD`",
+            "example": "2026-06-30"
+          },
+          "progress": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Progress of the agent, percent, one decimal",
+            "example": 50
+          },
+          "lastReminderAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Latest reminder sent to the agent about this course (RFC 3339), `null` without one",
+            "example": null
+          }
+        },
+        "required": [
+          "userId",
+          "firstName",
+          "lastName",
+          "courseId",
+          "courseTitle",
+          "deadline",
+          "progress",
+          "lastReminderAt"
+        ],
+        "description": "An agent late on a mandatory course"
+      },
+      "AdminStatsResponse": {
+        "type": "object",
+        "properties": {
+          "internalCourses": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Courses made by the mairie",
+            "example": 12
+          },
+          "platformCourses": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Courses provided with Mairie360",
+            "example": 30
+          },
+          "mandatoryInternalCourses": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Mandatory courses among the internal ones",
+            "example": 3
+          },
+          "agents": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Non-archived accounts",
+            "example": 120
+          },
+          "participants": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Agents enrolled in at least one course",
+            "example": 95
+          },
+          "participationRate": {
+            "type": "number",
+            "minimum": 0,
+            "description": "`participants / agents`, percent, one decimal",
+            "example": 79.2
+          },
+          "averageCompletion": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Average progress over every enrolment, percent, one decimal",
+            "example": 61.4
+          },
+          "lateMandatory": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Enrolments on a mandatory course whose deadline is past, not completed",
+            "example": 7
+          },
+          "byService": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "serviceId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Id of the service, `null` for the agents without a service",
+                  "example": "3"
+                },
+                "serviceName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Name of the service, `null` for the agents without a service",
+                  "example": "Urbanisme"
+                },
+                "agents": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "example": 25
+                },
+                "participants": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "example": 20
+                },
+                "participationRate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Percent, one decimal",
+                  "example": 80
+                }
+              },
+              "required": [
+                "serviceId",
+                "serviceName",
+                "agents",
+                "participants",
+                "participationRate"
+              ],
+              "description": "Participation of one service of the mairie"
+            },
+            "description": "By service name, the agents without a service last"
+          },
+          "byCourse": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "4"
+                },
+                "title": {
+                  "type": "string",
+                  "example": "RGPD pour les agents"
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "internal",
+                    "platform"
+                  ],
+                  "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+                  "example": "internal"
+                },
+                "mandatory": {
+                  "type": "boolean"
+                },
+                "enrolled": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Agents enrolled (archived accounts excluded)",
+                  "example": 40
+                },
+                "completed": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Agents who completed it",
+                  "example": 12
+                },
+                "averageProgress": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Average progress of the enrolled agents, percent, one decimal",
+                  "example": 47.5
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "source",
+                "mandatory",
+                "enrolled",
+                "completed",
+                "averageProgress"
+              ],
+              "description": "Indicators of one course"
+            },
+            "description": "Every course, by increasing id"
+          },
+          "lateAgents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "type": "string",
+                  "description": "Core API id of the agent",
+                  "example": "42"
+                },
+                "firstName": {
+                  "type": "string",
+                  "example": "Alice"
+                },
+                "lastName": {
+                  "type": "string",
+                  "example": "Martin"
+                },
+                "courseId": {
+                  "type": "string",
+                  "example": "4"
+                },
+                "courseTitle": {
+                  "type": "string",
+                  "example": "RGPD pour les agents"
+                },
+                "deadline": {
+                  "type": "string",
+                  "description": "Past deadline of the course, `YYYY-MM-DD`",
+                  "example": "2026-06-30"
+                },
+                "progress": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "Progress of the agent, percent, one decimal",
+                  "example": 50
+                },
+                "lastReminderAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Latest reminder sent to the agent about this course (RFC 3339), `null` without one",
+                  "example": null
+                }
+              },
+              "required": [
+                "userId",
+                "firstName",
+                "lastName",
+                "courseId",
+                "courseTitle",
+                "deadline",
+                "progress",
+                "lastReminderAt"
+              ],
+              "description": "An agent late on a mandatory course"
+            },
+            "description": "The 500 most overdue late enrolments (`lateMandatory` counts them all), by deadline, then course, then agent"
+          }
+        },
+        "required": [
+          "internalCourses",
+          "platformCourses",
+          "mandatoryInternalCourses",
+          "agents",
+          "participants",
+          "participationRate",
+          "averageCompletion",
+          "lateMandatory",
+          "byService",
+          "byCourse",
+          "lateAgents"
+        ],
+        "description": "E-learning indicators of the instance"
+      },
+      "SendRemindersBody": {
+        "type": "object",
+        "properties": {
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Core API id of an agent",
+              "example": "42"
+            },
+            "maxItems": 1000,
+            "description": "Agents to remind (at most 1000). Absent: every late agent of the course. Agents not enrolled, or who completed it, are ignored."
+          }
+        },
+        "description": "Who to remind about a mandatory course"
+      },
+      "SendRemindersResponse": {
+        "type": "object",
+        "properties": {
+          "sent": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "One per agent reminded; 0 when nobody was to remind",
+            "example": 3
+          }
+        },
+        "required": [
+          "sent"
+        ],
+        "description": "Reminders sent"
+      },
       "CourseIdParams": {
         "type": "object",
         "properties": {
@@ -3344,6 +4401,20 @@
             "pattern": "^[1-9]\\d{0,14}$",
             "description": "Course (E-learning API formation) identifier",
             "example": "4"
+          }
+        },
+        "required": [
+          "courseId"
+        ]
+      },
+      "AdminCourseIdParams": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Course (E-learning API formation) identifier",
+            "example": "7"
           }
         },
         "required": [
@@ -3437,7 +4508,14 @@
                 },
                 "duration": {
                   "type": "string",
+                  "description": "Sum of the durations of its contents",
                   "example": "25 min"
+                },
+                "durationSeconds": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Sum of the durations of its contents, in seconds",
+                  "example": 1500
                 },
                 "completed": {
                   "type": "boolean"
@@ -3469,7 +4547,7 @@
                           "audio",
                           "other"
                         ],
-                        "description": "Type of learning content",
+                        "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                         "example": "video"
                       },
                       "description": {
@@ -3477,21 +4555,31 @@
                       },
                       "duration": {
                         "type": "string",
+                        "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                         "example": "12 min"
+                      },
+                      "durationSeconds": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Duration in seconds; wins over `duration` in an administration body",
+                        "example": 720
                       },
                       "fileName": {
                         "type": "string",
+                        "description": "Name of the stored file (stored files only)",
                         "example": "organigramme-mairie360.pdf"
                       },
                       "href": {
                         "type": "string",
-                        "example": "/documents/organigramme-mairie360.pdf"
+                        "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                        "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                       },
                       "completed": {
                         "type": "boolean"
                       },
                       "required": {
-                        "type": "boolean"
+                        "type": "boolean",
+                        "description": "`false` for an optional content (defaults to `true` in an administration body)"
                       }
                     },
                     "required": [
@@ -3526,7 +4614,14 @@
               },
               "duration": {
                 "type": "string",
+                "description": "Sum of the durations of its contents",
                 "example": "25 min"
+              },
+              "durationSeconds": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Sum of the durations of its contents, in seconds",
+                "example": 1500
               },
               "completed": {
                 "type": "boolean"
@@ -3558,7 +4653,7 @@
                         "audio",
                         "other"
                       ],
-                      "description": "Type of learning content",
+                      "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                       "example": "video"
                     },
                     "description": {
@@ -3566,21 +4661,31 @@
                     },
                     "duration": {
                       "type": "string",
+                      "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                       "example": "12 min"
+                    },
+                    "durationSeconds": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Duration in seconds; wins over `duration` in an administration body",
+                      "example": 720
                     },
                     "fileName": {
                       "type": "string",
+                      "description": "Name of the stored file (stored files only)",
                       "example": "organigramme-mairie360.pdf"
                     },
                     "href": {
                       "type": "string",
-                      "example": "/documents/organigramme-mairie360.pdf"
+                      "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                      "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                     },
                     "completed": {
                       "type": "boolean"
                     },
                     "required": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "description": "`false` for an optional content (defaults to `true` in an administration body)"
                     }
                   },
                   "required": [
@@ -3620,7 +4725,7 @@
                   "audio",
                   "other"
                 ],
-                "description": "Type of learning content",
+                "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                 "example": "video"
               },
               "description": {
@@ -3628,21 +4733,31 @@
               },
               "duration": {
                 "type": "string",
+                "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                 "example": "12 min"
+              },
+              "durationSeconds": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Duration in seconds; wins over `duration` in an administration body",
+                "example": 720
               },
               "fileName": {
                 "type": "string",
+                "description": "Name of the stored file (stored files only)",
                 "example": "organigramme-mairie360.pdf"
               },
               "href": {
                 "type": "string",
-                "example": "/documents/organigramme-mairie360.pdf"
+                "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
               },
               "completed": {
                 "type": "boolean"
               },
               "required": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "`false` for an optional content (defaults to `true` in an administration body)"
               }
             },
             "required": [
@@ -3687,11 +4802,26 @@
           "rating": {
             "type": "number",
             "minimum": 1,
-            "maximum": 5
+            "maximum": 5,
+            "description": "Average rating of the course, one decimal, the caller's included",
+            "example": 4.5
           },
           "ratingCount": {
             "type": "number",
-            "minimum": 0
+            "minimum": 0,
+            "description": "Number of ratings of the course, the caller's included",
+            "example": 12
+          },
+          "ratingLabel": {
+            "type": "string",
+            "example": "4,5 (12 avis)"
+          },
+          "myRating": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "The rating the caller just gave",
+            "example": 5
           },
           "ratingDistribution": {
             "type": "object",
@@ -3717,7 +4847,7 @@
                 "minimum": 0
               }
             },
-            "description": "Distribution of the ratings by value, from 1 to 5",
+            "description": "Always empty: the e-learning service does not publish the distribution",
             "example": {
               "1": 0,
               "2": 1,
@@ -3727,12 +4857,15 @@
             }
           },
           "submitted": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Always `true`"
           }
         },
         "required": [
           "rating",
           "ratingCount",
+          "ratingLabel",
+          "myRating",
           "ratingDistribution",
           "submitted"
         ],
@@ -3777,11 +4910,25 @@
                     "type": "string"
                   }
                 ],
+                "description": "Average rating (1 to 5, one decimal), absent while nobody rated the course",
                 "example": 4.8
+              },
+              "ratingCount": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Number of ratings",
+                "example": 12
               },
               "duration": {
                 "type": "string",
+                "description": "Sum of the durations of its contents",
                 "example": "2 h 15"
+              },
+              "durationSeconds": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Sum of the durations of its contents, in seconds",
+                "example": 8100
               },
               "chapters": {
                 "anyOf": [
@@ -3803,11 +4950,35 @@
                     "type": "string"
                   }
                 ],
+                "description": "Number of users enrolled in the course",
                 "example": 128
               },
               "category": {
                 "type": "string",
                 "example": "Integration"
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "beginner",
+                  "intermediate",
+                  "advanced"
+                ],
+                "description": "Level of a formation",
+                "example": "beginner"
+              },
+              "mandatory": {
+                "type": "boolean",
+                "description": "`true` for a mandatory course (its `titleBadge` is then the mandatory badge)"
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "internal",
+                  "platform"
+                ],
+                "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+                "example": "internal"
               },
               "statusValue": {
                 "type": "string",
@@ -3910,7 +5081,28 @@
               },
               "deadline": {
                 "type": "string",
-                "example": "30 juin 2026"
+                "description": "Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).",
+                "example": "2026-06-30"
+              },
+              "startedAt": {
+                "type": "string",
+                "description": "Start of the caller on the course (RFC 3339), absent when none was recorded",
+                "example": "2026-03-02T08:15:00Z"
+              },
+              "completedAt": {
+                "type": "string",
+                "description": "Completion of the course by the caller (RFC 3339), absent while not completed",
+                "example": "2026-03-20T16:40:00Z"
+              },
+              "lastActivityAt": {
+                "type": "string",
+                "description": "Latest chapter the caller completed (RFC 3339), absent before any",
+                "example": "2026-03-18T10:05:00Z"
+              },
+              "lastReminderAt": {
+                "type": "string",
+                "description": "Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one",
+                "example": "2026-03-10T09:00:00Z"
               },
               "ratingDistribution": {
                 "type": "object",
@@ -3974,7 +5166,8 @@
                     ]
                   },
                   "ratingLabel": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "4,5 (12 avis)"
                   },
                   "ratingDistribution": {
                     "type": "object",
@@ -4068,7 +5261,14 @@
                         },
                         "duration": {
                           "type": "string",
+                          "description": "Sum of the durations of its contents",
                           "example": "25 min"
+                        },
+                        "durationSeconds": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Sum of the durations of its contents, in seconds",
+                          "example": 1500
                         },
                         "completed": {
                           "type": "boolean"
@@ -4100,7 +5300,7 @@
                                   "audio",
                                   "other"
                                 ],
-                                "description": "Type of learning content",
+                                "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                                 "example": "video"
                               },
                               "description": {
@@ -4108,21 +5308,31 @@
                               },
                               "duration": {
                                 "type": "string",
+                                "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                                 "example": "12 min"
+                              },
+                              "durationSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Duration in seconds; wins over `duration` in an administration body",
+                                "example": 720
                               },
                               "fileName": {
                                 "type": "string",
+                                "description": "Name of the stored file (stored files only)",
                                 "example": "organigramme-mairie360.pdf"
                               },
                               "href": {
                                 "type": "string",
-                                "example": "/documents/organigramme-mairie360.pdf"
+                                "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                                "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                               },
                               "completed": {
                                 "type": "boolean"
                               },
                               "required": {
-                                "type": "boolean"
+                                "type": "boolean",
+                                "description": "`false` for an optional content (defaults to `true` in an administration body)"
                               }
                             },
                             "required": [
@@ -4309,7 +5519,8 @@
         "tags": [
           "E-learning administration"
         ],
-        "summary": "Creates a course (not available yet: 501)",
+        "summary": "Creates a course",
+        "description": "The course as the front edits it. Sent to the e-learning service: `title`, `description`, `category`, `level` (else read from `levelBadge`), `mandatory` (else `titleBadge.variant` = `mandatory`), `deadline`, `source` (default `internal`), `instructor` (else `details.instructor`) and `details.chapters[].contents[]` (`type`, `title`, `description`, `durationSeconds` or `duration`, `required` (default `true`), `href` for a link). Other fields are ignored. Every chapter and content is new: their ids are ignored, and a content can only be a `link`, a `quiz` or `other` (there is no upload).",
         "requestBody": {
           "required": true,
           "content": {
@@ -4328,6 +5539,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Id of the course in the e-learning service",
+                      "example": "42"
+                    },
                     "course": {
                       "type": "object",
                       "properties": {
@@ -4354,11 +5570,25 @@
                               "type": "string"
                             }
                           ],
+                          "description": "Average rating (1 to 5, one decimal), absent while nobody rated the course",
                           "example": 4.8
+                        },
+                        "ratingCount": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Number of ratings",
+                          "example": 12
                         },
                         "duration": {
                           "type": "string",
+                          "description": "Sum of the durations of its contents",
                           "example": "2 h 15"
+                        },
+                        "durationSeconds": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Sum of the durations of its contents, in seconds",
+                          "example": 8100
                         },
                         "chapters": {
                           "anyOf": [
@@ -4380,11 +5610,35 @@
                               "type": "string"
                             }
                           ],
+                          "description": "Number of users enrolled in the course",
                           "example": 128
                         },
                         "category": {
                           "type": "string",
                           "example": "Integration"
+                        },
+                        "level": {
+                          "type": "string",
+                          "enum": [
+                            "beginner",
+                            "intermediate",
+                            "advanced"
+                          ],
+                          "description": "Level of a formation",
+                          "example": "beginner"
+                        },
+                        "mandatory": {
+                          "type": "boolean",
+                          "description": "`true` for a mandatory course (its `titleBadge` is then the mandatory badge)"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "internal",
+                            "platform"
+                          ],
+                          "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+                          "example": "internal"
                         },
                         "statusValue": {
                           "type": "string",
@@ -4487,7 +5741,28 @@
                         },
                         "deadline": {
                           "type": "string",
-                          "example": "30 juin 2026"
+                          "description": "Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).",
+                          "example": "2026-06-30"
+                        },
+                        "startedAt": {
+                          "type": "string",
+                          "description": "Start of the caller on the course (RFC 3339), absent when none was recorded",
+                          "example": "2026-03-02T08:15:00Z"
+                        },
+                        "completedAt": {
+                          "type": "string",
+                          "description": "Completion of the course by the caller (RFC 3339), absent while not completed",
+                          "example": "2026-03-20T16:40:00Z"
+                        },
+                        "lastActivityAt": {
+                          "type": "string",
+                          "description": "Latest chapter the caller completed (RFC 3339), absent before any",
+                          "example": "2026-03-18T10:05:00Z"
+                        },
+                        "lastReminderAt": {
+                          "type": "string",
+                          "description": "Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one",
+                          "example": "2026-03-10T09:00:00Z"
                         },
                         "ratingDistribution": {
                           "type": "object",
@@ -4551,7 +5826,8 @@
                               ]
                             },
                             "ratingLabel": {
-                              "type": "string"
+                              "type": "string",
+                              "example": "4,5 (12 avis)"
                             },
                             "ratingDistribution": {
                               "type": "object",
@@ -4645,7 +5921,14 @@
                                   },
                                   "duration": {
                                     "type": "string",
+                                    "description": "Sum of the durations of its contents",
                                     "example": "25 min"
+                                  },
+                                  "durationSeconds": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "description": "Sum of the durations of its contents, in seconds",
+                                    "example": 1500
                                   },
                                   "completed": {
                                     "type": "boolean"
@@ -4677,7 +5960,7 @@
                                             "audio",
                                             "other"
                                           ],
-                                          "description": "Type of learning content",
+                                          "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                                           "example": "video"
                                         },
                                         "description": {
@@ -4685,21 +5968,31 @@
                                         },
                                         "duration": {
                                           "type": "string",
+                                          "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                                           "example": "12 min"
+                                        },
+                                        "durationSeconds": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "description": "Duration in seconds; wins over `duration` in an administration body",
+                                          "example": 720
                                         },
                                         "fileName": {
                                           "type": "string",
+                                          "description": "Name of the stored file (stored files only)",
                                           "example": "organigramme-mairie360.pdf"
                                         },
                                         "href": {
                                           "type": "string",
-                                          "example": "/documents/organigramme-mairie360.pdf"
+                                          "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                                          "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                                         },
                                         "completed": {
                                           "type": "boolean"
                                         },
                                         "required": {
-                                          "type": "boolean"
+                                          "type": "boolean",
+                                          "description": "`false` for an optional content (defaults to `true` in an administration body)"
                                         }
                                       },
                                       "required": [
@@ -4736,15 +6029,16 @@
                     }
                   },
                   "required": [
+                    "id",
                     "course"
                   ],
-                  "description": "Formation created or updated by an administrator"
+                  "description": "Formation created or updated by an administrator: `course` is the course as it was sent, with its normalised fields and the id of the e-learning service. The ids of new chapters and contents are known once the catalogue is read again."
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid request payload",
+            "description": "Invalid request payload: every invalid field is named in `details` (`body.title`, `body.details.chapters.0.contents.1.href`...). A field the e-learning service refused is named when it can be told.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4793,16 +6087,6 @@
               }
             }
           },
-          "501": {
-            "description": "Not available: no upstream service stores this data yet",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "502": {
             "description": "An upstream API is unreachable, failed or answered an unusable body",
             "content": {
@@ -4831,14 +6115,15 @@
         "tags": [
           "E-learning administration"
         ],
-        "summary": "Updates a course (not available yet: 501)",
+        "summary": "Replaces a course",
+        "description": "The course as the front edits it. Sent to the e-learning service: `title`, `description`, `category`, `level` (else read from `levelBadge`), `mandatory` (else `titleBadge.variant` = `mandatory`), `deadline`, `source` (default `internal`), `instructor` (else `details.instructor`) and `details.chapters[].contents[]` (`type`, `title`, `description`, `durationSeconds` or `duration`, `required` (default `true`), `href` for a link). Other fields are ignored. Full replacement: the chapters and contents whose `id` is the decimal id of an existing row are kept (a stored file keeps its file and its type), the others are created (a new content can only be a `link`, a `quiz` or `other`), and the rows left out are deleted.",
         "parameters": [
           {
             "schema": {
               "type": "string",
               "pattern": "^[1-9]\\d{0,14}$",
               "description": "Course (E-learning API formation) identifier",
-              "example": "4"
+              "example": "7"
             },
             "required": true,
             "description": "Course (E-learning API formation) identifier",
@@ -4876,11 +6161,25 @@
                         "type": "string"
                       }
                     ],
+                    "description": "Average rating (1 to 5, one decimal), absent while nobody rated the course",
                     "example": 4.8
+                  },
+                  "ratingCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Number of ratings",
+                    "example": 12
                   },
                   "duration": {
                     "type": "string",
+                    "description": "Sum of the durations of its contents",
                     "example": "2 h 15"
+                  },
+                  "durationSeconds": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Sum of the durations of its contents, in seconds",
+                    "example": 8100
                   },
                   "chapters": {
                     "anyOf": [
@@ -4902,11 +6201,35 @@
                         "type": "string"
                       }
                     ],
+                    "description": "Number of users enrolled in the course",
                     "example": 128
                   },
                   "category": {
                     "type": "string",
                     "example": "Integration"
+                  },
+                  "level": {
+                    "type": "string",
+                    "enum": [
+                      "beginner",
+                      "intermediate",
+                      "advanced"
+                    ],
+                    "description": "Level of a formation",
+                    "example": "beginner"
+                  },
+                  "mandatory": {
+                    "type": "boolean",
+                    "description": "`true` for a mandatory course (its `titleBadge` is then the mandatory badge)"
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "internal",
+                      "platform"
+                    ],
+                    "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+                    "example": "internal"
                   },
                   "statusValue": {
                     "type": "string",
@@ -5009,7 +6332,28 @@
                   },
                   "deadline": {
                     "type": "string",
-                    "example": "30 juin 2026"
+                    "description": "Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).",
+                    "example": "2026-06-30"
+                  },
+                  "startedAt": {
+                    "type": "string",
+                    "description": "Start of the caller on the course (RFC 3339), absent when none was recorded",
+                    "example": "2026-03-02T08:15:00Z"
+                  },
+                  "completedAt": {
+                    "type": "string",
+                    "description": "Completion of the course by the caller (RFC 3339), absent while not completed",
+                    "example": "2026-03-20T16:40:00Z"
+                  },
+                  "lastActivityAt": {
+                    "type": "string",
+                    "description": "Latest chapter the caller completed (RFC 3339), absent before any",
+                    "example": "2026-03-18T10:05:00Z"
+                  },
+                  "lastReminderAt": {
+                    "type": "string",
+                    "description": "Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one",
+                    "example": "2026-03-10T09:00:00Z"
                   },
                   "ratingDistribution": {
                     "type": "object",
@@ -5073,7 +6417,8 @@
                         ]
                       },
                       "ratingLabel": {
-                        "type": "string"
+                        "type": "string",
+                        "example": "4,5 (12 avis)"
                       },
                       "ratingDistribution": {
                         "type": "object",
@@ -5167,7 +6512,14 @@
                             },
                             "duration": {
                               "type": "string",
+                              "description": "Sum of the durations of its contents",
                               "example": "25 min"
+                            },
+                            "durationSeconds": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "description": "Sum of the durations of its contents, in seconds",
+                              "example": 1500
                             },
                             "completed": {
                               "type": "boolean"
@@ -5199,7 +6551,7 @@
                                       "audio",
                                       "other"
                                     ],
-                                    "description": "Type of learning content",
+                                    "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                                     "example": "video"
                                   },
                                   "description": {
@@ -5207,21 +6559,31 @@
                                   },
                                   "duration": {
                                     "type": "string",
+                                    "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                                     "example": "12 min"
+                                  },
+                                  "durationSeconds": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "description": "Duration in seconds; wins over `duration` in an administration body",
+                                    "example": 720
                                   },
                                   "fileName": {
                                     "type": "string",
+                                    "description": "Name of the stored file (stored files only)",
                                     "example": "organigramme-mairie360.pdf"
                                   },
                                   "href": {
                                     "type": "string",
-                                    "example": "/documents/organigramme-mairie360.pdf"
+                                    "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                                    "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                                   },
                                   "completed": {
                                     "type": "boolean"
                                   },
                                   "required": {
-                                    "type": "boolean"
+                                    "type": "boolean",
+                                    "description": "`false` for an optional content (defaults to `true` in an administration body)"
                                   }
                                 },
                                 "required": [
@@ -5267,6 +6629,11 @@
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Id of the course in the e-learning service",
+                      "example": "42"
+                    },
                     "course": {
                       "type": "object",
                       "properties": {
@@ -5293,11 +6660,25 @@
                               "type": "string"
                             }
                           ],
+                          "description": "Average rating (1 to 5, one decimal), absent while nobody rated the course",
                           "example": 4.8
+                        },
+                        "ratingCount": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Number of ratings",
+                          "example": 12
                         },
                         "duration": {
                           "type": "string",
+                          "description": "Sum of the durations of its contents",
                           "example": "2 h 15"
+                        },
+                        "durationSeconds": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Sum of the durations of its contents, in seconds",
+                          "example": 8100
                         },
                         "chapters": {
                           "anyOf": [
@@ -5319,11 +6700,35 @@
                               "type": "string"
                             }
                           ],
+                          "description": "Number of users enrolled in the course",
                           "example": 128
                         },
                         "category": {
                           "type": "string",
                           "example": "Integration"
+                        },
+                        "level": {
+                          "type": "string",
+                          "enum": [
+                            "beginner",
+                            "intermediate",
+                            "advanced"
+                          ],
+                          "description": "Level of a formation",
+                          "example": "beginner"
+                        },
+                        "mandatory": {
+                          "type": "boolean",
+                          "description": "`true` for a mandatory course (its `titleBadge` is then the mandatory badge)"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "internal",
+                            "platform"
+                          ],
+                          "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+                          "example": "internal"
                         },
                         "statusValue": {
                           "type": "string",
@@ -5426,7 +6831,28 @@
                         },
                         "deadline": {
                           "type": "string",
-                          "example": "30 juin 2026"
+                          "description": "Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).",
+                          "example": "2026-06-30"
+                        },
+                        "startedAt": {
+                          "type": "string",
+                          "description": "Start of the caller on the course (RFC 3339), absent when none was recorded",
+                          "example": "2026-03-02T08:15:00Z"
+                        },
+                        "completedAt": {
+                          "type": "string",
+                          "description": "Completion of the course by the caller (RFC 3339), absent while not completed",
+                          "example": "2026-03-20T16:40:00Z"
+                        },
+                        "lastActivityAt": {
+                          "type": "string",
+                          "description": "Latest chapter the caller completed (RFC 3339), absent before any",
+                          "example": "2026-03-18T10:05:00Z"
+                        },
+                        "lastReminderAt": {
+                          "type": "string",
+                          "description": "Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one",
+                          "example": "2026-03-10T09:00:00Z"
                         },
                         "ratingDistribution": {
                           "type": "object",
@@ -5490,7 +6916,8 @@
                               ]
                             },
                             "ratingLabel": {
-                              "type": "string"
+                              "type": "string",
+                              "example": "4,5 (12 avis)"
                             },
                             "ratingDistribution": {
                               "type": "object",
@@ -5584,7 +7011,14 @@
                                   },
                                   "duration": {
                                     "type": "string",
+                                    "description": "Sum of the durations of its contents",
                                     "example": "25 min"
+                                  },
+                                  "durationSeconds": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "description": "Sum of the durations of its contents, in seconds",
+                                    "example": 1500
                                   },
                                   "completed": {
                                     "type": "boolean"
@@ -5616,7 +7050,7 @@
                                             "audio",
                                             "other"
                                           ],
-                                          "description": "Type of learning content",
+                                          "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                                           "example": "video"
                                         },
                                         "description": {
@@ -5624,21 +7058,31 @@
                                         },
                                         "duration": {
                                           "type": "string",
+                                          "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                                           "example": "12 min"
+                                        },
+                                        "durationSeconds": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "description": "Duration in seconds; wins over `duration` in an administration body",
+                                          "example": 720
                                         },
                                         "fileName": {
                                           "type": "string",
+                                          "description": "Name of the stored file (stored files only)",
                                           "example": "organigramme-mairie360.pdf"
                                         },
                                         "href": {
                                           "type": "string",
-                                          "example": "/documents/organigramme-mairie360.pdf"
+                                          "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                                          "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                                         },
                                         "completed": {
                                           "type": "boolean"
                                         },
                                         "required": {
-                                          "type": "boolean"
+                                          "type": "boolean",
+                                          "description": "`false` for an optional content (defaults to `true` in an administration body)"
                                         }
                                       },
                                       "required": [
@@ -5675,15 +7119,16 @@
                     }
                   },
                   "required": [
+                    "id",
                     "course"
                   ],
-                  "description": "Formation created or updated by an administrator"
+                  "description": "Formation created or updated by an administrator: `course` is the course as it was sent, with its normalised fields and the id of the e-learning service. The ids of new chapters and contents are known once the catalogue is read again."
                 }
               }
             }
           },
           "400": {
-            "description": "Invalid request payload",
+            "description": "Invalid request payload: every invalid field is named in `details` (`body.title`, `body.details.chapters.0.contents.1.href`...). A field the e-learning service refused is named when it can be told.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5712,6 +7157,16 @@
               }
             }
           },
+          "404": {
+            "description": "Unknown course",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "429": {
             "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
             "content": {
@@ -5724,16 +7179,6 @@
           },
           "500": {
             "description": "Unexpected server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Not available: no upstream service stores this data yet",
             "content": {
               "application/json": {
                 "schema": {
@@ -5768,14 +7213,15 @@
         "tags": [
           "E-learning administration"
         ],
-        "summary": "Deletes a course (not available yet: 501)",
+        "summary": "Deletes a course",
+        "description": "Deletes the course with its chapters, contents, enrolments and progress.",
         "parameters": [
           {
             "schema": {
               "type": "string",
               "pattern": "^[1-9]\\d{0,14}$",
               "description": "Course (E-learning API formation) identifier",
-              "example": "4"
+              "example": "7"
             },
             "required": true,
             "description": "Course (E-learning API formation) identifier",
@@ -5803,6 +7249,498 @@
                     "courseId"
                   ],
                   "description": "Confirmation that the course was deleted"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid course identifier",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or invalid session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted to administrators",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown course",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/elearning/admin/courses/{courseId}/reminders": {
+      "post": {
+        "tags": [
+          "E-learning administration"
+        ],
+        "summary": "Reminds the late agents of a mandatory course",
+        "description": "Sends a reminder to the given agents, or to every agent late on the course (deadline past, not completed) when `userIds` is absent. Agents not enrolled, or who completed it, are ignored.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Course (E-learning API formation) identifier",
+              "example": "7"
+            },
+            "required": true,
+            "description": "Course (E-learning API formation) identifier",
+            "name": "courseId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[1-9]\\d{0,14}$",
+                      "description": "Core API id of an agent",
+                      "example": "42"
+                    },
+                    "maxItems": 1000,
+                    "description": "Agents to remind (at most 1000). Absent: every late agent of the course. Agents not enrolled, or who completed it, are ignored."
+                  }
+                },
+                "description": "Who to remind about a mandatory course"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reminders sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sent": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "One per agent reminded; 0 when nobody was to remind",
+                      "example": 3
+                    }
+                  },
+                  "required": [
+                    "sent"
+                  ],
+                  "description": "Reminders sent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or invalid session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted to administrators",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown course",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The course is not mandatory",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/elearning/admin/stats": {
+      "get": {
+        "tags": [
+          "E-learning administration"
+        ],
+        "summary": "E-learning indicators of the instance",
+        "description": "Courses by origin, participation (overall and per service), average completion, indicators per course and the agents late on a mandatory course, read from the E-learning API.",
+        "responses": {
+          "200": {
+            "description": "Indicators",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "internalCourses": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Courses made by the mairie",
+                      "example": 12
+                    },
+                    "platformCourses": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Courses provided with Mairie360",
+                      "example": 30
+                    },
+                    "mandatoryInternalCourses": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Mandatory courses among the internal ones",
+                      "example": 3
+                    },
+                    "agents": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Non-archived accounts",
+                      "example": 120
+                    },
+                    "participants": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Agents enrolled in at least one course",
+                      "example": 95
+                    },
+                    "participationRate": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "`participants / agents`, percent, one decimal",
+                      "example": 79.2
+                    },
+                    "averageCompletion": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Average progress over every enrolment, percent, one decimal",
+                      "example": 61.4
+                    },
+                    "lateMandatory": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Enrolments on a mandatory course whose deadline is past, not completed",
+                      "example": 7
+                    },
+                    "byService": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "serviceId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Id of the service, `null` for the agents without a service",
+                            "example": "3"
+                          },
+                          "serviceName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Name of the service, `null` for the agents without a service",
+                            "example": "Urbanisme"
+                          },
+                          "agents": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "example": 25
+                          },
+                          "participants": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "example": 20
+                          },
+                          "participationRate": {
+                            "type": "number",
+                            "minimum": 0,
+                            "description": "Percent, one decimal",
+                            "example": 80
+                          }
+                        },
+                        "required": [
+                          "serviceId",
+                          "serviceName",
+                          "agents",
+                          "participants",
+                          "participationRate"
+                        ],
+                        "description": "Participation of one service of the mairie"
+                      },
+                      "description": "By service name, the agents without a service last"
+                    },
+                    "byCourse": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "4"
+                          },
+                          "title": {
+                            "type": "string",
+                            "example": "RGPD pour les agents"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "internal",
+                              "platform"
+                            ],
+                            "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+                            "example": "internal"
+                          },
+                          "mandatory": {
+                            "type": "boolean"
+                          },
+                          "enrolled": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Agents enrolled (archived accounts excluded)",
+                            "example": 40
+                          },
+                          "completed": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Agents who completed it",
+                            "example": 12
+                          },
+                          "averageProgress": {
+                            "type": "number",
+                            "minimum": 0,
+                            "description": "Average progress of the enrolled agents, percent, one decimal",
+                            "example": 47.5
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "source",
+                          "mandatory",
+                          "enrolled",
+                          "completed",
+                          "averageProgress"
+                        ],
+                        "description": "Indicators of one course"
+                      },
+                      "description": "Every course, by increasing id"
+                    },
+                    "lateAgents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string",
+                            "description": "Core API id of the agent",
+                            "example": "42"
+                          },
+                          "firstName": {
+                            "type": "string",
+                            "example": "Alice"
+                          },
+                          "lastName": {
+                            "type": "string",
+                            "example": "Martin"
+                          },
+                          "courseId": {
+                            "type": "string",
+                            "example": "4"
+                          },
+                          "courseTitle": {
+                            "type": "string",
+                            "example": "RGPD pour les agents"
+                          },
+                          "deadline": {
+                            "type": "string",
+                            "description": "Past deadline of the course, `YYYY-MM-DD`",
+                            "example": "2026-06-30"
+                          },
+                          "progress": {
+                            "type": "number",
+                            "minimum": 0,
+                            "description": "Progress of the agent, percent, one decimal",
+                            "example": 50
+                          },
+                          "lastReminderAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Latest reminder sent to the agent about this course (RFC 3339), `null` without one",
+                            "example": null
+                          }
+                        },
+                        "required": [
+                          "userId",
+                          "firstName",
+                          "lastName",
+                          "courseId",
+                          "courseTitle",
+                          "deadline",
+                          "progress",
+                          "lastReminderAt"
+                        ],
+                        "description": "An agent late on a mandatory course"
+                      },
+                      "description": "The 500 most overdue late enrolments (`lateMandatory` counts them all), by deadline, then course, then agent"
+                    }
+                  },
+                  "required": [
+                    "internalCourses",
+                    "platformCourses",
+                    "mandatoryInternalCourses",
+                    "agents",
+                    "participants",
+                    "participationRate",
+                    "averageCompletion",
+                    "lateMandatory",
+                    "byService",
+                    "byCourse",
+                    "lateAgents"
+                  ],
+                  "description": "E-learning indicators of the instance"
                 }
               }
             }
@@ -5847,8 +7785,556 @@
               }
             }
           },
-          "501": {
-            "description": "Not available: no upstream service stores this data yet",
+          "502": {
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/elearning/courses/{courseId}/certificate": {
+      "get": {
+        "tags": [
+          "E-learning"
+        ],
+        "summary": "Attestation of a course the caller completed (PDF)",
+        "description": "The PDF attestation written by the E-learning API, with its `Content-Disposition` file name.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Course (E-learning API formation) identifier",
+              "example": "4"
+            },
+            "required": true,
+            "description": "Course (E-learning API formation) identifier",
+            "name": "courseId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF attestation",
+            "headers": {
+              "Content-Disposition": {
+                "description": "File name of the attestation",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "PDF document"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid course identifier",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or invalid session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown course, or the caller is not enrolled in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The caller has not completed the course yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/elearning/certificates": {
+      "get": {
+        "tags": [
+          "E-learning"
+        ],
+        "summary": "Attestations of the courses the caller completed during a year (PDF)",
+        "description": "One PDF written by the E-learning API, with its `Content-Disposition` file name.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 2000,
+              "maximum": 2100,
+              "description": "Calendar year, from 2000 to 2100; defaults to the current year (UTC)",
+              "example": 2026
+            },
+            "required": false,
+            "description": "Calendar year, from 2000 to 2100; defaults to the current year (UTC)",
+            "name": "year",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PDF attestations of the year",
+            "headers": {
+              "Content-Disposition": {
+                "description": "File name of the attestations",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "PDF document"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid year",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or invalid session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The caller completed no course during this year",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/elearning/courses/{courseId}/chapters/{chapterId}/contents/{contentId}/file": {
+      "get": {
+        "tags": [
+          "E-learning"
+        ],
+        "summary": "Signed URL of a stored file of a course",
+        "description": "Where to open a stored file (video, PDF, document, audio) of a course the caller is enrolled in: a URL valid a few minutes, to ask for again on every opening. A link carries its own `href` in the catalogue; a link, a quiz or `other` has no file (404).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Course (E-learning API formation) identifier",
+              "example": "4"
+            },
+            "required": true,
+            "description": "Course (E-learning API formation) identifier",
+            "name": "courseId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Chapter (E-learning API module) identifier",
+              "example": "11"
+            },
+            "required": true,
+            "description": "Chapter (E-learning API module) identifier",
+            "name": "chapterId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Content (E-learning API attachment) identifier",
+              "example": "27"
+            },
+            "required": true,
+            "description": "Content (E-learning API attachment) identifier",
+            "name": "contentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed URL of the file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "description": "Signed URL of the stored file, valid a few minutes: ask for it again on every opening instead of storing it",
+                      "example": "https://elearning.s3.fr-par.scw.cloud/courses/4/principes.pdf?X-Amz-Signature=abc"
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "description": "Where to open a stored file (video, PDF, document, audio)"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid identifiers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or invalid session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown course or course the caller is not enrolled in, or no stored file under this chapter and id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/elearning/training-time": {
+      "get": {
+        "tags": [
+          "E-learning"
+        ],
+        "summary": "Training time of the caller during a year",
+        "description": "Yearly goal of the instance, time spent (the durations of the contents of the chapters completed that year), courses completed that year, and the time per course, read from the E-learning API.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 2000,
+              "maximum": 2100,
+              "description": "Calendar year, from 2000 to 2100; defaults to the current year (UTC)",
+              "example": 2026
+            },
+            "required": false,
+            "description": "Calendar year, from 2000 to 2100; defaults to the current year (UTC)",
+            "name": "year",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Training time of the year",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "year": {
+                      "type": "integer",
+                      "example": 2026
+                    },
+                    "goalMinutes": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Yearly training goal of an agent, in minutes, set for the whole instance",
+                      "example": 600
+                    },
+                    "timeSpentSeconds": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Training time of the year, every course together, in seconds",
+                      "example": 5400
+                    },
+                    "completedCount": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Courses completed during the year",
+                      "example": 2
+                    },
+                    "courses": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "example": "4"
+                          },
+                          "title": {
+                            "type": "string",
+                            "example": "RGPD pour les agents"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "not-started",
+                              "in-progress",
+                              "completed"
+                            ],
+                            "description": "Current progress of the caller, whatever the year",
+                            "example": "in-progress"
+                          },
+                          "timeSpentSeconds": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Durations of the contents of the chapters completed during the year",
+                            "example": 1800
+                          },
+                          "completedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Completion of the course (RFC 3339), `null` while not completed",
+                            "example": "2026-03-20T16:40:00Z"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "status",
+                          "timeSpentSeconds",
+                          "completedAt"
+                        ],
+                        "description": "Training time of the caller on one course during the year"
+                      },
+                      "description": "Every course the caller is enrolled in, by increasing id"
+                    }
+                  },
+                  "required": [
+                    "year",
+                    "goalMinutes",
+                    "timeSpentSeconds",
+                    "completedCount",
+                    "courses"
+                  ],
+                  "description": "Training time of the caller during a year"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid year",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or invalid session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
             "content": {
               "application/json": {
                 "schema": {
@@ -6200,11 +8686,25 @@
                                     "type": "string"
                                   }
                                 ],
+                                "description": "Average rating (1 to 5, one decimal), absent while nobody rated the course",
                                 "example": 4.8
+                              },
+                              "ratingCount": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Number of ratings",
+                                "example": 12
                               },
                               "duration": {
                                 "type": "string",
+                                "description": "Sum of the durations of its contents",
                                 "example": "2 h 15"
+                              },
+                              "durationSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Sum of the durations of its contents, in seconds",
+                                "example": 8100
                               },
                               "chapters": {
                                 "anyOf": [
@@ -6226,11 +8726,35 @@
                                     "type": "string"
                                   }
                                 ],
+                                "description": "Number of users enrolled in the course",
                                 "example": 128
                               },
                               "category": {
                                 "type": "string",
                                 "example": "Integration"
+                              },
+                              "level": {
+                                "type": "string",
+                                "enum": [
+                                  "beginner",
+                                  "intermediate",
+                                  "advanced"
+                                ],
+                                "description": "Level of a formation",
+                                "example": "beginner"
+                              },
+                              "mandatory": {
+                                "type": "boolean",
+                                "description": "`true` for a mandatory course (its `titleBadge` is then the mandatory badge)"
+                              },
+                              "source": {
+                                "type": "string",
+                                "enum": [
+                                  "internal",
+                                  "platform"
+                                ],
+                                "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+                                "example": "internal"
                               },
                               "statusValue": {
                                 "type": "string",
@@ -6333,7 +8857,28 @@
                               },
                               "deadline": {
                                 "type": "string",
-                                "example": "30 juin 2026"
+                                "description": "Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).",
+                                "example": "2026-06-30"
+                              },
+                              "startedAt": {
+                                "type": "string",
+                                "description": "Start of the caller on the course (RFC 3339), absent when none was recorded",
+                                "example": "2026-03-02T08:15:00Z"
+                              },
+                              "completedAt": {
+                                "type": "string",
+                                "description": "Completion of the course by the caller (RFC 3339), absent while not completed",
+                                "example": "2026-03-20T16:40:00Z"
+                              },
+                              "lastActivityAt": {
+                                "type": "string",
+                                "description": "Latest chapter the caller completed (RFC 3339), absent before any",
+                                "example": "2026-03-18T10:05:00Z"
+                              },
+                              "lastReminderAt": {
+                                "type": "string",
+                                "description": "Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one",
+                                "example": "2026-03-10T09:00:00Z"
                               },
                               "ratingDistribution": {
                                 "type": "object",
@@ -6397,7 +8942,8 @@
                                     ]
                                   },
                                   "ratingLabel": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "example": "4,5 (12 avis)"
                                   },
                                   "ratingDistribution": {
                                     "type": "object",
@@ -6491,7 +9037,14 @@
                                         },
                                         "duration": {
                                           "type": "string",
+                                          "description": "Sum of the durations of its contents",
                                           "example": "25 min"
+                                        },
+                                        "durationSeconds": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "description": "Sum of the durations of its contents, in seconds",
+                                          "example": 1500
                                         },
                                         "completed": {
                                           "type": "boolean"
@@ -6523,7 +9076,7 @@
                                                   "audio",
                                                   "other"
                                                 ],
-                                                "description": "Type of learning content",
+                                                "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                                                 "example": "video"
                                               },
                                               "description": {
@@ -6531,21 +9084,31 @@
                                               },
                                               "duration": {
                                                 "type": "string",
+                                                "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                                                 "example": "12 min"
+                                              },
+                                              "durationSeconds": {
+                                                "type": "integer",
+                                                "minimum": 0,
+                                                "description": "Duration in seconds; wins over `duration` in an administration body",
+                                                "example": 720
                                               },
                                               "fileName": {
                                                 "type": "string",
+                                                "description": "Name of the stored file (stored files only)",
                                                 "example": "organigramme-mairie360.pdf"
                                               },
                                               "href": {
                                                 "type": "string",
-                                                "example": "/documents/organigramme-mairie360.pdf"
+                                                "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                                                "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                                               },
                                               "completed": {
                                                 "type": "boolean"
                                               },
                                               "required": {
-                                                "type": "boolean"
+                                                "type": "boolean",
+                                                "description": "`false` for an optional content (defaults to `true` in an administration body)"
                                               }
                                             },
                                             "required": [
@@ -6816,7 +9379,14 @@
                           },
                           "duration": {
                             "type": "string",
+                            "description": "Sum of the durations of its contents",
                             "example": "25 min"
+                          },
+                          "durationSeconds": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "description": "Sum of the durations of its contents, in seconds",
+                            "example": 1500
                           },
                           "completed": {
                             "type": "boolean"
@@ -6848,7 +9418,7 @@
                                     "audio",
                                     "other"
                                   ],
-                                  "description": "Type of learning content",
+                                  "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                                   "example": "video"
                                 },
                                 "description": {
@@ -6856,21 +9426,31 @@
                                 },
                                 "duration": {
                                   "type": "string",
+                                  "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                                   "example": "12 min"
+                                },
+                                "durationSeconds": {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "description": "Duration in seconds; wins over `duration` in an administration body",
+                                  "example": 720
                                 },
                                 "fileName": {
                                   "type": "string",
+                                  "description": "Name of the stored file (stored files only)",
                                   "example": "organigramme-mairie360.pdf"
                                 },
                                 "href": {
                                   "type": "string",
-                                  "example": "/documents/organigramme-mairie360.pdf"
+                                  "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                                  "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                                 },
                                 "completed": {
                                   "type": "boolean"
                                 },
                                 "required": {
-                                  "type": "boolean"
+                                  "type": "boolean",
+                                  "description": "`false` for an optional content (defaults to `true` in an administration body)"
                                 }
                               },
                               "required": [
@@ -6905,7 +9485,14 @@
                         },
                         "duration": {
                           "type": "string",
+                          "description": "Sum of the durations of its contents",
                           "example": "25 min"
+                        },
+                        "durationSeconds": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Sum of the durations of its contents, in seconds",
+                          "example": 1500
                         },
                         "completed": {
                           "type": "boolean"
@@ -6937,7 +9524,7 @@
                                   "audio",
                                   "other"
                                 ],
-                                "description": "Type of learning content",
+                                "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                                 "example": "video"
                               },
                               "description": {
@@ -6945,21 +9532,31 @@
                               },
                               "duration": {
                                 "type": "string",
+                                "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                                 "example": "12 min"
+                              },
+                              "durationSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "description": "Duration in seconds; wins over `duration` in an administration body",
+                                "example": 720
                               },
                               "fileName": {
                                 "type": "string",
+                                "description": "Name of the stored file (stored files only)",
                                 "example": "organigramme-mairie360.pdf"
                               },
                               "href": {
                                 "type": "string",
-                                "example": "/documents/organigramme-mairie360.pdf"
+                                "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                                "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                               },
                               "completed": {
                                 "type": "boolean"
                               },
                               "required": {
-                                "type": "boolean"
+                                "type": "boolean",
+                                "description": "`false` for an optional content (defaults to `true` in an administration body)"
                               }
                             },
                             "required": [
@@ -6999,7 +9596,7 @@
                             "audio",
                             "other"
                           ],
-                          "description": "Type of learning content",
+                          "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                           "example": "video"
                         },
                         "description": {
@@ -7007,21 +9604,31 @@
                         },
                         "duration": {
                           "type": "string",
+                          "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                           "example": "12 min"
+                        },
+                        "durationSeconds": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Duration in seconds; wins over `duration` in an administration body",
+                          "example": 720
                         },
                         "fileName": {
                           "type": "string",
+                          "description": "Name of the stored file (stored files only)",
                           "example": "organigramme-mairie360.pdf"
                         },
                         "href": {
                           "type": "string",
-                          "example": "/documents/organigramme-mairie360.pdf"
+                          "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                          "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                         },
                         "completed": {
                           "type": "boolean"
                         },
                         "required": {
-                          "type": "boolean"
+                          "type": "boolean",
+                          "description": "`false` for an optional content (defaults to `true` in an administration body)"
                         }
                       },
                       "required": [
@@ -7319,8 +9926,8 @@
         "tags": [
           "E-learning"
         ],
-        "summary": "Rates a course (not available yet: 501)",
-        "description": "Not available yet: the E-learning API does not store ratings, so a valid request from an authenticated caller answers 501. The 200 answer is the contract the route will keep once ratings are persisted upstream.",
+        "summary": "Rates a course the caller completed",
+        "description": "Stores the rating of the caller (1 to 5; a new rating replaces the previous one) in the E-learning API and returns the rating of the course.",
         "parameters": [
           {
             "schema": {
@@ -7368,11 +9975,26 @@
                     "rating": {
                       "type": "number",
                       "minimum": 1,
-                      "maximum": 5
+                      "maximum": 5,
+                      "description": "Average rating of the course, one decimal, the caller's included",
+                      "example": 4.5
                     },
                     "ratingCount": {
                       "type": "number",
-                      "minimum": 0
+                      "minimum": 0,
+                      "description": "Number of ratings of the course, the caller's included",
+                      "example": 12
+                    },
+                    "ratingLabel": {
+                      "type": "string",
+                      "example": "4,5 (12 avis)"
+                    },
+                    "myRating": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 5,
+                      "description": "The rating the caller just gave",
+                      "example": 5
                     },
                     "ratingDistribution": {
                       "type": "object",
@@ -7398,7 +10020,7 @@
                           "minimum": 0
                         }
                       },
-                      "description": "Distribution of the ratings by value, from 1 to 5",
+                      "description": "Always empty: the e-learning service does not publish the distribution",
                       "example": {
                         "1": 0,
                         "2": 1,
@@ -7408,12 +10030,15 @@
                       }
                     },
                     "submitted": {
-                      "type": "boolean"
+                      "type": "boolean",
+                      "description": "Always `true`"
                     }
                   },
                   "required": [
                     "rating",
                     "ratingCount",
+                    "ratingLabel",
+                    "myRating",
                     "ratingDistribution",
                     "submitted"
                   ],
@@ -7442,6 +10067,26 @@
               }
             }
           },
+          "404": {
+            "description": "Unknown course, or the caller is not enrolled in it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The caller has not completed the course yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "429": {
             "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
             "content": {
@@ -7454,16 +10099,6 @@
           },
           "500": {
             "description": "Unexpected server error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Not available: no upstream service stores this data yet",
             "content": {
               "application/json": {
                 "schema": {
@@ -7567,11 +10202,25 @@
                               "type": "string"
                             }
                           ],
+                          "description": "Average rating (1 to 5, one decimal), absent while nobody rated the course",
                           "example": 4.8
+                        },
+                        "ratingCount": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Number of ratings",
+                          "example": 12
                         },
                         "duration": {
                           "type": "string",
+                          "description": "Sum of the durations of its contents",
                           "example": "2 h 15"
+                        },
+                        "durationSeconds": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "description": "Sum of the durations of its contents, in seconds",
+                          "example": 8100
                         },
                         "chapters": {
                           "anyOf": [
@@ -7593,11 +10242,35 @@
                               "type": "string"
                             }
                           ],
+                          "description": "Number of users enrolled in the course",
                           "example": 128
                         },
                         "category": {
                           "type": "string",
                           "example": "Integration"
+                        },
+                        "level": {
+                          "type": "string",
+                          "enum": [
+                            "beginner",
+                            "intermediate",
+                            "advanced"
+                          ],
+                          "description": "Level of a formation",
+                          "example": "beginner"
+                        },
+                        "mandatory": {
+                          "type": "boolean",
+                          "description": "`true` for a mandatory course (its `titleBadge` is then the mandatory badge)"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "internal",
+                            "platform"
+                          ],
+                          "description": "Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)",
+                          "example": "internal"
                         },
                         "statusValue": {
                           "type": "string",
@@ -7700,7 +10373,28 @@
                         },
                         "deadline": {
                           "type": "string",
-                          "example": "30 juin 2026"
+                          "description": "Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).",
+                          "example": "2026-06-30"
+                        },
+                        "startedAt": {
+                          "type": "string",
+                          "description": "Start of the caller on the course (RFC 3339), absent when none was recorded",
+                          "example": "2026-03-02T08:15:00Z"
+                        },
+                        "completedAt": {
+                          "type": "string",
+                          "description": "Completion of the course by the caller (RFC 3339), absent while not completed",
+                          "example": "2026-03-20T16:40:00Z"
+                        },
+                        "lastActivityAt": {
+                          "type": "string",
+                          "description": "Latest chapter the caller completed (RFC 3339), absent before any",
+                          "example": "2026-03-18T10:05:00Z"
+                        },
+                        "lastReminderAt": {
+                          "type": "string",
+                          "description": "Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one",
+                          "example": "2026-03-10T09:00:00Z"
                         },
                         "ratingDistribution": {
                           "type": "object",
@@ -7764,7 +10458,8 @@
                               ]
                             },
                             "ratingLabel": {
-                              "type": "string"
+                              "type": "string",
+                              "example": "4,5 (12 avis)"
                             },
                             "ratingDistribution": {
                               "type": "object",
@@ -7858,7 +10553,14 @@
                                   },
                                   "duration": {
                                     "type": "string",
+                                    "description": "Sum of the durations of its contents",
                                     "example": "25 min"
+                                  },
+                                  "durationSeconds": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "description": "Sum of the durations of its contents, in seconds",
+                                    "example": 1500
                                   },
                                   "completed": {
                                     "type": "boolean"
@@ -7890,7 +10592,7 @@
                                             "audio",
                                             "other"
                                           ],
-                                          "description": "Type of learning content",
+                                          "description": "Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.",
                                           "example": "video"
                                         },
                                         "description": {
@@ -7898,21 +10600,31 @@
                                         },
                                         "duration": {
                                           "type": "string",
+                                          "description": "Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.",
                                           "example": "12 min"
+                                        },
+                                        "durationSeconds": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "description": "Duration in seconds; wins over `duration` in an administration body",
+                                          "example": 720
                                         },
                                         "fileName": {
                                           "type": "string",
+                                          "description": "Name of the stored file (stored files only)",
                                           "example": "organigramme-mairie360.pdf"
                                         },
                                         "href": {
                                           "type": "string",
-                                          "example": "/documents/organigramme-mairie360.pdf"
+                                          "description": "Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)",
+                                          "example": "https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on"
                                         },
                                         "completed": {
                                           "type": "boolean"
                                         },
                                         "required": {
-                                          "type": "boolean"
+                                          "type": "boolean",
+                                          "description": "`false` for an optional content (defaults to `true` in an administration body)"
                                         }
                                       },
                                       "required": [

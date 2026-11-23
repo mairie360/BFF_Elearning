@@ -49,14 +49,27 @@ export const BadgeVariant = z
 export const ContentType = z
   .enum(['video', 'pdf', 'document', 'link', 'quiz', 'audio', 'other'])
   .openapi({
-    description: 'Type of learning content',
+    description:
+      'Type of learning content. `video`, `pdf`, `document` and `audio` are stored files (their URL comes from the `file` route); `link` carries its `href`; `quiz` and `other` have no file.',
     example: 'video',
   });
+
+export const CourseLevel = z.enum(['beginner', 'intermediate', 'advanced']).openapi({
+  description: 'Level of a formation',
+  example: 'beginner',
+});
+
+export const CourseSource = z.enum(['internal', 'platform']).openapi({
+  description: 'Origin of a formation: `internal` (made by the mairie) or `platform` (provided with Mairie360)',
+  example: 'internal',
+});
 
 registry.register('CourseStatus', CourseStatus);
 registry.register('CatalogStatusFilter', CatalogStatusFilter);
 registry.register('BadgeVariant', BadgeVariant);
 registry.register('ContentType', ContentType);
+registry.register('CourseLevel', CourseLevel);
+registry.register('CourseSource', CourseSource);
 
 // =====================
 // SHARED MODELS
@@ -186,11 +199,21 @@ export const CourseContent = z
     title: z.string().openapi({ example: 'Présentation des directions et services' }),
     type: ContentType,
     description: z.string().optional(),
-    duration: z.string().optional().openapi({ example: '12 min' }),
-    fileName: z.string().optional().openapi({ example: 'organigramme-mairie360.pdf' }),
-    href: z.string().optional().openapi({ example: '/documents/organigramme-mairie360.pdf' }),
+    duration: z.string().optional().openapi({
+      description: 'Human duration (`12 min`, `1 h 30`). In an administration body, also `90 s`, `1h30`, `12:30` (minutes:seconds), `1:02:00` or a bare number of minutes.',
+      example: '12 min',
+    }),
+    durationSeconds: z.number().int().min(0).optional().openapi({
+      description: 'Duration in seconds; wins over `duration` in an administration body',
+      example: 720,
+    }),
+    fileName: z.string().optional().openapi({ description: 'Name of the stored file (stored files only)', example: 'organigramme-mairie360.pdf' }),
+    href: z.string().optional().openapi({
+      description: 'Absolute `https://` URL of a `link` content (links only: a stored file is opened through the `file` route)',
+      example: 'https://www.cnil.fr/fr/rgpd-de-quoi-parle-t-on',
+    }),
     completed: z.boolean().optional(),
-    required: z.boolean().optional(),
+    required: z.boolean().optional().openapi({ description: '`false` for an optional content (defaults to `true` in an administration body)' }),
   })
   .openapi({
     description: 'Learning content of a chapter',
@@ -201,7 +224,8 @@ export const CourseChapter = z
     id: z.string().openapi({ example: 'accueil-1' }),
     title: z.string().openapi({ example: 'Municipal organisation' }),
     description: z.string().optional(),
-    duration: z.string().optional().openapi({ example: '25 min' }),
+    duration: z.string().optional().openapi({ description: 'Sum of the durations of its contents', example: '25 min' }),
+    durationSeconds: z.number().int().min(0).optional().openapi({ description: 'Sum of the durations of its contents, in seconds', example: 1500 }),
     completed: z.boolean().optional(),
     active: z.boolean().optional(),
     contents: z.array(CourseContent).optional(),
@@ -218,7 +242,7 @@ export const ElearningCourseDetails = z
     instructor: z.string().optional(),
     duration: z.string().optional(),
     rating: z.union([z.number(), z.string()]).optional(),
-    ratingLabel: z.string().optional(),
+    ratingLabel: z.string().optional().openapi({ example: '4,5 (12 avis)' }),
     ratingDistribution: RatingDistribution.optional(),
     progress: z.number().min(0).max(100).optional(),
     completed: z.boolean().optional(),
@@ -235,17 +259,30 @@ export const ElearningCourse = z
     title: z.string().openapi({ example: 'Accueil des nouveaux agents' }),
     description: z.string(),
     instructor: z.string().optional(),
-    rating: z.union([z.number(), z.string()]).optional().openapi({ example: 4.8 }),
-    duration: z.string().optional().openapi({ example: '2 h 15' }),
+    rating: z.union([z.number(), z.string()]).optional().openapi({ description: 'Average rating (1 to 5, one decimal), absent while nobody rated the course', example: 4.8 }),
+    ratingCount: z.number().int().min(0).optional().openapi({ description: 'Number of ratings', example: 12 }),
+    duration: z.string().optional().openapi({ description: 'Sum of the durations of its contents', example: '2 h 15' }),
+    durationSeconds: z.number().int().min(0).optional().openapi({ description: 'Sum of the durations of its contents, in seconds', example: 8100 }),
     chapters: z.union([z.number(), z.string()]).optional().openapi({ example: 4 }),
-    learners: z.union([z.number(), z.string()]).optional().openapi({ example: 128 }),
+    learners: z.union([z.number(), z.string()]).optional().openapi({ description: 'Number of users enrolled in the course', example: 128 }),
     category: z.string().optional().openapi({ example: 'Integration' }),
+    level: CourseLevel.optional(),
+    mandatory: z.boolean().optional().openapi({ description: '`true` for a mandatory course (its `titleBadge` is then the mandatory badge)' }),
+    source: CourseSource.optional(),
     statusValue: CourseStatus.optional(),
     titleBadge: CourseBadge.optional(),
     levelBadge: CourseBadge.optional(),
     statusBadge: CourseBadge.optional(),
     progress: z.number().min(0).max(100).optional(),
-    deadline: z.string().optional().openapi({ example: '30 juin 2026' }),
+    deadline: z.string().optional().openapi({
+      description:
+        'Date by which the course must be completed, ISO `YYYY-MM-DD` (the front formats it). An administration body also accepts an ISO date-time (its date is kept).',
+      example: '2026-06-30',
+    }),
+    startedAt: z.string().optional().openapi({ description: 'Start of the caller on the course (RFC 3339), absent when none was recorded', example: '2026-03-02T08:15:00Z' }),
+    completedAt: z.string().optional().openapi({ description: 'Completion of the course by the caller (RFC 3339), absent while not completed', example: '2026-03-20T16:40:00Z' }),
+    lastActivityAt: z.string().optional().openapi({ description: 'Latest chapter the caller completed (RFC 3339), absent before any', example: '2026-03-18T10:05:00Z' }),
+    lastReminderAt: z.string().optional().openapi({ description: 'Latest reminder an administrator sent the caller about this course (RFC 3339), absent without one', example: '2026-03-10T09:00:00Z' }),
     ratingDistribution: RatingDistribution.optional(),
     details: ElearningCourseDetails.optional(),
   })
@@ -258,11 +295,14 @@ registry.register('CourseChapter', CourseChapter);
 registry.register('ElearningCourseDetails', ElearningCourseDetails);
 registry.register('ElearningCourse', ElearningCourse);
 
-// Creation body of POST /elearning/admin/courses (answers 501 until the E-learning API can create a
-// formation). Built from the shape (not .extend()) so it is published as a plain object, not an allOf.
+// Creation body of POST /elearning/admin/courses. Built from the shape (not .extend()) so it is published as a plain
+// object, not an allOf. The `id` the front gives a new course is ignored: the E-learning API allocates it.
 export const AdminCourseCreateBody = z
-  .object({ ...ElearningCourse.shape, id: z.string().openapi({ example: 'scan-course' }) })
-  .openapi('AdminCourseCreateBody', { description: 'Formation to create' });
+  .object({ ...ElearningCourse.shape, id: z.string().optional().openapi({ description: 'Ignored: the e-learning service allocates the id', example: 'new-course' }) })
+  .openapi('AdminCourseCreateBody', {
+    description:
+      'Formation to create. Its chapters (`details.chapters`) and their contents are created in order; a new content can only be a `link` (with its `href`), a `quiz` or `other`: there is no upload. Chapter and content ids are ignored.',
+  });
 
 registry.register('AdminCourseCreateBody', AdminCourseCreateBody);
 
@@ -320,10 +360,12 @@ registry.register('ElearningCatalogResponse', ElearningCatalogResponse);
 
 export const AdminCourseResponse = z
   .object({
+    id: z.string().openapi({ description: 'Id of the course in the e-learning service', example: '42' }),
     course: ElearningCourse,
   })
   .openapi({
-    description: 'Formation created or updated by an administrator',
+    description:
+      'Formation created or updated by an administrator: `course` is the course as it was sent, with its normalised fields and the id of the e-learning service. The ids of new chapters and contents are known once the catalogue is read again.',
   });
 
 export const AdminCourseDeleteResponse = z
@@ -363,6 +405,12 @@ const NumericId = (description: string, example: string) =>
 
 export const CourseIdParams = z.object({
   courseId: NumericId('Course (E-learning API formation) identifier', '4'),
+});
+
+// The administration routes edit and delete the course they name: their example is course 7, a course of init-test.sql
+// that nothing else reads, so the ZAP scan (which calls every operation on the examples) never edits course 4.
+export const AdminCourseIdParams = z.object({
+  courseId: NumericId('Course (E-learning API formation) identifier', '7'),
 });
 
 export const CourseContentParams = z.object({
@@ -409,10 +457,12 @@ export const SubmitRatingBody = z
 
 export const RatingSubmitResponse = z
   .object({
-    rating: z.number().min(1).max(5),
-    ratingCount: z.number().min(0),
-    ratingDistribution: RatingDistribution,
-    submitted: z.boolean(),
+    rating: z.number().min(1).max(5).openapi({ description: 'Average rating of the course, one decimal, the caller\'s included', example: 4.5 }),
+    ratingCount: z.number().min(0).openapi({ description: 'Number of ratings of the course, the caller\'s included', example: 12 }),
+    ratingLabel: z.string().openapi({ example: '4,5 (12 avis)' }),
+    myRating: z.number().int().min(1).max(5).openapi({ description: 'The rating the caller just gave', example: 5 }),
+    ratingDistribution: RatingDistribution.openapi({ description: 'Always empty: the e-learning service does not publish the distribution' }),
+    submitted: z.boolean().openapi({ description: 'Always `true`' }),
   })
   .openapi({
     description: 'Rating summary after sending',
@@ -436,7 +486,129 @@ export const CourseActionResponse = z
     description: 'Response to start or resume a formation',
   });
 
+// Calendar year of the training time and the attestations (the e-learning service accepts 2000 to 2100).
+export const YearQuery = z.object({
+  year: z.coerce.number().int().min(2000).max(2100).optional().openapi({ description: 'Calendar year, from 2000 to 2100; defaults to the current year (UTC)', example: 2026 }),
+});
+
+export const TrainingTimeCourse = z
+  .object({
+    id: z.string().openapi({ example: '4' }),
+    title: z.string().openapi({ example: 'RGPD pour les agents' }),
+    status: CourseStatus.openapi({ description: 'Current progress of the caller, whatever the year' }),
+    timeSpentSeconds: z.number().int().min(0).openapi({ description: 'Durations of the contents of the chapters completed during the year', example: 1800 }),
+    completedAt: z.string().nullable().openapi({ description: 'Completion of the course (RFC 3339), `null` while not completed', example: '2026-03-20T16:40:00Z' }),
+  })
+  .openapi({ description: 'Training time of the caller on one course during the year' });
+
+export const TrainingTimeResponse = z
+  .object({
+    year: z.number().int().openapi({ example: 2026 }),
+    goalMinutes: z.number().int().min(0).openapi({ description: 'Yearly training goal of an agent, in minutes, set for the whole instance', example: 600 }),
+    timeSpentSeconds: z.number().int().min(0).openapi({ description: 'Training time of the year, every course together, in seconds', example: 5400 }),
+    completedCount: z.number().int().min(0).openapi({ description: 'Courses completed during the year', example: 2 }),
+    courses: z.array(TrainingTimeCourse).openapi({ description: 'Every course the caller is enrolled in, by increasing id' }),
+  })
+  .openapi({ description: 'Training time of the caller during a year' });
+
+export const ChapterContentParams = z.object({
+  courseId: NumericId('Course (E-learning API formation) identifier', '4'),
+  chapterId: NumericId('Chapter (E-learning API module) identifier', '11'),
+  contentId: NumericId('Content (E-learning API attachment) identifier', '27'),
+});
+
+export const ContentFileResponse = z
+  .object({
+    url: z.string().openapi({
+      description: 'Signed URL of the stored file, valid a few minutes: ask for it again on every opening instead of storing it',
+      example: 'https://elearning.s3.fr-par.scw.cloud/courses/4/principes.pdf?X-Amz-Signature=abc',
+    }),
+  })
+  .openapi({ description: 'Where to open a stored file (video, PDF, document, audio)' });
+
+// PDF answers (attestations): the bytes of the e-learning service, as they are.
+export const PdfDocument = z.string().openapi({ type: 'string', format: 'binary', description: 'PDF document' });
+
+export const ServiceStats = z
+  .object({
+    serviceId: z.string().nullable().openapi({ description: 'Id of the service, `null` for the agents without a service', example: '3' }),
+    serviceName: z.string().nullable().openapi({ description: 'Name of the service, `null` for the agents without a service', example: 'Urbanisme' }),
+    agents: z.number().int().min(0).openapi({ example: 25 }),
+    participants: z.number().int().min(0).openapi({ example: 20 }),
+    participationRate: z.number().min(0).openapi({ description: 'Percent, one decimal', example: 80 }),
+  })
+  .openapi({ description: 'Participation of one service of the mairie' });
+
+export const CourseStats = z
+  .object({
+    id: z.string().openapi({ example: '4' }),
+    title: z.string().openapi({ example: 'RGPD pour les agents' }),
+    source: CourseSource,
+    mandatory: z.boolean(),
+    enrolled: z.number().int().min(0).openapi({ description: 'Agents enrolled (archived accounts excluded)', example: 40 }),
+    completed: z.number().int().min(0).openapi({ description: 'Agents who completed it', example: 12 }),
+    averageProgress: z.number().min(0).openapi({ description: 'Average progress of the enrolled agents, percent, one decimal', example: 47.5 }),
+  })
+  .openapi({ description: 'Indicators of one course' });
+
+export const LateAgent = z
+  .object({
+    userId: z.string().openapi({ description: 'Core API id of the agent', example: '42' }),
+    firstName: z.string().openapi({ example: 'Alice' }),
+    lastName: z.string().openapi({ example: 'Martin' }),
+    courseId: z.string().openapi({ example: '4' }),
+    courseTitle: z.string().openapi({ example: 'RGPD pour les agents' }),
+    deadline: z.string().openapi({ description: 'Past deadline of the course, `YYYY-MM-DD`', example: '2026-06-30' }),
+    progress: z.number().min(0).openapi({ description: 'Progress of the agent, percent, one decimal', example: 50 }),
+    lastReminderAt: z.string().nullable().openapi({ description: 'Latest reminder sent to the agent about this course (RFC 3339), `null` without one', example: null }),
+  })
+  .openapi({ description: 'An agent late on a mandatory course' });
+
+export const AdminStatsResponse = z
+  .object({
+    internalCourses: z.number().int().min(0).openapi({ description: 'Courses made by the mairie', example: 12 }),
+    platformCourses: z.number().int().min(0).openapi({ description: 'Courses provided with Mairie360', example: 30 }),
+    mandatoryInternalCourses: z.number().int().min(0).openapi({ description: 'Mandatory courses among the internal ones', example: 3 }),
+    agents: z.number().int().min(0).openapi({ description: 'Non-archived accounts', example: 120 }),
+    participants: z.number().int().min(0).openapi({ description: 'Agents enrolled in at least one course', example: 95 }),
+    participationRate: z.number().min(0).openapi({ description: '`participants / agents`, percent, one decimal', example: 79.2 }),
+    averageCompletion: z.number().min(0).openapi({ description: 'Average progress over every enrolment, percent, one decimal', example: 61.4 }),
+    lateMandatory: z.number().int().min(0).openapi({ description: 'Enrolments on a mandatory course whose deadline is past, not completed', example: 7 }),
+    byService: z.array(ServiceStats).openapi({ description: 'By service name, the agents without a service last' }),
+    byCourse: z.array(CourseStats).openapi({ description: 'Every course, by increasing id' }),
+    lateAgents: z.array(LateAgent).openapi({ description: 'The 500 most overdue late enrolments (`lateMandatory` counts them all), by deadline, then course, then agent' }),
+  })
+  .openapi({ description: 'E-learning indicators of the instance' });
+
+export const SendRemindersBody = z
+  .object({
+    userIds: z
+      .array(NumericId('Core API id of an agent', '42'))
+      .max(1000)
+      .optional()
+      .openapi({ description: 'Agents to remind (at most 1000). Absent: every late agent of the course. Agents not enrolled, or who completed it, are ignored.' }),
+  })
+  .openapi({ description: 'Who to remind about a mandatory course' });
+
+export const SendRemindersResponse = z
+  .object({
+    sent: z.number().int().min(0).openapi({ description: 'One per agent reminded; 0 when nobody was to remind', example: 3 }),
+  })
+  .openapi({ description: 'Reminders sent' });
+
+registry.register('YearQuery', YearQuery);
+registry.register('TrainingTimeCourse', TrainingTimeCourse);
+registry.register('TrainingTimeResponse', TrainingTimeResponse);
+registry.register('ChapterContentParams', ChapterContentParams);
+registry.register('ContentFileResponse', ContentFileResponse);
+registry.register('ServiceStats', ServiceStats);
+registry.register('CourseStats', CourseStats);
+registry.register('LateAgent', LateAgent);
+registry.register('AdminStatsResponse', AdminStatsResponse);
+registry.register('SendRemindersBody', SendRemindersBody);
+registry.register('SendRemindersResponse', SendRemindersResponse);
 registry.register('CourseIdParams', CourseIdParams);
+registry.register('AdminCourseIdParams', AdminCourseIdParams);
 registry.register('CourseContentParams', CourseContentParams);
 registry.register('CompleteContentBody', CompleteContentBody);
 registry.register('ContentCompleteResponse', ContentCompleteResponse);

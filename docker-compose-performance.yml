@@ -183,8 +183,9 @@ services:
       S3_BUCKET: mairie360-elearning
       S3_REGION: fr-par
       S3_ENDPOINT: https://s3.fr-par.scw.cloud
-      S3_ACCESS_KEY: ""
-      S3_SECRET_KEY: ""
+      # Placeholders: presigning is a local computation (MAIR-1150, the file route), the bucket is never contacted.
+      S3_ACCESS_KEY: placeholder-access-key
+      S3_SECRET_KEY: placeholder-secret-key
       S3_PRESIGN_TTL_SECS: 900
     expose:
       - "3006"

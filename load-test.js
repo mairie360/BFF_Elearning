@@ -15,8 +15,9 @@ import { createCoverage } from '/coverage.js';
 // - `crud` (2 VUs): `coverage.run()` calls every handler once per iteration, reads and writes, so
 //   it carries the coverage gate. Handlers run path by path in contract order and, for one path,
 //   in the order get, put, post, delete, options, head, patch, trace (so DELETE runs before PATCH).
-//   Ratings and course administration have no upstream storage yet: they answer 501,
-//   declared as the expected status of their request (`NOT_IMPLEMENTED`).
+//   Course administration (MAIR-1150) works on courses the handlers create and delete themselves (helper
+//   requests tagged `op:setup`), never on the seeded course 4. The attestation and rating handlers first
+//   complete the seeded chapter (idempotent, once per VU), so they never depend on the order of the handlers.
 // - `reads`: replays only the GET handlers, as random learners of init-perf.sql.
 // - `catalog_rush`: `GET /elearning/catalog` at a fixed arrival rate, failing on any dropped iteration.
 // Every operation gets a p(95) threshold, whose budget depends on its family (`budgetOf`).
@@ -54,8 +55,6 @@ const PROFILES = {
 const PROFILE = PROFILES[__ENV.K6_PROFILE || 'ci'];
 if (!PROFILE) throw new Error(`Unknown K6_PROFILE ${__ENV.K6_PROFILE}: ${Object.keys(PROFILES).join(', ')}`);
 
-// Routes with no upstream storage yet answer 501: expected, so not counted in http_req_failed.
-const NOT_IMPLEMENTED = { responseCallback: http.expectedStatuses(501) };
 
 // Token of seeded caller `id`, signed by performance_test.sh (fails the run on an unknown id).
 function jwtOf(id) {
@@ -100,9 +99,64 @@ function checkCatalog(response, learner, prefix) {
   });
 }
 
-// The admin course routes take the whole course (id, title, description).
-function courseBody(id, title) {
-  return { id, title, description: 'Course created by the k6 load test', category: 'Integration', duration: '1 h' };
+// The admin course routes take the whole course: a mandatory course past its deadline, one chapter of a link and a quiz.
+function courseBody(title) {
+  return {
+    title,
+    description: 'Course created by the k6 load test',
+    category: 'Integration',
+    level: 'beginner',
+    mandatory: true,
+    deadline: '2020-01-31',
+    details: {
+      title,
+      description: 'Course created by the k6 load test',
+      chapters: [{
+        id: 'new-chapter',
+        title: 'Introduction',
+        contents: [
+          { id: 'new-link', title: 'CNIL', type: 'link', href: 'https://www.cnil.fr/', duration: '10 min' },
+          { id: 'new-quiz', title: 'Quiz', type: 'quiz', duration: '5 min', required: false },
+        ],
+      }],
+    },
+  };
+}
+
+const SETUP = { tags: { op: 'setup' } };
+
+/** A course of the administrator, created for one handler: its id. */
+function createCourse(data) {
+  const response = http.post(coverage.url('POST /elearning/admin/courses'), JSON.stringify(courseBody('k6 scratch course')), {
+    headers: Object.assign({ 'Content-Type': 'application/json' }, data.admin),
+    tags: SETUP.tags,
+  });
+  check(response, { 'setup course 201': (r) => r.status === 201 });
+  return (json(response) || {}).id;
+}
+
+function deleteCourse(data, courseId) {
+  if (!courseId) return;
+  const response = http.del(coverage.url('DELETE /elearning/admin/courses/{courseId}', { courseId }), null, { headers: data.admin, tags: SETUP.tags });
+  check(response, { 'cleanup course 200': (r) => r.status === 200 });
+}
+
+// The user completes the seeded chapter once per VU: the completion is kept upstream, so the attestation and the
+// rating answer 200 whatever ran before.
+let completedOnce = false;
+function ensureCompleted(headers) {
+  if (completedOnce) return;
+  const op = 'POST /elearning/courses/{courseId}/contents/{contentId}/complete';
+  const response = http.post(
+    coverage.url(op, { courseId: FIXTURE_COURSE_ID, contentId: FIXTURE_CONTENT_ID }),
+    JSON.stringify({ chapterId: FIXTURE_CHAPTER_ID, completed: true }),
+    { headers: Object.assign({ 'Content-Type': 'application/json' }, headers), tags: SETUP.tags },
+  );
+  completedOnce = check(response, { 'setup completion 200': (r) => r.status === 200 });
+}
+
+function isPdf(r) {
+  return r.status === 200 && String(r.headers['Content-Type'] || '').includes('application/pdf');
 }
 
 const handlers = {
@@ -112,20 +166,37 @@ const handlers = {
   'GET /check_apis': ({ request }) =>
     check(request(), { 'check_apis 200': (r) => r.status === 200 }),
 
-  // --- Admin: courses (501 until the E-learning API can edit formations) ---
-  'POST /elearning/admin/courses': ({ request, data }) =>
-    check(request({ body: courseBody('perf-course', 'k6 course'), headers: data.admin, params: NOT_IMPLEMENTED }), {
-      'create course 501': (r) => r.status === 501,
+  // --- Admin: courses (MAIR-1150), on courses the handlers create ---
+  'POST /elearning/admin/courses': ({ request, data }) => {
+    const response = request({ body: courseBody('k6 course'), headers: data.admin });
+    check(response, { 'create course 201': (r) => r.status === 201 && /^[1-9][0-9]*$/.test((json(r) || {}).id) });
+    deleteCourse(data, (json(response) || {}).id);
+  },
+  'DELETE /elearning/admin/courses/{courseId}': ({ request, data }) => {
+    const courseId = createCourse(data);
+    check(request({ path: { courseId }, headers: data.admin }), {
+      'delete course 200': (r) => r.status === 200 && (json(r) || {}).deleted === true,
+    });
+  },
+  'PATCH /elearning/admin/courses/{courseId}': ({ request, data }) => {
+    const courseId = createCourse(data);
+    check(request({ path: { courseId }, body: courseBody('k6 course, patched'), headers: data.admin }), {
+      'patch course 200': (r) => r.status === 200 && (json(r) || {}).id === courseId,
+    });
+    deleteCourse(data, courseId);
+  },
+  'POST /elearning/admin/courses/{courseId}/reminders': ({ request, data }) => {
+    const courseId = createCourse(data);
+    check(request({ path: { courseId }, body: {}, headers: data.admin }), {
+      'reminders 200': (r) => r.status === 200 && typeof (json(r) || {}).sent === 'number',
+    });
+    deleteCourse(data, courseId);
+  },
+  'GET /elearning/admin/stats': ({ request, data }) =>
+    check(request({ headers: data.admin }), {
+      'stats 200': (r) => r.status === 200,
+      'stats list the courses': (r) => r.status === 200 && Array.isArray((json(r) || {}).byCourse) && (json(r) || {}).byCourse.length > 0,
     }),
-  'DELETE /elearning/admin/courses/{courseId}': ({ request, data }) =>
-    check(request({ path: { courseId: FIXTURE_COURSE_ID }, headers: data.admin, params: NOT_IMPLEMENTED }), {
-      'delete course 501': (r) => r.status === 501,
-    }),
-  'PATCH /elearning/admin/courses/{courseId}': ({ request, data }) =>
-    check(
-      request({ path: { courseId: FIXTURE_COURSE_ID }, body: courseBody(FIXTURE_COURSE_ID, 'k6 course, patched'), headers: data.admin, params: NOT_IMPLEMENTED }),
-      { 'patch course 501': (r) => r.status === 501 },
-    ),
 
   // --- Learner ---
   'GET /elearning/catalog': ({ request }) => {
@@ -147,10 +218,32 @@ const handlers = {
       'profile is the learner': (r) => r.status === 200 && ((json(r) || {}).user || {}).id === String(learner.id),
     });
   },
-  'POST /elearning/courses/{courseId}/rating': ({ request }) =>
-    check(request({ path: { courseId: FIXTURE_COURSE_ID }, body: { rating: 5 }, params: NOT_IMPLEMENTED }), {
-      'rating 501': (r) => r.status === 501,
+  'POST /elearning/courses/{courseId}/rating': ({ request, data }) => {
+    ensureCompleted(data.user);
+    check(request({ path: { courseId: FIXTURE_COURSE_ID }, body: { rating: 5 } }), {
+      'rating 200': (r) => r.status === 200 && (json(r) || {}).myRating === 5,
+    });
+  },
+  'GET /elearning/courses/{courseId}/certificate': ({ request, data }) => {
+    ensureCompleted(data.user);
+    check(request({ path: { courseId: FIXTURE_COURSE_ID } }), { 'certificate 200 PDF': isPdf });
+  },
+  'GET /elearning/certificates': ({ request, data }) => {
+    ensureCompleted(data.user);
+    check(request({}), { 'certificates 200 PDF': isPdf });
+  },
+  'GET /elearning/courses/{courseId}/chapters/{chapterId}/contents/{contentId}/file': ({ request }) =>
+    check(request({ path: { courseId: FIXTURE_COURSE_ID, chapterId: FIXTURE_CHAPTER_ID, contentId: FIXTURE_CONTENT_ID } }), {
+      'file 200': (r) => r.status === 200 && /^https:\/\//.test((json(r) || {}).url || ''),
     }),
+  'GET /elearning/training-time': ({ request }) => {
+    const learner = randomLearner();
+    check(request({ headers: learner.headers }), {
+      'training time 200': (r) => r.status === 200,
+      'training time lists the learner formations': (r) => r.status === 200
+        && ((json(r) || {}).courses || []).every((course) => learner.formations.has(String(course.id))),
+    });
+  },
   'POST /elearning/courses/{courseId}/start': ({ request }) =>
     check(request({ path: { courseId: FIXTURE_COURSE_ID }, body: { source: 'catalog' } }), {
       'start 200': (r) => r.status === 200,
@@ -164,7 +257,7 @@ const readOperations = coverage.operations.filter((o) => o.method === 'GET');
 function budgetOf({ op, method }) {
   if (op === 'GET /health') return 50; // process probe
   if (op === 'GET /check_apis') return 300; // -> Core + E-learning /health
-  if (method === 'GET') return 600; // BFF User /me + E-learning API fan-out (formations, modules)
+  if (method === 'GET') return 600; // Core /me + E-learning API reads (catalogue, summary, PDF, stats)
   return 800; // writes
 }
 
