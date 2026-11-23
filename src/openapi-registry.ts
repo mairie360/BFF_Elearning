@@ -596,6 +596,105 @@ export const SendRemindersResponse = z
   })
   .openapi({ description: 'Reminders sent' });
 
+// =====================
+// ENROLMENT (MAIR-817): only an administrator enrols agents in a course
+// =====================
+
+// The enrolment writes name course 7 and agent 2 of init-test.sql, so the ZAP scan (which calls every operation on the
+// examples) enrols and unenrols the seeded agent on the scratch course, never on course 4.
+export const AdminLearnerParams = z.object({
+  courseId: NumericId('Course (E-learning API formation) identifier', '7'),
+  userId: NumericId('Core API id of the agent', '2'),
+});
+
+const agentIdentityShape = {
+  userId: z.string().openapi({ description: 'Core API id of the agent', example: '2' }),
+  name: z.string().openapi({ description: 'First and last name', example: 'Alice Martin' }),
+  firstName: z.string().openapi({ description: 'First name of the account', example: 'Alice' }),
+  lastName: z.string().openapi({ description: 'Last name of the account', example: 'Martin' }),
+};
+
+export const AgentIdentity = z.object(agentIdentityShape).openapi({ description: 'An active (non-archived) agent of the instance' });
+
+export const AdminAgentsQuery = z.object({
+  search: z.string().trim().min(1).max(100).optional().openapi({
+    description: 'Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).',
+    example: 'martin',
+  }),
+  limit: z.coerce.number().int().min(1).max(200).default(50).openapi({ description: 'Agents to return, 1 to 200 (default 50)', example: 50 }),
+  offset: z.coerce.number().int().min(0).max(1_000_000).default(0).openapi({ description: 'Agents to skip, in id order (default 0): the `nextOffset` of the previous page', example: 0 }),
+  excludeCourseId: NumericId('Leaves out the agents already enrolled in this course (the « add agents » picker of a course)', '4').optional(),
+});
+
+export const AdminAgentsResponse = z
+  .object({
+    agents: z.array(AgentIdentity).openapi({ description: 'Agents of the page, in id order' }),
+    limit: z.number().int().openapi({ example: 50 }),
+    offset: z.number().int().openapi({ example: 0 }),
+    nextOffset: z.number().int().nullable().openapi({ description: 'Offset of the next page, `null` after the last agent. The total is not known upstream.', example: 50 }),
+  })
+  .openapi({ description: 'One page of the agents an administrator can enrol' });
+
+export const CourseLearner = z.object({
+  ...agentIdentityShape,
+  status: CourseStatus,
+  progress: z.number().int().min(0).max(100).openapi({ description: 'Share of the chapters completed, percent (100 once the course is completed)', example: 50 }),
+  startedAt: z.string().nullable().openapi({ description: 'First chapter completed, `null` before', example: '2026-03-02T09:15:00' }),
+  completedAt: z.string().nullable().openapi({ description: 'Course completed, `null` before', example: null }),
+  lastActivityAt: z.string().nullable().openapi({ description: 'Last chapter completed, `null` before', example: '2026-03-04T10:00:00' }),
+  lastReminderAt: z.string().nullable().openapi({ description: 'Last reminder an administrator sent for this course, `null` if none', example: null }),
+}).openapi({ description: 'An agent enrolled in the course, with their progress' });
+
+export const CourseLearnersQuery = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(50).openapi({ description: 'Learners to return, 1 to 200 (default 50)', example: 50 }),
+  offset: z.coerce.number().int().min(0).max(1_000_000).default(0).openapi({ description: 'Learners to skip (default 0): the `nextOffset` of the previous page', example: 0 }),
+});
+
+export const CourseLearnersResponse = z
+  .object({
+    courseId: z.string().openapi({ example: '4' }),
+    learners: z.array(CourseLearner).openapi({ description: 'Learners of the page, by last name, first name and id' }),
+    total: z.number().int().min(0).openapi({ description: 'Active learners of the course, all pages together', example: 12 }),
+    limit: z.number().int().openapi({ example: 50 }),
+    offset: z.number().int().openapi({ example: 0 }),
+    nextOffset: z.number().int().nullable().openapi({ description: 'Offset of the next page, `null` after the last learner', example: null }),
+  })
+  .openapi({ description: 'One page of the active (non-archived) agents enrolled in a course' });
+
+export const EnrolLearnersBody = z
+  .object({
+    userIds: z.array(NumericId('Core API id of an agent', '2')).min(1).max(200).openapi({ description: '1 to 200 agents to enrol (duplicates are counted once)' }),
+  })
+  .openapi({ description: 'Agents to enrol in the course' });
+
+export const EnrolLearnersResponse = z
+  .object({
+    courseId: z.string().openapi({ example: '7' }),
+    enrolled: z.array(z.string()).openapi({ description: 'Agents enrolled by this request', example: ['2'] }),
+    alreadyEnrolled: z.array(z.string()).openapi({ description: 'Agents who were enrolled already (their progress is kept)', example: [] }),
+    failed: z.array(z.string()).openapi({ description: 'Agents not enrolled: unknown or archived account, or a failure of the e-learning service for that agent', example: [] }),
+  })
+  .openapi({ description: 'Outcome of the enrolment, per agent, in the order of the request' });
+
+export const RemoveLearnerResponse = z
+  .object({
+    removed: z.boolean(),
+    courseId: z.string().openapi({ example: '7' }),
+    userId: z.string().openapi({ example: '2' }),
+  })
+  .openapi({ description: 'Confirmation that the agent was unenrolled (their progress on the course is deleted)' });
+
+registry.register('AdminLearnerParams', AdminLearnerParams);
+registry.register('AgentIdentity', AgentIdentity);
+registry.register('AdminAgentsQuery', AdminAgentsQuery);
+registry.register('AdminAgentsResponse', AdminAgentsResponse);
+registry.register('CourseLearner', CourseLearner);
+registry.register('CourseLearnersQuery', CourseLearnersQuery);
+registry.register('CourseLearnersResponse', CourseLearnersResponse);
+registry.register('EnrolLearnersBody', EnrolLearnersBody);
+registry.register('EnrolLearnersResponse', EnrolLearnersResponse);
+registry.register('RemoveLearnerResponse', RemoveLearnerResponse);
+
 registry.register('YearQuery', YearQuery);
 registry.register('TrainingTimeCourse', TrainingTimeCourse);
 registry.register('TrainingTimeResponse', TrainingTimeResponse);

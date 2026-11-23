@@ -3791,6 +3791,487 @@
         ],
         "description": "Response loading the profile page"
       },
+      "AdminLearnerParams": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Course (E-learning API formation) identifier",
+            "example": "7"
+          },
+          "userId": {
+            "type": "string",
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Core API id of the agent",
+            "example": "2"
+          }
+        },
+        "required": [
+          "courseId",
+          "userId"
+        ]
+      },
+      "AgentIdentity": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "Core API id of the agent",
+            "example": "2"
+          },
+          "name": {
+            "type": "string",
+            "description": "First and last name",
+            "example": "Alice Martin"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "First name of the account",
+            "example": "Alice"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Last name of the account",
+            "example": "Martin"
+          }
+        },
+        "required": [
+          "userId",
+          "name",
+          "firstName",
+          "lastName"
+        ],
+        "description": "An active (non-archived) agent of the instance"
+      },
+      "AdminAgentsQuery": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).",
+            "example": "martin"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50,
+            "description": "Agents to return, 1 to 200 (default 50)",
+            "example": 50
+          },
+          "offset": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1000000,
+            "default": 0,
+            "description": "Agents to skip, in id order (default 0): the `nextOffset` of the previous page",
+            "example": 0
+          },
+          "excludeCourseId": {
+            "type": "string",
+            "pattern": "^[1-9]\\d{0,14}$",
+            "description": "Leaves out the agents already enrolled in this course (the « add agents » picker of a course)",
+            "example": "4"
+          }
+        }
+      },
+      "AdminAgentsResponse": {
+        "type": "object",
+        "properties": {
+          "agents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "type": "string",
+                  "description": "Core API id of the agent",
+                  "example": "2"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "First and last name",
+                  "example": "Alice Martin"
+                },
+                "firstName": {
+                  "type": "string",
+                  "description": "First name of the account",
+                  "example": "Alice"
+                },
+                "lastName": {
+                  "type": "string",
+                  "description": "Last name of the account",
+                  "example": "Martin"
+                }
+              },
+              "required": [
+                "userId",
+                "name",
+                "firstName",
+                "lastName"
+              ],
+              "description": "An active (non-archived) agent of the instance"
+            },
+            "description": "Agents of the page, in id order"
+          },
+          "limit": {
+            "type": "integer",
+            "example": 50
+          },
+          "offset": {
+            "type": "integer",
+            "example": 0
+          },
+          "nextOffset": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Offset of the next page, `null` after the last agent. The total is not known upstream.",
+            "example": 50
+          }
+        },
+        "required": [
+          "agents",
+          "limit",
+          "offset",
+          "nextOffset"
+        ],
+        "description": "One page of the agents an administrator can enrol"
+      },
+      "CourseLearner": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "Core API id of the agent",
+            "example": "2"
+          },
+          "name": {
+            "type": "string",
+            "description": "First and last name",
+            "example": "Alice Martin"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "First name of the account",
+            "example": "Alice"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "Last name of the account",
+            "example": "Martin"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not-started",
+              "in-progress",
+              "completed"
+            ],
+            "description": "Progress status of the formation for the signed-in user",
+            "example": "in-progress"
+          },
+          "progress": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Share of the chapters completed, percent (100 once the course is completed)",
+            "example": 50
+          },
+          "startedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "First chapter completed, `null` before",
+            "example": "2026-03-02T09:15:00"
+          },
+          "completedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Course completed, `null` before",
+            "example": null
+          },
+          "lastActivityAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Last chapter completed, `null` before",
+            "example": "2026-03-04T10:00:00"
+          },
+          "lastReminderAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Last reminder an administrator sent for this course, `null` if none",
+            "example": null
+          }
+        },
+        "required": [
+          "userId",
+          "name",
+          "firstName",
+          "lastName",
+          "status",
+          "progress",
+          "startedAt",
+          "completedAt",
+          "lastActivityAt",
+          "lastReminderAt"
+        ],
+        "description": "An agent enrolled in the course, with their progress"
+      },
+      "CourseLearnersQuery": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "default": 50,
+            "description": "Learners to return, 1 to 200 (default 50)",
+            "example": 50
+          },
+          "offset": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 1000000,
+            "default": 0,
+            "description": "Learners to skip (default 0): the `nextOffset` of the previous page",
+            "example": 0
+          }
+        }
+      },
+      "CourseLearnersResponse": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "example": "4"
+          },
+          "learners": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "type": "string",
+                  "description": "Core API id of the agent",
+                  "example": "2"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "First and last name",
+                  "example": "Alice Martin"
+                },
+                "firstName": {
+                  "type": "string",
+                  "description": "First name of the account",
+                  "example": "Alice"
+                },
+                "lastName": {
+                  "type": "string",
+                  "description": "Last name of the account",
+                  "example": "Martin"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "not-started",
+                    "in-progress",
+                    "completed"
+                  ],
+                  "description": "Progress status of the formation for the signed-in user",
+                  "example": "in-progress"
+                },
+                "progress": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100,
+                  "description": "Share of the chapters completed, percent (100 once the course is completed)",
+                  "example": 50
+                },
+                "startedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "First chapter completed, `null` before",
+                  "example": "2026-03-02T09:15:00"
+                },
+                "completedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Course completed, `null` before",
+                  "example": null
+                },
+                "lastActivityAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Last chapter completed, `null` before",
+                  "example": "2026-03-04T10:00:00"
+                },
+                "lastReminderAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "Last reminder an administrator sent for this course, `null` if none",
+                  "example": null
+                }
+              },
+              "required": [
+                "userId",
+                "name",
+                "firstName",
+                "lastName",
+                "status",
+                "progress",
+                "startedAt",
+                "completedAt",
+                "lastActivityAt",
+                "lastReminderAt"
+              ],
+              "description": "An agent enrolled in the course, with their progress"
+            },
+            "description": "Learners of the page, by last name, first name and id"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Active learners of the course, all pages together",
+            "example": 12
+          },
+          "limit": {
+            "type": "integer",
+            "example": 50
+          },
+          "offset": {
+            "type": "integer",
+            "example": 0
+          },
+          "nextOffset": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Offset of the next page, `null` after the last learner",
+            "example": null
+          }
+        },
+        "required": [
+          "courseId",
+          "learners",
+          "total",
+          "limit",
+          "offset",
+          "nextOffset"
+        ],
+        "description": "One page of the active (non-archived) agents enrolled in a course"
+      },
+      "EnrolLearnersBody": {
+        "type": "object",
+        "properties": {
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Core API id of an agent",
+              "example": "2"
+            },
+            "minItems": 1,
+            "maxItems": 200,
+            "description": "1 to 200 agents to enrol (duplicates are counted once)"
+          }
+        },
+        "required": [
+          "userIds"
+        ],
+        "description": "Agents to enrol in the course"
+      },
+      "EnrolLearnersResponse": {
+        "type": "object",
+        "properties": {
+          "courseId": {
+            "type": "string",
+            "example": "7"
+          },
+          "enrolled": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Agents enrolled by this request",
+            "example": [
+              "2"
+            ]
+          },
+          "alreadyEnrolled": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Agents who were enrolled already (their progress is kept)",
+            "example": []
+          },
+          "failed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Agents not enrolled: unknown or archived account, or a failure of the e-learning service for that agent",
+            "example": []
+          }
+        },
+        "required": [
+          "courseId",
+          "enrolled",
+          "alreadyEnrolled",
+          "failed"
+        ],
+        "description": "Outcome of the enrolment, per agent, in the order of the request"
+      },
+      "RemoveLearnerResponse": {
+        "type": "object",
+        "properties": {
+          "removed": {
+            "type": "boolean"
+          },
+          "courseId": {
+            "type": "string",
+            "example": "7"
+          },
+          "userId": {
+            "type": "string",
+            "example": "2"
+          }
+        },
+        "required": [
+          "removed",
+          "courseId",
+          "userId"
+        ],
+        "description": "Confirmation that the agent was unenrolled (their progress on the course is deleted)"
+      },
       "YearQuery": {
         "type": "object",
         "properties": {
@@ -7741,6 +8222,816 @@
                     "lateAgents"
                   ],
                   "description": "E-learning indicators of the instance"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or invalid session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted to administrators",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/elearning/admin/courses/{courseId}/learners": {
+      "get": {
+        "tags": [
+          "E-learning administration"
+        ],
+        "summary": "Lists the agents enrolled in a course, with their progress",
+        "description": "One page of the active (non-archived) agents enrolled in the course, by last name, first name and id, with their progress, their last activity and the last reminder sent to them. `total` counts every page; read on with `nextOffset` until it is `null`.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Course (E-learning API formation) identifier",
+              "example": "4"
+            },
+            "required": true,
+            "description": "Course (E-learning API formation) identifier",
+            "name": "courseId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "description": "Learners to return, 1 to 200 (default 50)",
+              "example": 50
+            },
+            "required": false,
+            "description": "Learners to return, 1 to 200 (default 50)",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1000000,
+              "default": 0,
+              "description": "Learners to skip (default 0): the `nextOffset` of the previous page",
+              "example": 0
+            },
+            "required": false,
+            "description": "Learners to skip (default 0): the `nextOffset` of the previous page",
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Learners among the agents examined",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "courseId": {
+                      "type": "string",
+                      "example": "4"
+                    },
+                    "learners": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string",
+                            "description": "Core API id of the agent",
+                            "example": "2"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "First and last name",
+                            "example": "Alice Martin"
+                          },
+                          "firstName": {
+                            "type": "string",
+                            "description": "First name of the account",
+                            "example": "Alice"
+                          },
+                          "lastName": {
+                            "type": "string",
+                            "description": "Last name of the account",
+                            "example": "Martin"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "not-started",
+                              "in-progress",
+                              "completed"
+                            ],
+                            "description": "Progress status of the formation for the signed-in user",
+                            "example": "in-progress"
+                          },
+                          "progress": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 100,
+                            "description": "Share of the chapters completed, percent (100 once the course is completed)",
+                            "example": 50
+                          },
+                          "startedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "First chapter completed, `null` before",
+                            "example": "2026-03-02T09:15:00"
+                          },
+                          "completedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Course completed, `null` before",
+                            "example": null
+                          },
+                          "lastActivityAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Last chapter completed, `null` before",
+                            "example": "2026-03-04T10:00:00"
+                          },
+                          "lastReminderAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "Last reminder an administrator sent for this course, `null` if none",
+                            "example": null
+                          }
+                        },
+                        "required": [
+                          "userId",
+                          "name",
+                          "firstName",
+                          "lastName",
+                          "status",
+                          "progress",
+                          "startedAt",
+                          "completedAt",
+                          "lastActivityAt",
+                          "lastReminderAt"
+                        ],
+                        "description": "An agent enrolled in the course, with their progress"
+                      },
+                      "description": "Learners of the page, by last name, first name and id"
+                    },
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "Active learners of the course, all pages together",
+                      "example": 12
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 50
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "nextOffset": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "description": "Offset of the next page, `null` after the last learner",
+                      "example": null
+                    }
+                  },
+                  "required": [
+                    "courseId",
+                    "learners",
+                    "total",
+                    "limit",
+                    "offset",
+                    "nextOffset"
+                  ],
+                  "description": "One page of the active (non-archived) agents enrolled in a course"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid course identifier, `limit` or `offset`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or invalid session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted to administrators",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown course",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "E-learning administration"
+        ],
+        "summary": "Enrols agents in a course",
+        "description": "Enrols each agent (5 at a time). An agent enrolled already keeps their progress and is listed in `alreadyEnrolled`; an unknown or archived account, or a failure of the e-learning service for one agent, lands in `failed` without stopping the others.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Course (E-learning API formation) identifier",
+              "example": "7"
+            },
+            "required": true,
+            "description": "Course (E-learning API formation) identifier",
+            "name": "courseId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[1-9]\\d{0,14}$",
+                      "description": "Core API id of an agent",
+                      "example": "2"
+                    },
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "description": "1 to 200 agents to enrol (duplicates are counted once)"
+                  }
+                },
+                "required": [
+                  "userIds"
+                ],
+                "description": "Agents to enrol in the course"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Outcome per agent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "courseId": {
+                      "type": "string",
+                      "example": "7"
+                    },
+                    "enrolled": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Agents enrolled by this request",
+                      "example": [
+                        "2"
+                      ]
+                    },
+                    "alreadyEnrolled": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Agents who were enrolled already (their progress is kept)",
+                      "example": []
+                    },
+                    "failed": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Agents not enrolled: unknown or archived account, or a failure of the e-learning service for that agent",
+                      "example": []
+                    }
+                  },
+                  "required": [
+                    "courseId",
+                    "enrolled",
+                    "alreadyEnrolled",
+                    "failed"
+                  ],
+                  "description": "Outcome of the enrolment, per agent, in the order of the request"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid course identifier or body: every invalid field is named in `details` (`body.userIds.0`...)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or invalid session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted to administrators",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown course",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/elearning/admin/courses/{courseId}/learners/{userId}": {
+      "delete": {
+        "tags": [
+          "E-learning administration"
+        ],
+        "summary": "Unenrols an agent from a course",
+        "description": "Removes the enrolment and the progress of the agent on this course (their other courses are untouched).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Course (E-learning API formation) identifier",
+              "example": "7"
+            },
+            "required": true,
+            "description": "Course (E-learning API formation) identifier",
+            "name": "courseId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Core API id of the agent",
+              "example": "2"
+            },
+            "required": true,
+            "description": "Core API id of the agent",
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agent unenrolled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "removed": {
+                      "type": "boolean"
+                    },
+                    "courseId": {
+                      "type": "string",
+                      "example": "7"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "example": "2"
+                    }
+                  },
+                  "required": [
+                    "removed",
+                    "courseId",
+                    "userId"
+                  ],
+                  "description": "Confirmation that the agent was unenrolled (their progress on the course is deleted)"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid course or agent identifier",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, expired or invalid session",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted to administrators",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The agent is not enrolled in the course, or the course or the agent is unknown",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "An upstream API is not configured (`<SERVICE>_URL` missing or invalid)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/elearning/admin/agents": {
+      "get": {
+        "tags": [
+          "E-learning administration"
+        ],
+        "summary": "Lists the agents an administrator can enrol",
+        "description": "One page of the active (non-archived) agents, in id order. `search` keeps the agents whose name or e-mail contains the term, `excludeCourseId` leaves out the learners of a course (the picker that enrols agents). `nextOffset` tells where to read on (`null` after the last agent).",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).",
+              "example": "martin"
+            },
+            "required": false,
+            "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).",
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "description": "Agents to return, 1 to 200 (default 50)",
+              "example": 50
+            },
+            "required": false,
+            "description": "Agents to return, 1 to 200 (default 50)",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1000000,
+              "default": 0,
+              "description": "Agents to skip, in id order (default 0): the `nextOffset` of the previous page",
+              "example": 0
+            },
+            "required": false,
+            "description": "Agents to skip, in id order (default 0): the `nextOffset` of the previous page",
+            "name": "offset",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$",
+              "description": "Leaves out the agents already enrolled in this course (the « add agents » picker of a course)",
+              "example": "4"
+            },
+            "required": false,
+            "description": "Leaves out the agents already enrolled in this course (the « add agents » picker of a course)",
+            "name": "excludeCourseId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agents of the page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "agents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string",
+                            "description": "Core API id of the agent",
+                            "example": "2"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "First and last name",
+                            "example": "Alice Martin"
+                          },
+                          "firstName": {
+                            "type": "string",
+                            "description": "First name of the account",
+                            "example": "Alice"
+                          },
+                          "lastName": {
+                            "type": "string",
+                            "description": "Last name of the account",
+                            "example": "Martin"
+                          }
+                        },
+                        "required": [
+                          "userId",
+                          "name",
+                          "firstName",
+                          "lastName"
+                        ],
+                        "description": "An active (non-archived) agent of the instance"
+                      },
+                      "description": "Agents of the page, in id order"
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "example": 50
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "nextOffset": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ],
+                      "description": "Offset of the next page, `null` after the last agent. The total is not known upstream.",
+                      "example": 50
+                    }
+                  },
+                  "required": [
+                    "agents",
+                    "limit",
+                    "offset",
+                    "nextOffset"
+                  ],
+                  "description": "One page of the agents an administrator can enrol"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid `search`, `limit`, `offset` or `excludeCourseId`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }

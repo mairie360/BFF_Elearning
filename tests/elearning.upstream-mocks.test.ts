@@ -37,6 +37,10 @@ const ELEARNING = {
   adminFormation: '/api/v1/admin/formations/{formationId}/',
   reminders: '/api/v1/admin/formations/{formationId}/reminders/',
   stats: '/api/v1/admin/stats/',
+  users: '/api/v1/admin/users/',
+  userFormations: '/api/v1/admin/users/{userId}/',
+  userFormation: '/api/v1/admin/users/{userId}/{formationId}/',
+  learners: '/api/v1/admin/formations/{formationId}/learners/',
 } as const;
 const PDF = '%PDF-1.4\n1 0 obj << >> endobj\n%%EOF\n';
 const pdfReply = (headers: Record<string, string> = {}): MockReply => ({ raw: PDF, contentType: 'application/pdf', headers });
@@ -1291,6 +1295,341 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
         const broken = await withSession(request(app).get('/elearning/admin/stats'), 'jwt-admin', { role: 'admin' });
         expect(broken.status).toBe(502);
         expectBffContract('get', '/elearning/admin/stats', broken);
+      });
+    });
+
+    describe('MAIR-817 enrolment of agents by an administrator', () => {
+      const asAdmin = (call: request.Test) => withSession(call, 'jwt-admin', { role: 'admin' });
+      const asAgent = (call: request.Test) => withSession(call, 'jwt-agent', { role: 'User' });
+      const enrolment = (id: number, status: 'NotStarted' | 'InProgress' | 'Completed', fields: object = {}) => ({
+        id, name: `Formation ${id}`, description: '', progress_status: status, started_at: null, completed_at: null, ...fields,
+      });
+
+      describe('GET /elearning/admin/courses/{courseId}/learners', () => {
+        const route = '/elearning/admin/courses/{courseId}/learners';
+        const learner = (userId: number, firstName: string, lastName: string, fields: object = {}) => ({
+          user_id: userId, first_name: firstName, last_name: lastName, status: 'NotStarted', progress: 0,
+          started_at: null, completed_at: null, last_activity_at: null, last_reminder_at: null, ...fields,
+        });
+
+        test('relays one page of learners with their status, progress and dates, in one call', async () => {
+          elearningApi.on('get', ELEARNING.learners, {
+            body: {
+              formation_id: 4, total: 11, limit: 3, offset: 8,
+              learners: [
+                learner(1, 'Security', 'Admin', {
+                  status: 'Completed', progress: 100, started_at: '2026-03-02T09:15:00', completed_at: '2026-03-04T10:00:00',
+                  last_activity_at: '2026-03-04T10:00:00',
+                }),
+                learner(2, 'Jean Pierre', 'Durand', {
+                  status: 'InProgress', progress: 33, started_at: '2026-03-05T08:00:00', last_activity_at: '2026-03-05T08:00:00',
+                  last_reminder_at: '2026-03-10T07:30:00',
+                }),
+                learner(5, 'Nina', 'Roy'),
+              ],
+            },
+          });
+
+          const response = await asAdmin(request(app).get('/elearning/admin/courses/4/learners?limit=3&offset=8'));
+
+          expect(response.status).toBe(200);
+          expectBffContract('get', route, response);
+          expect(response.body).toEqual({
+            courseId: '4',
+            total: 11,
+            limit: 3,
+            offset: 8,
+            nextOffset: null,
+            learners: [
+              {
+                userId: '1', name: 'Security Admin', firstName: 'Security', lastName: 'Admin', status: 'completed', progress: 100,
+                startedAt: '2026-03-02T09:15:00', completedAt: '2026-03-04T10:00:00', lastActivityAt: '2026-03-04T10:00:00', lastReminderAt: null,
+              },
+              {
+                userId: '2', name: 'Jean Pierre Durand', firstName: 'Jean Pierre', lastName: 'Durand', status: 'in-progress', progress: 33,
+                startedAt: '2026-03-05T08:00:00', completedAt: null, lastActivityAt: '2026-03-05T08:00:00', lastReminderAt: '2026-03-10T07:30:00',
+              },
+              {
+                userId: '5', name: 'Nina Roy', firstName: 'Nina', lastName: 'Roy', status: 'not-started', progress: 0,
+                startedAt: null, completedAt: null, lastActivityAt: null, lastReminderAt: null,
+              },
+            ],
+          });
+          const calls = elearningApi.requests;
+          expect(calls).toHaveLength(1);
+          expect(calls[0].url.pathname + calls[0].url.search).toBe(elearningApiUrls.getGetFormationLearnersUrl(4, { limit: 3, offset: 8 }));
+          expect(calls[0].headers.authorization).toBe(bearer('jwt-admin', { role: 'admin' }));
+        });
+
+        test('defaults to 50 learners from 0, and gives the next offset while learners remain', async () => {
+          elearningApi.on('get', ELEARNING.learners, ({ url }) => ({
+            body: {
+              formation_id: 4, total: 120, limit: Number(url.searchParams.get('limit')), offset: Number(url.searchParams.get('offset')),
+              learners: Array.from({ length: 50 }, (_, index) => learner(index + 1, 'Agent', String(index + 1))),
+            },
+          }));
+
+          const response = await asAdmin(request(app).get('/elearning/admin/courses/4/learners'));
+
+          expect(response.status).toBe(200);
+          expectBffContract('get', route, response);
+          expect(response.body).toMatchObject({ total: 120, limit: 50, offset: 0, nextOffset: 50 });
+          expect(response.body.learners).toHaveLength(50);
+          expect(elearningApi.calls(ELEARNING.learners, 'get')[0].url.search).toBe('?limit=50&offset=0');
+        });
+
+        test('ends the list past the last learner', async () => {
+          elearningApi.on('get', ELEARNING.learners, { body: { formation_id: 4, total: 3, limit: 50, offset: 500, learners: [] } });
+
+          const response = await asAdmin(request(app).get('/elearning/admin/courses/4/learners?offset=500'));
+
+          expect(response.status).toBe(200);
+          expect(response.body).toMatchObject({ learners: [], total: 3, nextOffset: null });
+        });
+
+        test('answers 404 for an unknown course', async () => {
+          elearningApi.on('get', ELEARNING.learners, elearningError(404));
+
+          const response = await asAdmin(request(app).get('/elearning/admin/courses/404/learners'));
+
+          expect(response.status).toBe(404);
+          expectBffContract('get', route, response);
+          expect(response.body.error.message).toBe('Course not found.');
+        });
+
+        test('answers 502 to an unusable answer', async () => {
+          captureLogs();
+          elearningApi.on('get', ELEARNING.learners, { body: { formation_id: 4, total: 1, learners: [{ user_id: 'one' }] }, outOfContract: true });
+
+          const response = await asAdmin(request(app).get('/elearning/admin/courses/4/learners'));
+
+          expect(response.status).toBe(502);
+          expectBffContract('get', route, response);
+        });
+
+        test.each(['/elearning/admin/courses/abc/learners', '/elearning/admin/courses/4/learners?limit=0', '/elearning/admin/courses/4/learners?limit=201', '/elearning/admin/courses/4/learners?offset=-1'])(
+          'refuses %s with a 400 before any call',
+          async (url) => {
+            const response = await asAdmin(request(app).get(url));
+
+            expect(response.status).toBe(400);
+            expectBffContract('get', route, response);
+            expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+          },
+        );
+
+        test('forbids non-administrators without any call, and relays an E-learning 403', async () => {
+          const response = await asAgent(request(app).get('/elearning/admin/courses/4/learners'));
+
+          expect(response.status).toBe(403);
+          expectBffContract('get', route, response);
+          expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+
+          elearningApi.on('get', ELEARNING.learners, elearningError(403));
+          const refused = await asAdmin(request(app).get('/elearning/admin/courses/4/learners'));
+          expect(refused.status).toBe(403);
+          expectBffContract('get', route, refused);
+        });
+      });
+
+      describe('GET /elearning/admin/agents', () => {
+        const route = '/elearning/admin/agents';
+        const agent = (id: number, firstName: string, lastName: string) => ({ id, name: `${firstName} ${lastName}`, first_name: firstName, last_name: lastName });
+
+        test('reads one page of agents, with the names of the accounts', async () => {
+          elearningApi.on('get', ELEARNING.users, { body: { users: [agent(150, 'Alice', 'Martin'), agent(151, 'Jean Pierre', 'Durand')] } });
+
+          const response = await asAdmin(request(app).get('/elearning/admin/agents?limit=2&offset=149'));
+
+          expect(response.status).toBe(200);
+          expectBffContract('get', route, response);
+          expect(response.body).toEqual({
+            agents: [
+              { userId: '150', name: 'Alice Martin', firstName: 'Alice', lastName: 'Martin' },
+              { userId: '151', name: 'Jean Pierre Durand', firstName: 'Jean Pierre', lastName: 'Durand' },
+            ],
+            limit: 2,
+            offset: 149,
+            nextOffset: 151,
+          });
+          expect(elearningApi.calls(ELEARNING.users, 'get')[0].url.search).toBe('?limit=2&offset=149');
+        });
+
+        test('ends the list on a short page', async () => {
+          elearningApi.on('get', ELEARNING.users, { body: { users: [agent(441, 'Agent', '441')] } });
+
+          const response = await asAdmin(request(app).get('/elearning/admin/agents?offset=440'));
+
+          expect(response.status).toBe(200);
+          expect(response.body).toMatchObject({ limit: 50, offset: 440, nextOffset: null });
+        });
+
+        test('hands the search and the excluded course to the E-learning API, in one call', async () => {
+          elearningApi.on('get', ELEARNING.users, { body: { users: [agent(150, 'Alice', 'Martin')] } });
+
+          const response = await asAdmin(request(app).get('/elearning/admin/agents?search=%20martin%20&limit=10&excludeCourseId=7'));
+
+          expect(response.status).toBe(200);
+          expectBffContract('get', route, response);
+          expect(response.body).toMatchObject({ agents: [{ userId: '150' }], nextOffset: null });
+          const calls = elearningApi.calls(ELEARNING.users, 'get');
+          expect(calls).toHaveLength(1);
+          expect(calls[0].url.pathname + calls[0].url.search)
+            .toBe(elearningApiUrls.getGetUsersUrl({ limit: 10, offset: 0, search: 'martin', exclude_formation_id: 7 }));
+        });
+
+        test('answers 502 to an agent without names', async () => {
+          captureLogs();
+          elearningApi.on('get', ELEARNING.users, { body: { users: [{ id: 2, name: 'Perf Tester' }] }, outOfContract: true });
+
+          const response = await asAdmin(request(app).get('/elearning/admin/agents'));
+
+          expect(response.status).toBe(502);
+          expectBffContract('get', route, response);
+        });
+
+        test.each(['limit=0', 'limit=201', 'offset=-1', 'search=', `search=${'a'.repeat(101)}`, 'excludeCourseId=0', 'excludeCourseId=abc'])('refuses %s with a 400', async (query) => {
+          const response = await asAdmin(request(app).get(`/elearning/admin/agents?${query}`));
+
+          expect(response.status).toBe(400);
+          expectBffContract('get', route, response);
+          expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+        });
+
+        test('forbids non-administrators, and relays an E-learning 403', async () => {
+          const forbidden = await asAgent(request(app).get('/elearning/admin/agents'));
+          expect(forbidden.status).toBe(403);
+          expectBffContract('get', route, forbidden);
+          expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+
+          elearningApi.on('get', ELEARNING.users, elearningError(403));
+          const refused = await asAdmin(request(app).get('/elearning/admin/agents'));
+          expect(refused.status).toBe(403);
+          expectBffContract('get', route, refused);
+        });
+      });
+
+      describe('POST /elearning/admin/courses/{courseId}/learners', () => {
+        const route = '/elearning/admin/courses/{courseId}/learners';
+
+        test('enrols the new agents, reports those enrolled already and the failures, each agent once', async () => {
+          captureLogs();
+          elearningApi.on('get', ELEARNING.adminFormation, { body: { modules: [] } });
+          elearningApi.on('get', ELEARNING.userFormations, ({ pathParams }) => {
+            if (pathParams.userId === '5') return elearningError(500);
+            return { body: { formations: pathParams.userId === '2' ? [enrolment(7, 'InProgress')] : [enrolment(4, 'Completed')] } };
+          });
+          elearningApi.on('post', ELEARNING.adminFormation, ({ body }) =>
+            ((body as { user_id: number }).user_id === 999 ? elearningError(404) : { status: 200 }));
+
+          const response = await asAdmin(request(app).post('/elearning/admin/courses/7/learners')).send({ userIds: ['3', '2', '999', '3', '5'] });
+
+          expect(response.status).toBe(200);
+          expectBffContract('post', route, response);
+          expect(response.body).toEqual({ courseId: '7', enrolled: ['3'], alreadyEnrolled: ['2'], failed: ['999', '5'] });
+          const registrations = elearningApi.calls(ELEARNING.adminFormation, 'post');
+          expect(registrations.map((call) => call.body)).toEqual(expect.arrayContaining([{ user_id: 3 }, { user_id: 999 }]));
+          expect(registrations).toHaveLength(2);
+          expect(registrations[0].url.pathname).toBe(elearningApiUrls.getRegisterUserToFormationUrl(7));
+        });
+
+        test('enrols 5 agents at a time at most', async () => {
+          elearningApi.on('get', ELEARNING.adminFormation, { body: { modules: [] } });
+          elearningApi.on('get', ELEARNING.userFormations, { body: { formations: [] }, delayMs: 20 });
+          elearningApi.on('post', ELEARNING.adminFormation, { status: 200, delayMs: 20 });
+          const userIds = Array.from({ length: 12 }, (_, index) => String(index + 10));
+
+          const response = await asAdmin(request(app).post('/elearning/admin/courses/7/learners')).send({ userIds });
+
+          expect(response.status).toBe(200);
+          expect(response.body.enrolled).toEqual(userIds);
+          expect(elearningApi.maxInFlight).toBeGreaterThan(1);
+          expect(elearningApi.maxInFlight).toBeLessThanOrEqual(5);
+        });
+
+        test('answers 404 for an unknown course without enrolling anybody', async () => {
+          elearningApi.on('get', ELEARNING.adminFormation, elearningError(404));
+
+          const response = await asAdmin(request(app).post('/elearning/admin/courses/404/learners')).send({ userIds: ['2'] });
+
+          expect(response.status).toBe(404);
+          expectBffContract('post', route, response);
+          expect(elearningApi.calls(ELEARNING.adminFormation, 'post')).toHaveLength(0);
+        });
+
+        test('answers 401 when the E-learning API refuses the session', async () => {
+          elearningApi.on('get', ELEARNING.adminFormation, { body: { modules: [] } });
+          elearningApi.on('get', ELEARNING.userFormations, { body: { formations: [] } });
+          elearningApi.on('post', ELEARNING.adminFormation, elearningError(401));
+
+          const response = await asAdmin(request(app).post('/elearning/admin/courses/7/learners')).send({ userIds: ['2', '3'] });
+
+          expect(response.status).toBe(401);
+          expectBffContract('post', route, response);
+        });
+
+        test.each<[string, unknown, string]>([
+          ['no agent', { userIds: [] }, 'body.userIds'],
+          ['more than 200 agents', { userIds: Array.from({ length: 201 }, (_, index) => String(index + 1)) }, 'body.userIds'],
+          ['a non-numeric id', { userIds: ['alice'] }, 'body.userIds.0'],
+          ['no body', undefined, 'body'],
+        ])('refuses %s with a 400 before any call', async (_label, body, path) => {
+          const call = asAdmin(request(app).post('/elearning/admin/courses/7/learners'));
+          const response = await (body === undefined ? call : call.send(body as object));
+
+          expect(response.status).toBe(400);
+          expectBffContract('post', route, response);
+          expect(response.body.error.details[0].path).toBe(path);
+          expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+        });
+
+        test('forbids non-administrators without any call', async () => {
+          const response = await asAgent(request(app).post('/elearning/admin/courses/7/learners')).send({ userIds: ['2'] });
+
+          expect(response.status).toBe(403);
+          expectBffContract('post', route, response);
+          expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+        });
+      });
+
+      describe('DELETE /elearning/admin/courses/{courseId}/learners/{userId}', () => {
+        const route = '/elearning/admin/courses/{courseId}/learners/{userId}';
+
+        test('unenrols the agent', async () => {
+          elearningApi.on('delete', ELEARNING.userFormation, { status: 204 });
+
+          const response = await asAdmin(request(app).delete('/elearning/admin/courses/7/learners/2'));
+
+          expect(response.status).toBe(200);
+          expectBffContract('delete', route, response);
+          expect(response.body).toEqual({ removed: true, courseId: '7', userId: '2' });
+          expect(elearningApi.calls(ELEARNING.userFormation, 'delete')[0].url.pathname).toBe(elearningApiUrls.getUnsubFormationUrl(2, 7));
+        });
+
+        test.each([[404, 404, 'Enrolment not found.'], [403, 403, 'This action is restricted to administrators.']])(
+          'maps an E-learning %i to %i',
+          async (upstream, status, message) => {
+            elearningApi.on('delete', ELEARNING.userFormation, elearningError(upstream));
+
+            const response = await asAdmin(request(app).delete('/elearning/admin/courses/7/learners/2'));
+
+            expect(response.status).toBe(status);
+            expectBffContract('delete', route, response);
+            expect(response.body.error.message).toBe(message);
+          },
+        );
+
+        test('refuses invalid ids and non-administrators before any call', async () => {
+          const invalid = await asAdmin(request(app).delete('/elearning/admin/courses/7/learners/0'));
+          expect(invalid.status).toBe(400);
+          expectBffContract('delete', route, invalid);
+          expect(invalid.body.error.details[0].path).toBe('params.userId');
+
+          const agent = await asAgent(request(app).delete('/elearning/admin/courses/7/learners/2'));
+          expect(agent.status).toBe(403);
+          expectBffContract('delete', route, agent);
+          expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+        });
       });
     });
 

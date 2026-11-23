@@ -1,5 +1,9 @@
-import { asCaller, HttpError, upstreamError, upstreamStatus, withRetry } from '@mairie360/bffs-lib';
-import type { CatalogFormation, CourseBody, GetStatsResultView, SummaryResultView } from '@mairie360/elearning-api-openapi/model';
+import {
+  asCaller, DEFAULT_CONCURRENCY, HttpError, mapWithConcurrency, upstreamError, upstreamStatus, withRetry,
+} from '@mairie360/bffs-lib';
+import type {
+  CatalogFormation, CourseBody, GetFormationLearnersResultView, GetStatsResultView, SummaryResultView, User, UsersFormation,
+} from '@mairie360/elearning-api-openapi/model';
 import type { Request } from 'express';
 import { elearningClient } from '../../clients/elearningClient';
 import { UPSTREAM_TIMEOUT_MS } from '../../clients/upstream';
@@ -281,4 +285,114 @@ export async function loadStats(req: Caller): Promise<GetStatsResultView> {
   if (!isRecord(body)) throw invalidAnswer();
   for (const key of ['by_service', 'by_formation', 'late_agents']) arrayOf(body, key);
   return body as unknown as GetStatsResultView;
+}
+
+// --- Enrolment (MAIR-817): only an administrator enrols agents in a course ---
+
+export type AgentPage = { agents: User[]; nextOffset: number | null };
+
+function isAgent(user: unknown): user is User {
+  return isRecord(user) && typeof user.id === 'number' && typeof user.name === 'string'
+    && typeof user.first_name === 'string' && typeof user.last_name === 'string';
+}
+
+/**
+ * Agents an administrator can enrol, in id order (`GET /api/v1/admin/users/`): the E-learning API searches the names
+ * and e-mails (`search`) and leaves out the learners of a course (`exclude_formation_id`). One upstream call.
+ */
+export async function loadAgents(
+  req: Caller,
+  { search, limit, offset, excludeCourseId }: { search?: string; limit: number; offset: number; excludeCourseId?: string },
+): Promise<AgentPage> {
+  const params = {
+    limit,
+    offset,
+    ...(search ? { search } : {}),
+    ...(excludeCourseId ? { exclude_formation_id: toNumber(excludeCourseId) } : {}),
+  };
+  const body = await call(() => elearningClient.getUsers(params, options(req)), { retry: true, statuses: { 403: forbidden } });
+  const agents = arrayOf<unknown>(body, 'users');
+  if (!agents.every(isAgent)) throw invalidAnswer();
+  return { agents, nextOffset: agents.length < limit ? null : offset + agents.length };
+}
+
+/** The enrolment of `userId` in the course, `undefined` when not enrolled (`GET /api/v1/admin/users/{user_id}/`). */
+async function enrolmentOf(req: Caller, userId: number, courseId: string): Promise<UsersFormation | undefined> {
+  const body = await call(() => elearningClient.getUserFormations(userId, undefined, options(req)), { retry: true, statuses: { 403: forbidden } });
+  const formations = arrayOf<unknown>(body, 'formations');
+  const found = formations.find((formation) => isRecord(formation) && String(formation.id) === courseId);
+  if (found !== undefined && typeof (found as UsersFormation).progress_status !== 'string') throw invalidAnswer();
+  return found as UsersFormation | undefined;
+}
+
+/** 404 unless the formation exists (`GET /api/v1/admin/formations/{formation_id}/`, its structure only). */
+async function ensureCourse(req: Caller, courseId: string): Promise<void> {
+  await call(() => elearningClient.getFormationById(toNumber(courseId), undefined, options(req)), {
+    retry: true,
+    statuses: { 403: forbidden },
+    notFound: () => courseNotFound(courseId),
+  });
+}
+
+/**
+ * One page of the learners of the course, by last name, first name and id, with their progress
+ * (`GET /api/v1/admin/formations/{formation_id}/learners/`, one call). 404 when the course does not exist.
+ */
+export async function loadLearners(req: Caller, courseId: string, limit: number, offset: number): Promise<GetFormationLearnersResultView> {
+  const body = await call(() => elearningClient.getFormationLearners(toNumber(courseId), { limit, offset }, options(req)), {
+    retry: true,
+    statuses: { 403: forbidden },
+    notFound: () => courseNotFound(courseId),
+  });
+  if (!isRecord(body) || typeof body.total !== 'number') throw invalidAnswer();
+  const learners = arrayOf<unknown>(body, 'learners');
+  if (!learners.every((learner) => isRecord(learner) && typeof learner.user_id === 'number'
+    && typeof learner.first_name === 'string' && typeof learner.last_name === 'string' && typeof learner.progress === 'number')) {
+    throw invalidAnswer();
+  }
+  return body as unknown as GetFormationLearnersResultView;
+}
+
+export type EnrolmentOutcome = { enrolled: string[]; alreadyEnrolled: string[]; failed: string[] };
+
+/**
+ * Enrols each agent in the course (`POST /api/v1/admin/formations/{formation_id}/`, idempotent upstream), 5 at a time.
+ * The API answers the same 200 to an agent who was enrolled already, so each enrolment is read first: at most
+ * 1 + 2 x 200 calls. 404 when the course does not exist; per agent, an unknown or archived account (upstream 404) or
+ * any other failure of that agent's calls lands in `failed`. A refused session (401) or administrator (403) fails the
+ * whole request once every agent was handled.
+ */
+export async function enrolLearners(req: Caller, courseId: string, userIds: string[]): Promise<EnrolmentOutcome> {
+  await ensureCourse(req, courseId);
+  const formationId = toNumber(courseId);
+  const outcome: EnrolmentOutcome = { enrolled: [], alreadyEnrolled: [], failed: [] };
+  const results = await mapWithConcurrency(userIds, DEFAULT_CONCURRENCY, async (userId) => {
+    try {
+      if (await enrolmentOf(req, toNumber(userId), courseId)) return 'alreadyEnrolled' as const;
+      // POST: not retried.
+      await call(() => elearningClient.registerUserToFormation(formationId, { user_id: toNumber(userId) }, options(req)), {
+        statuses: { 403: forbidden, 404: () => new HttpError(404, 'Unknown agent or course.') },
+      });
+      return 'enrolled' as const;
+    } catch (error) {
+      if (error instanceof HttpError && (error.status === 401 || error.status === 403)) return error;
+      return 'failed' as const;
+    }
+  });
+  const fatal = results.find((result): result is HttpError => result instanceof HttpError);
+  if (fatal) throw fatal;
+  results.forEach((result, index) => outcome[result as keyof EnrolmentOutcome].push(userIds[index]));
+  return outcome;
+}
+
+/** Unenrols an agent (`DELETE /api/v1/admin/users/{user_id}/{formation_id}/`): 404 when not enrolled or unknown. */
+export async function removeLearner(req: Caller, courseId: string, userId: string): Promise<void> {
+  await call(() => elearningClient.unsubFormation(toNumber(userId), toNumber(courseId), options(req)), {
+    statuses: {
+      403: forbidden,
+      404: () => new HttpError(404, 'Enrolment not found.', {
+        details: [{ path: 'params.userId', message: `Agent ${userId} is not enrolled in course ${courseId}.` } satisfies ErrorDetail],
+      }),
+    },
+  });
 }

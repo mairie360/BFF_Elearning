@@ -14,6 +14,10 @@ Les chemins sont relatifs au BFF. Les proxies web conservent méthode, paramètr
 | PATCH | `/elearning/admin/courses/{courseId}` | 200 `AdminCourseResponse` : remplacement complet (lignes à identifiant décimal gardées) ; 404 formation inconnue |
 | DELETE | `/elearning/admin/courses/{courseId}` | 200 `AdminCourseDeleteResponse` `{ deleted, courseId }` ; 404 formation inconnue |
 | POST | `/elearning/admin/courses/{courseId}/reminders` | 200 `SendRemindersResponse` `{ sent }` (corps `{ userIds? }`) ; 404 inconnue, 409 non obligatoire |
+| GET | `/elearning/admin/agents?search=&limit=&offset=&excludeCourseId=` | 200 `AdminAgentsResponse` `{ agents: [{ userId, name, firstName, lastName }], limit, offset, nextOffset }`: active agents to enrol (MAIR-817); `search` on the name or e-mail, `excludeCourseId` leaves out the learners of a course |
+| GET | `/elearning/admin/courses/{courseId}/learners?limit=&offset=` | 200 `CourseLearnersResponse` `{ courseId, learners: [{ userId, name, firstName, lastName, status, progress, startedAt, completedAt, lastActivityAt, lastReminderAt }], total, limit, offset, nextOffset }`: the active learners by name; 404 unknown course |
+| POST | `/elearning/admin/courses/{courseId}/learners` | 200 `EnrolLearnersResponse` `{ courseId, enrolled, alreadyEnrolled, failed }` (body `{ userIds }`, 1-200); 404 unknown course |
+| DELETE | `/elearning/admin/courses/{courseId}/learners/{userId}` | 200 `RemoveLearnerResponse` `{ removed, courseId, userId }`; 404 not enrolled |
 | GET | `/elearning/admin/stats` | 200 `AdminStatsResponse` : indicateurs de l’instance |
 | GET | `/elearning/catalog` | 200 Formations de l’appelant, lues dans l’API E-learning (champs V2 : catégorie, niveau, obligatoire, échéance, source, formateur, durées, notes, dates) |
 | GET | `/elearning/certificates?year=` | 200 `application/pdf` attestations de l’année ; 404 aucune |

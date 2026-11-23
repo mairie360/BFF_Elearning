@@ -4,6 +4,8 @@ import './routes/health';
 import './routes/check_apis';
 import './routes/Elearning/admin_courses';
 import './routes/Elearning/admin_stats';
+import './routes/Elearning/admin_learners';
+import './routes/Elearning/admin_agents';
 import './routes/Elearning/certificate';
 import './routes/Elearning/certificates';
 import './routes/Elearning/content_file';

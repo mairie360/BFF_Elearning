@@ -18,7 +18,7 @@ Domaine fonctionnel: Formation en ligne.
 - Informations de formation de l’E-learning V2 : catégorie, niveau, caractère obligatoire et échéance, origine (mairie ou plateforme), formateur, durées, nombre d’inscrits et notes.
 - Noter une formation terminée, télécharger son attestation PDF ou les attestations d’une année, et suivre le temps de formation de l’année par rapport à l’objectif de l’instance.
 - Ouvrir un fichier stocké (vidéo, PDF, document, audio) par une URL signée de courte durée.
-- Les administrateurs créent, modifient et suppriment des formations (liens, quiz et autres contenus sans envoi de fichier), relancent les agents en retard sur une formation obligatoire et consultent les indicateurs de l’instance (participation, complétion, par service, par formation, agents en retard).
+- Les administrateurs créent, modifient et suppriment des formations (liens, quiz et autres contenus sans envoi de fichier), inscrivent des agents à une formation et les désinscrivent (MAIR-817 : seul un administrateur inscrit), suivent la progression de chaque apprenant, relancent les agents en retard sur une formation obligatoire et consultent les indicateurs de l’instance (participation, complétion, par service, par formation, agents en retard).
 
 ## Parcours type
 
@@ -38,7 +38,7 @@ Le BFF ne conserve aucun état. Formations, chapitres (modules), contenus (pièc
 
 ## Périmètre et limites
 
-Seules les formations auxquelles l’utilisateur est inscrit sont listées, et l’inscription est faite par un administrateur dans l’API E-learning. La progression est suivie par chapitre, pas par contenu. Un nouveau contenu ne peut pas encore être un fichier envoyé : les formations se composent de liens, de quiz et d’autres contenus, les fichiers stockés sont conservés tels quels.
+Seules les formations auxquelles l’utilisateur est inscrit sont listées, et l’inscription est faite par un administrateur, depuis l’administration des formations (`/elearning/admin/courses/{courseId}/learners`). La progression est suivie par chapitre, pas par contenu. Un nouveau contenu ne peut pas encore être un fichier envoyé : les formations se composent de liens, de quiz et d’autres contenus, les fichiers stockés sont conservés tels quels.
 
 ## Pour développer ou exploiter ce module
 
