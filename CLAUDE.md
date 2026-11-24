@@ -157,9 +157,9 @@ before opening the PR; skip one of the three only when that layer cannot observe
 
 ## CI / Docker
 
-- `contracts.yml`: Node 24.22.1, `npm ci`, `npm run contracts:check`, `npm test -- --runInBand`.
-- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v5.11.1` (`node_version: "24.22.1"`).
-- Everything targets **Node 24.22.1**; `Dockerfile` and `development.Dockerfile` pin `node:24.22.1-alpine@sha256:06d7adf3…` by digest; the production image runs `CMD ["node", "dist/index.js"]` with a 180 MB heap cap.
+- `contracts.yml`: Node 26.13.1, `npm ci`, `npm run contracts:check`, `npm test -- --runInBand`.
+- `cicd.yml`: delegates to the reusable `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v5.14.3` (`node_version: "26.13.1"`).
+- Everything targets **Node 26.13.1**; `Dockerfile` and `development.Dockerfile` pin `node:26.13.1-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5…` by digest; the production image runs `CMD ["node", "dist/index.js"]` with a 180 MB heap cap.
 - `docker-compose.yml` is the local dev stack (redis + `elearning-api` + this BFF via `development.Dockerfile`, with `develop.watch` sync on `./src`). GitHub Packages secrets are passed as build secrets (`npmrc`, `node_auth_token`).
 
 ### ZAP OpenAPI coverage gate
