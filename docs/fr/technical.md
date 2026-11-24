@@ -26,7 +26,7 @@ Les erreurs de l’API E-learning ne sont jamais relayées : 401 reste 401, une 
 
 ## Installation et lancement local
 
-Utiliser Node.js 24.22.1 pour reproduire les jobs de CI et npm avec le fichier de verrouillage versionné. Les versions des autres jobs et de Docker sont précisées plus bas.
+Utiliser Node.js 26.13.1 pour reproduire les jobs de CI et npm avec le fichier de verrouillage versionné. Les versions des autres jobs et de Docker sont précisées plus bas.
 
 Les dépendances privées `@mairie360/*` nécessitent un accès GitHub Packages. Configurer `NODE_AUTH_TOKEN` dans l’environnement avec un jeton autorisé à lire ces packages, conformément à `.npmrc`. Ne pas enregistrer la valeur dans Git.
 
@@ -46,9 +46,7 @@ ELEARNING_API_PORT=3006
 # avec elle les jetons de session que Core signe et refuse de démarrer sans elle. Coller la clé publique du Core
 # utilisé.
 JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n<base64 de la clé publique de Core>\n-----END PUBLIC KEY-----"
-# Transition HS256 uniquement : l’ancien secret partagé permet aussi au BFF de démarrer et accepte les jetons
-# HS256. À retirer une fois JWT_PUBLIC_KEY déployée.
-# JWT_SECRET=
+# JWT_SECRET est ignoré : bffs-lib >= 3 refuse les jetons HS256 (MAIR-680).
 ```
 
 ```bash
@@ -131,11 +129,11 @@ Le générateur de types est fixé à `openapi-typescript@7.10.1` dans `scripts/
 
 ## CI/CD et exécution Docker
 
-Le job `contracts.yml` utilise Node.js 24.22.1, `actions/checkout@v7` et `actions/setup-node@v7`. Il s’exécute sur push, pull request et lancement manuel; il installe avec `npm ci`, contrôle les contrats et lance les tests dédiés.
+Le job `contracts.yml` utilise Node.js 26.13.1, `actions/checkout@v7` et `actions/setup-node@v7`. Il s’exécute sur push, pull request et lancement manuel; il installe avec `npm ci`, contrôle les contrats et lance les tests dédiés.
 
-`cicd.yml` appelle `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v5.11.1`, avec `cicd_version: v5.11.1` et `node_version: "24.22.1"`. Les étapes réutilisables et les environnements GitHub déterminent les contrôles, publications et déploiements effectifs. Un push sur `main` s’arrête après `release-dev` ; staging et prod passent par les workflows manuels `promote-staging.yml` / `promote-prod.yml` (MAIR-494).
+`cicd.yml` appelle `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v5.14.3`, avec `cicd_version: v5.14.3` et `node_version: "26.13.1"`. Les étapes réutilisables et les environnements GitHub déterminent les contrôles, publications et déploiements effectifs. Un push sur `main` s’arrête après `release-dev` ; staging et prod passent par les workflows manuels `promote-staging.yml` / `promote-prod.yml` (MAIR-494).
 
-`Dockerfile` et `development.Dockerfile` utilisent `node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53` (épinglée par digest, le même Node.js 24.22.1 que les jobs de CI) ; l’image de production lance `["node", "dist/index.js"]` et l’image de développement lance `["npm", "run", "start"]`.
+`Dockerfile` et `development.Dockerfile` utilisent `node:26.13.1-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5` (épinglée par digest, le même Node.js 26.13.1 que les jobs de CI) ; l’image de production lance `["node", "dist/index.js"]` et l’image de développement lance `["npm", "run", "start"]`.
 
 `integration_test.sh` lance la stack de `docker-compose-integration.yml`: les images publiées de Core API et de l’E-learning API, la base avec ses migrations et `init-test.sql`, Redis, l’image du BFF sous test et un service `newman` qui rejoue `tests/postman/collection.json` (environnement `tests/postman/environment.json`) contre le BFF avec `--bail`. Son code de sortie est celui de newman. La collection contient des vérifications de fonctionnement (le BFF démarre, `/health`, `/check_apis`, `/openapi.json`, la session résolue auprès de Core API pour l’Admin et l’agent seedés) et le parcours métier d’inscription et de progression d’une formation sur la formation seedée `4` (administration des formations refusée à un utilisateur simple, et le parcours de l’administrateur sur sa propre formation : création d’une formation obligatoire, envoi de fichier refusé, modification, relances, indicateurs, suppression ; l’inscription (MAIR-817) sur sa propre formation : agents listés et cherchés, l’agent seedé inscrit avec un compte inconnu qui échoue, inscrit à nouveau, listé comme apprenant, retrouvant la formation dans son catalogue, désinscrit, 404 la seconde fois, un utilisateur simple refusé à chaque étape ; le catalogue et ses filtres, le démarrage, notation et attestation refusées avant la fin, l’URL signée du PDF seedé, la complétion du contenu avec la progression relue, la notation, les attestations et le temps de formation de l’année, le profil en lecture seule : une modification répond 404 et le profil reste inchangé). Les comptes seedés sont incarnés par des JWT EdDSA que `integration_test.sh` signe avec la clé Ed25519 du run, comme Core (paire de clés neuve, `stack_secrets.sh`), avec une contrefaçon sous le `kid` de Core et un jeton HS256, tous deux refusés; l’environnement commité ne contient aucun secret. En CI cette stack est la porte `integration_tests` de la promotion staging: elle bloque la promotion en cas d’échec et publie le rapport junit (`newman-reports/newman.xml`) en résumé de job et en artefact. Le test jest `tests/integration-collection.test.ts` vérifie que chaque opération de `contracts/openapi.json` a une requête dans la collection et que chaque requête vérifie quelque chose.
 

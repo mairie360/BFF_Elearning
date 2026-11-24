@@ -26,7 +26,7 @@ Errors of the E-learning API are never relayed: 401 stays 401, a course the call
 
 ## Installation and local startup
 
-Use Node.js 24.22.1 to reproduce the CI jobs and npm with the committed lockfile. Other job and Docker versions are detailed below.
+Use Node.js 26.13.1 to reproduce the CI jobs and npm with the committed lockfile. Other job and Docker versions are detailed below.
 
 Private `@mairie360/*` dependencies require GitHub Packages access. Set `NODE_AUTH_TOKEN` in the environment to a token allowed to read these packages, as configured in `.npmrc`. Do not commit its value.
 
@@ -45,9 +45,7 @@ ELEARNING_API_PORT=3006
 # Core's Ed25519 public key (PEM, `\n`-escaped line breaks accepted), MAIR-680: the BFF verifies the session
 # tokens Core signs with it and refuses to start without it. Paste the public key of the Core you run against.
 JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n<base64 of Core's public key>\n-----END PUBLIC KEY-----"
-# HS256 transition only: the former shared secret also lets the BFF start and accepts HS256 tokens. Remove it
-# once JWT_PUBLIC_KEY is deployed.
-# JWT_SECRET=
+# JWT_SECRET is ignored: bffs-lib >= 3 refuses HS256 tokens (MAIR-680).
 ```
 
 ```bash
@@ -130,11 +128,11 @@ The type generator is pinned to `openapi-typescript@7.10.1` in `scripts/contract
 
 ## CI/CD and Docker execution
 
-The `contracts.yml` job uses Node.js 24.22.1, `actions/checkout@v7` and `actions/setup-node@v7`. It runs on pushes, pull requests and manual dispatch; it installs with `npm ci`, checks contracts and runs the associated tests.
+The `contracts.yml` job uses Node.js 26.13.1, `actions/checkout@v7` and `actions/setup-node@v7`. It runs on pushes, pull requests and manual dispatch; it installs with `npm ci`, checks contracts and runs the associated tests.
 
-`cicd.yml` calls `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v5.11.1`, with `cicd_version: v5.11.1` and `node_version: "24.22.1"`. Reusable steps and GitHub environments determine actual checks, publications and deployments. A push to `main` stops after `release-dev`; staging and prod go through the manual `promote-staging.yml` / `promote-prod.yml` workflows (MAIR-494).
+`cicd.yml` calls `mairie360/CICD/.github/workflows/BFFs-cicd.yml@v5.14.3`, with `cicd_version: v5.14.3` and `node_version: "26.13.1"`. Reusable steps and GitHub environments determine actual checks, publications and deployments. A push to `main` stops after `release-dev`; staging and prod go through the manual `promote-staging.yml` / `promote-prod.yml` workflows (MAIR-494).
 
-`Dockerfile` and `development.Dockerfile` use `node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53` (pinned by digest, the same Node.js 24.22.1 as the CI jobs); the production image runs `["node", "dist/index.js"]`, and the development image runs `["npm", "run", "start"]`.
+`Dockerfile` and `development.Dockerfile` use `node:26.13.1-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5` (pinned by digest, the same Node.js 26.13.1 as the CI jobs); the production image runs `["node", "dist/index.js"]`, and the development image runs `["npm", "run", "start"]`.
 
 `integration_test.sh` runs the stack of `docker-compose-integration.yml`: the published Core API and E-learning API images, the database with its migrations and `init-test.sql`, Redis, the BFF image under test and a `newman` service that replays `tests/postman/collection.json` (environment `tests/postman/environment.json`) against the BFF with `--bail`. Its exit code is the exit code of newman. The collection holds working checks (the BFF starts, `/health`, `/check_apis`, `/openapi.json`, the session resolved against Core API for the seeded Admin and agent) and the business journey of the enrolment and progression of a course on the seeded formation `4` (course administration refused to a plain user, and the administrator's journey on a course of its own: creation of a mandatory course, refused upload, update, reminders, indicators, deletion; the enrolment (MAIR-817) on a course of its own: agents listed and searched, the seeded agent enrolled with an unknown account that fails, enrolled again, listed as a learner, finding the course in its catalogue, unenrolled, 404 the second time, a plain user refused every step; the catalogue and its filters, start, rating and attestation refused before completion, the signed URL of the seeded PDF, completion of the content with the progress read back, rating, attestations and training time of the year, the profile read-only: an edit answers 404 and the profile is unchanged). The seeded accounts are impersonated with EdDSA JWTs that `integration_test.sh` signs with the run's Ed25519 key, like Core (fresh key pair, `stack_secrets.sh`), plus a forgery under Core's `kid` and an HS256 token, both refused; the committed environment holds no secret. In CI this stack is the `integration_tests` gate of the staging promotion: it blocks the promotion on failure and publishes the junit report (`newman-reports/newman.xml`) as job summary and artifact. The jest test `tests/integration-collection.test.ts` checks that every operation of `contracts/openapi.json` has a request in the collection and that every request asserts something.
 
