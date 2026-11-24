@@ -13,7 +13,8 @@ const DEFAULT_PORT = 4006;
 /**
  * Startup check: no upstream defaults to localhost, so a missing or invalid URL is a deployment error, and so is a
  * missing or malformed session key. The session tokens are verified with Core's public key `JWT_PUBLIC_KEY`
- * (MAIR-680, bffs-lib requireSession); `JWT_SECRET` alone is still accepted during the transition (HS256 tokens).
+ * (MAIR-680, bffs-lib requireSession). Since bffs-lib 3 (MAIR-680) HS256 tokens are refused and `JWT_SECRET` is
+ * ignored: it neither lets the BFF start nor authenticates anyone.
  */
 export function assertStartupConfiguration(): void {
   assertConfigured(UPSTREAM_SERVICES);
@@ -25,7 +26,7 @@ export function assertStartupConfiguration(): void {
     throw new Error('Invalid configuration: JWT_PUBLIC_KEY must hold Ed25519 PUBLIC KEY PEM blocks');
   }
   if (keys === undefined) {
-    throw new Error('Missing configuration: JWT_PUBLIC_KEY (or JWT_SECRET during the HS256 transition)');
+    throw new Error('Missing configuration: JWT_PUBLIC_KEY');
   }
 }
 
