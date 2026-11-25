@@ -3543,7 +3543,10 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** @example catalog */
+                        /**
+                         * @description Where the course was opened from: a lowercase tag of 1 to 32 letters, `-` or `_`
+                         * @example catalog
+                         */
                         source?: string;
                     };
                 };
@@ -6406,7 +6409,10 @@ export interface components {
         };
         /** @description Context to start or resume a formation */
         StartCourseBody: {
-            /** @example catalog */
+            /**
+             * @description Where the course was opened from: a lowercase tag of 1 to 32 letters, `-` or `_`
+             * @example catalog
+             */
             source?: string;
         };
         /** @description Response to start or resume a formation */

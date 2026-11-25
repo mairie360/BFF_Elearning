@@ -2865,6 +2865,63 @@
           "response": []
         },
         {
+          "name": "MAIR-1203 A start whose source is not a tag is refused with a 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_agent}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/courses/999999999/start",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "courses",
+                "999999999",
+                "start"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"source\": \"catalog' AND '1'='1\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Error envelope names the source\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error.code).to.eql('BAD_REQUEST');",
+                  "    pm.expect(body.error.details.map((d) => d.path)).to.eql(['body.source']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Starting an unknown course answers 404",
           "request": {
             "method": "POST",
