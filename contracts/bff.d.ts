@@ -3540,17 +3540,7 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /**
-                         * @description Where the course was opened from: a lowercase tag of 1 to 32 letters, `-` or `_`
-                         * @example catalog
-                         */
-                        source?: string;
-                    };
-                };
-            };
+            requestBody?: never;
             responses: {
                 /** @description Course to start or resume */
                 200: {
@@ -6406,14 +6396,6 @@ export interface components {
             };
             /** @description Always `true` */
             submitted: boolean;
-        };
-        /** @description Context to start or resume a formation */
-        StartCourseBody: {
-            /**
-             * @description Where the course was opened from: a lowercase tag of 1 to 32 letters, `-` or `_`
-             * @example catalog
-             */
-            source?: string;
         };
         /** @description Response to start or resume a formation */
         CourseActionResponse: {

@@ -2865,7 +2865,7 @@
           "response": []
         },
         {
-          "name": "MAIR-1203 A start whose source is not a tag is refused with a 400",
+          "name": "MAIR-1203 A start ignores its body: an unknown course still answers 404",
           "request": {
             "method": "POST",
             "header": [
@@ -2894,7 +2894,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\"source\": \"catalog' AND '1'='1\"}",
+              "raw": "{\"source\": \"../../../../etc/passwd\"}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2908,13 +2908,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status is 400\", function () {",
-                  "    pm.response.to.have.status(400);",
+                  "pm.test(\"Status is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
                   "});",
-                  "pm.test(\"Error envelope names the source\", function () {",
+                  "pm.test(\"Error envelope of the unknown course, not of the body\", function () {",
                   "    const body = pm.response.json();",
-                  "    pm.expect(body.error.code).to.eql('BAD_REQUEST');",
-                  "    pm.expect(body.error.details.map((d) => d.path)).to.eql(['body.source']);",
+                  "    pm.expect(body.error.code).to.eql('NOT_FOUND');",
+                  "    pm.expect(body.error.details.map((d) => d.path)).to.eql(['params.courseId']);",
                   "});"
                 ]
               }

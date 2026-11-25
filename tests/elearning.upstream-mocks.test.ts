@@ -624,23 +624,23 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(missing.body).toEqual({ error: { code: 'NOT_FOUND', message: 'Course not found.', details: [{ path: 'params.courseId', message: 'No course 77.' }] } });
     });
 
-    // MAIR-1203: ZAP's SQL injection rule sent payloads in the free-text `source` and got 200s it could compare.
-    test.each(["catalog' AND '1'='1", 'catalog" OR 1=1 --', 'Catalog', 'a'.repeat(33), '', '<b>'])(
-      'MAIR-1203 POST .../start refuses the source %j with a 400, without any call',
-      async (source) => {
-        const response = await withSession(request(app).post('/elearning/courses/4/start'), 'start-agent').send({ source });
+    // MAIR-1203: ZAP injected SQL and path traversal payloads into the unused free-text `source` of the body and got 200s
+    // it compared. The route takes no body any more: whatever is sent, the answer is the same and nothing is relayed.
+    test.each([{ source: "catalog' AND '1'='1" }, { source: '../../../../etc/passwd' }, { source: 'catalog' }, {}])(
+      'MAIR-1203 POST .../start ignores the body %j',
+      async (body) => {
+        const response = await withSession(request(app).post('/elearning/courses/4/start'), 'start-agent').send(body);
 
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(200);
         expectBffContract('post', '/elearning/courses/{courseId}/start', response);
-        expect(response.body.error.details.map((detail: { path: string }) => detail.path)).toEqual(['body.source']);
-        expect(elearningApi.requests).toHaveLength(0);
+        expect(response.body).toMatchObject({ course: { id: '4' }, nextContentId: '29', redirectUrl: '/courses/4' });
+        expect(elearningApi.requests.every((call) => call.method === 'GET' && !JSON.stringify(call.body ?? '').includes('source'))).toBe(true);
       },
     );
 
-    test.each(['catalog', 'profile', 'my-courses', 'home_page'])('MAIR-1203 POST .../start still accepts the source %s', async (source) => {
-      const response = await withSession(request(app).post('/elearning/courses/4/start'), 'start-agent').send({ source });
-
-      expect(response.status).toBe(200);
+    test('MAIR-1203 the contract of POST .../start declares no body', () => {
+      const contract = JSON.parse(readFileSync(path.join(__dirname, '..', 'contracts', 'openapi.json'), 'utf8'));
+      expect(contract.paths['/elearning/courses/{courseId}/start'].post.requestBody).toBeUndefined();
     });
 
     test.each([

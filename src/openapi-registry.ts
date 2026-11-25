@@ -468,18 +468,6 @@ export const RatingSubmitResponse = z
     description: 'Rating summary after sending',
   });
 
-export const StartCourseBody = z
-  .object({
-    // A context tag (`catalog`, `profile`…), never sent upstream: free text let a scanner's payloads through to a 200.
-    source: z.string().max(32).regex(/^[a-z][a-z_-]*$/, 'Must be a lowercase tag such as `catalog`').optional().openapi({
-      description: 'Where the course was opened from: a lowercase tag of 1 to 32 letters, `-` or `_`',
-      example: 'catalog',
-    }),
-  })
-  .openapi({
-    description: 'Context to start or resume a formation',
-  });
-
 export const CourseActionResponse = z
   .object({
     course: ElearningCourse,
@@ -719,7 +707,6 @@ registry.register('CompleteContentBody', CompleteContentBody);
 registry.register('ContentCompleteResponse', ContentCompleteResponse);
 registry.register('SubmitRatingBody', SubmitRatingBody);
 registry.register('RatingSubmitResponse', RatingSubmitResponse);
-registry.register('StartCourseBody', StartCourseBody);
 registry.register('CourseActionResponse', CourseActionResponse);
 
 // =====================
