@@ -5353,19 +5353,6 @@
         ],
         "description": "Rating summary after sending"
       },
-      "StartCourseBody": {
-        "type": "object",
-        "properties": {
-          "source": {
-            "type": "string",
-            "maxLength": 32,
-            "pattern": "^[a-z][a-z_-]*$",
-            "description": "Where the course was opened from: a lowercase tag of 1 to 32 letters, `-` or `_`",
-            "example": "catalog"
-          }
-        },
-        "description": "Context to start or resume a formation"
-      },
       "CourseActionResponse": {
         "type": "object",
         "properties": {
@@ -11447,26 +11434,6 @@
             "in": "path"
           }
         ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "source": {
-                    "type": "string",
-                    "maxLength": 32,
-                    "pattern": "^[a-z][a-z_-]*$",
-                    "description": "Where the course was opened from: a lowercase tag of 1 to 32 letters, `-` or `_`",
-                    "example": "catalog"
-                  }
-                },
-                "description": "Context to start or resume a formation"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Course to start or resume",

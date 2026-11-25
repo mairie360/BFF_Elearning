@@ -6,7 +6,6 @@ import {
   CourseIdParams,
   registry,
   sessionErrorResponses,
-  StartCourseBody,
 } from '../../openapi-registry';
 import { nextContentId } from './elearning_helpers';
 import { loadCourse } from './elearning_upstream';
@@ -22,14 +21,6 @@ registry.registerPath({
     'Returns the course with its progress, the next content to open and the course URL. Nothing is written: the E-learning API records the start of a course when its first chapter is completed.',
   request: {
     params: CourseIdParams,
-    body: {
-      required: false,
-      content: {
-        'application/json': {
-          schema: StartCourseBody,
-        },
-      },
-    },
   },
   responses: {
     200: {
@@ -70,7 +61,7 @@ registry.registerPath({
 
 router.post('/:courseId/start', async (req: Request, res: Response) => {
   const { courseId } = parseRequest(CourseIdParams, req.params, 'params');
-  parseRequest(StartCourseBody, req.body ?? {}, 'body');
+  // No body: the former free-text `source` was never used, and only gave a scanner a parameter to inject into.
 
   // No profile read (MAIR-525): `requireSession` verified the token and the E-learning API checks the session again.
   const course = await loadCourse(req, courseId);
