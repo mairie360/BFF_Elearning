@@ -27,13 +27,13 @@ steps:
   - name: search the catalog with a refused status (deliberate error, query string)
     request: {method: GET, path: "/elearning/catalog?search={{marker.email}}&status={{marker.first_name}}", headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}}
     expect: [400]
-  - name: create a course naming the marker (not supported upstream, deliberate error)
+  - name: create a course naming the marker
     request:
       method: POST
       path: /elearning/admin/courses
       headers: {Authorization: "Bearer {{env.ADMIN_JWT}}"}
       json: {id: "gdpr-marker", title: "Course of {{marker.last_name}}", description: "Ask {{marker.first_name}} at {{marker.email}}", instructor: "{{marker.first_name}} {{marker.last_name}}"}
-    expect: [501]
+    expect: [201]
   - name: create a course with a refused body (deliberate error)
     request:
       method: POST
