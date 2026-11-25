@@ -1496,6 +1496,15 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
           expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
         });
 
+        // MAIR-1203: ZAP sent a search holding a NUL byte; the API refused it (400) and the BFF answered 502.
+        test.each(['%00', 'mar%00tin', '%27%22%00%3CscrIpt%3E', 'a%1Fb', 'a%7Fb'])('MAIR-1203 refuses the control characters of search=%s with a 400, without any call', async (search) => {
+          const response = await asAdmin(request(app).get(`/elearning/admin/agents?search=${search}`));
+
+          expect(response.status).toBe(400);
+          expectBffContract('get', route, response);
+          expect(mocks.flatMap((mock) => mock.requests)).toHaveLength(0);
+        });
+
         test('forbids non-administrators, and relays an E-learning 403', async () => {
           const forbidden = await asAgent(request(app).get('/elearning/admin/agents'));
           expect(forbidden.status).toBe(403);

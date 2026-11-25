@@ -7,3 +7,4 @@
 10112	IGNORE	Session Management Response Identified
 90005	IGNORE	Sec-Fetch-* Headers Not Present (API, non applicable)
 100001	OUTOFSCOPE	.*/docs/?.*
+100001	OUTOFSCOPE	.*/elearning/(certificates|courses/[0-9]+/certificate)(\?.*)?$

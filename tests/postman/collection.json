@@ -1602,6 +1602,54 @@
           "response": []
         },
         {
+          "name": "MAIR-1203 A search holding a NUL byte is refused with a 400, not a 502",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_admin}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/elearning/admin/agents?search=mar%00tin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "elearning",
+                "admin",
+                "agents"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "mar%00tin"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Error envelope names the search\", function () {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.error.code).to.eql('BAD_REQUEST');",
+                  "    pm.expect(body.error.details.map((d) => d.path)).to.include('query.search');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "List the agents",
           "request": {
             "method": "GET",

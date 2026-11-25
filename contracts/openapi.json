@@ -3851,7 +3851,8 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 100,
-            "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).",
+            "pattern": "^[^\\u0000-\\u001f\\u007f]*$",
+            "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters, no control character).",
             "example": "martin"
           },
           "limit": {
@@ -8902,11 +8903,12 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 100,
-              "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).",
+              "pattern": "^[^\\u0000-\\u001f\\u007f]*$",
+              "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters, no control character).",
               "example": "martin"
             },
             "required": false,
-            "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).",
+            "description": "Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters, no control character).",
             "name": "search",
             "in": "query"
           },
