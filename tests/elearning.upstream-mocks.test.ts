@@ -624,6 +624,25 @@ describe('BFF E-learning with contract-driven upstream mocks', () => {
       expect(missing.body).toEqual({ error: { code: 'NOT_FOUND', message: 'Course not found.', details: [{ path: 'params.courseId', message: 'No course 77.' }] } });
     });
 
+    // MAIR-1203: ZAP's SQL injection rule sent payloads in the free-text `source` and got 200s it could compare.
+    test.each(["catalog' AND '1'='1", 'catalog" OR 1=1 --', 'Catalog', 'a'.repeat(33), '', '<b>'])(
+      'MAIR-1203 POST .../start refuses the source %j with a 400, without any call',
+      async (source) => {
+        const response = await withSession(request(app).post('/elearning/courses/4/start'), 'start-agent').send({ source });
+
+        expect(response.status).toBe(400);
+        expectBffContract('post', '/elearning/courses/{courseId}/start', response);
+        expect(response.body.error.details.map((detail: { path: string }) => detail.path)).toEqual(['body.source']);
+        expect(elearningApi.requests).toHaveLength(0);
+      },
+    );
+
+    test.each(['catalog', 'profile', 'my-courses', 'home_page'])('MAIR-1203 POST .../start still accepts the source %s', async (source) => {
+      const response = await withSession(request(app).post('/elearning/courses/4/start'), 'start-agent').send({ source });
+
+      expect(response.status).toBe(200);
+    });
+
     test.each([
       ['the E-learning API', 500],
       ['the E-learning API', 503],

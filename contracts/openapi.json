@@ -5358,6 +5358,9 @@
         "properties": {
           "source": {
             "type": "string",
+            "maxLength": 32,
+            "pattern": "^[a-z][a-z_-]*$",
+            "description": "Where the course was opened from: a lowercase tag of 1 to 32 letters, `-` or `_`",
             "example": "catalog"
           }
         },
@@ -11453,6 +11456,9 @@
                 "properties": {
                   "source": {
                     "type": "string",
+                    "maxLength": 32,
+                    "pattern": "^[a-z][a-z_-]*$",
+                    "description": "Where the course was opened from: a lowercase tag of 1 to 32 letters, `-` or `_`",
                     "example": "catalog"
                   }
                 },
