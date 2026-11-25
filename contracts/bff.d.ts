@@ -1911,7 +1911,7 @@ export interface paths {
         get: {
             parameters: {
                 query?: {
-                    /** @description Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters). */
+                    /** @description Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters, no control character). */
                     search?: string;
                     /** @description Agents to return, 1 to 200 (default 50) */
                     limit?: number;
@@ -5613,7 +5613,7 @@ export interface components {
         };
         AdminAgentsQuery: {
             /**
-             * @description Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).
+             * @description Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters, no control character).
              * @example martin
              */
             search?: string;

@@ -617,8 +617,10 @@ const agentIdentityShape = {
 export const AgentIdentity = z.object(agentIdentityShape).openapi({ description: 'An active (non-archived) agent of the instance' });
 
 export const AdminAgentsQuery = z.object({
-  search: z.string().trim().min(1).max(100).optional().openapi({
-    description: 'Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters).',
+  // Core refuses a search holding a control character (400), which the BFF answered 502: refused here first.
+  // eslint-disable-next-line no-control-regex
+  search: z.string().trim().min(1).max(100).regex(/^[^\u0000-\u001f\u007f]*$/, 'Must not contain a control character').optional().openapi({
+    description: 'Part of the `first last` name, `last first` name or e-mail of the agent, case ignored (trimmed, 1 to 100 characters, no control character).',
     example: 'martin',
   }),
   limit: z.coerce.number().int().min(1).max(200).default(50).openapi({ description: 'Agents to return, 1 to 200 (default 50)', example: 50 }),

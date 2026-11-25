@@ -181,7 +181,8 @@ const handlers = {
   },
   'PATCH /elearning/admin/courses/{courseId}': ({ request, data }) => {
     const courseId = createCourse(data);
-    check(request({ path: { courseId }, body: courseBody('k6 course, patched'), headers: data.admin }), {
+    // The PATCH body is the course the front edits, its id included (ElearningCourse), unlike the POST body.
+    check(request({ path: { courseId }, body: Object.assign({ id: courseId }, courseBody('k6 course, patched')), headers: data.admin }), {
       'patch course 200': (r) => r.status === 200 && (json(r) || {}).id === courseId,
     });
     deleteCourse(data, courseId);
