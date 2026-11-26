@@ -21,6 +21,7 @@ import certificateRouter from './routes/Elearning/certificate';
 import certificatesRouter from './routes/Elearning/certificates';
 import contentFileRouter from './routes/Elearning/content_file';
 import trainingTimeRouter from './routes/Elearning/training_time';
+import searchRouter from './routes/search';
 
 export const app = express();
 // Client IP (req.ip) as seen behind the ingress: unset or `false` trusts no proxy.
@@ -40,6 +41,8 @@ app.get(['/openapi.json', '/swagger.json'], (_req, res) => res.json(openApiDocum
 
 app.use('/health', healthRouter);
 app.use('/check_apis', checkApisRouter);
+// The header's global search, over every business API (noStore + requireSession in the router).
+app.use('/search', searchRouter);
 
 // Session-bound routes: never cached (`Cache-Control: no-store`) and refused with a 401 before any upstream
 // call unless the request carries an `Authorization: Bearer <token>` verified with Core's public key JWT_PUBLIC_KEY

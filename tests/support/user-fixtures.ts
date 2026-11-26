@@ -26,7 +26,7 @@ export function coreMe(
 ): GetMeResponseView {
   return {
     first_name: 'Alice', last_name: 'Martin', email: 'alice.martin@mairie.test', phone: '+33123456789', status: 'active',
-    role: 'User', roles: ['User'], groups, ...fields,
+    role: 'User', roles: ['User'], groups, modules: ['dashboard', 'training'], ...fields,
   };
 }
 
