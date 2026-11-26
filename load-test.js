@@ -167,6 +167,17 @@ const handlers = {
   'GET /check_apis': ({ request }) =>
     check(request(), { 'check_apis 200': (r) => r.status === 200 }),
 
+  // --- Global search ---
+  // As a seeded agent: each module answers or is listed as unavailable, never an error.
+  'GET /search': ({ request }) =>
+    check(request({ query: { q: 'ag' }, headers: randomLearner().headers }), {
+      'search 200': (r) => r.status === 200,
+      'search is the grouped answer': (r) => {
+        const body = json(r);
+        return Boolean(body) && Array.isArray(body.groups) && Array.isArray(body.unavailable);
+      },
+    }),
+
   // --- Admin: courses (MAIR-1150), on courses the handlers create ---
   'POST /elearning/admin/courses': ({ request, data }) => {
     const response = request({ body: courseBody('k6 course'), headers: data.admin });

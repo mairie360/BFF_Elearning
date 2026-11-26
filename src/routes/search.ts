@@ -1,7 +1,7 @@
 import { GlobalSearchResponseSchema, SEARCH_DEFAULT_LIMIT, SEARCH_MAX_LENGTH, SEARCH_MAX_LIMIT, SEARCH_MIN_LENGTH, globalSearchHandler, noStore, requireSession } from '@mairie360/bffs-lib';
 import { Router } from 'express';
 import { logger } from '../logger';
-import { ErrorResponse as ErrorBody, registry } from '../openapi-registry';
+import { ErrorResponse as ErrorBody, registry, sessionErrorResponses } from '../openapi-registry';
 
 const router = Router();
 
@@ -42,6 +42,7 @@ registry.registerPath({
       content: { 'application/json': { schema: SearchResponseSchema } },
     },
     400: errorResponse('Invalid `q` or `limit`'),
+    ...sessionErrorResponses,
     401: errorResponse('Missing or invalid session'),
     500: errorResponse('Unexpected server error'),
     503: errorResponse('JWT_PUBLIC_KEY is not configured'),

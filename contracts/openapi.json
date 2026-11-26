@@ -6143,8 +6143,28 @@
               }
             }
           },
+          "429": {
+            "description": "An upstream API rate limit is reached: retry after the Retry-After header (seconds)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "An upstream API is unreachable, failed or answered an unusable body",
             "content": {
               "application/json": {
                 "schema": {
